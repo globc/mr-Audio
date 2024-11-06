@@ -90,6 +90,15 @@ wandb/
 # mr Blip checkpoints
 mr_BLIP_checkpoints/
 
+# datasets
+mr_BLIP_data/
+
+# venvs
+mraudio3/
+
+# configs
+lavis/configs/datasets/
+
 # IPython
 profile_default/
 ipython_config.py
