@@ -10,12 +10,7 @@ import os
 
 import torch
 import torch.distributed as dist
-from lavis.common.dist_utils import (
-    get_rank,
-    get_world_size,
-    is_main_process,
-    is_dist_avail_and_initialized,
-)
+from lavis.common.dist_utils import get_rank, get_world_size, is_main_process, is_dist_avail_and_initialized
 from lavis.common.logger import MetricLogger, SmoothedValue
 from lavis.common.registry import registry
 from lavis.datasets.data_utils import prepare_sample
@@ -64,11 +59,18 @@ class BaseTask:
         return datasets
 
     def train_step(self, model, samples):
-        loss = model(samples)["loss"]
-        return loss
+        output = model(samples)
+        loss_dict = {}
+        for k,v in output.items():
+            if "loss" in k:
+                loss_dict[k] = v
+        return output["loss"], loss_dict
 
     def valid_step(self, model, samples):
         raise NotImplementedError
+    
+    def before_training(self, model, dataset, **kwargs):
+        model.before_training(dataset=dataset, task_type=type(self))
 
     def before_evaluation(self, model, dataset, **kwargs):
         model.before_evaluation(dataset=dataset, task_type=type(self))
@@ -92,9 +94,6 @@ class BaseTask:
 
             eval_output = self.valid_step(model=model, samples=samples)
             results.extend(eval_output)
-
-            # print("breaking in evaluation in base_task.py")
-            # break
 
         if is_dist_avail_and_initialized():
             dist.barrier()
@@ -207,6 +206,11 @@ class BaseTask:
             samples = next(data_loader)
 
             samples = prepare_sample(samples, cuda_enabled=cuda_enabled)
+
+            ## notify model that sample is empty (error occured)
+            if not isinstance(samples, dict):
+                samples = {"is_empty":True}
+
             samples.update(
                 {
                     "epoch": inner_epoch,
@@ -218,7 +222,8 @@ class BaseTask:
             lr_scheduler.step(cur_epoch=inner_epoch, cur_step=i)
 
             with torch.cuda.amp.autocast(enabled=use_amp):
-                loss = self.train_step(model=model, samples=samples)
+                loss, loss_dict = self.train_step(model=model, samples=samples)
+                loss /= accum_grad_iters #TODO: not affect loss_dict values for logging
 
             # after_train_step()
             if use_amp:
@@ -230,12 +235,12 @@ class BaseTask:
             if (i + 1) % accum_grad_iters == 0:
                 if use_amp:
                     scaler.step(optimizer)
-                    scaler.update()
-                else:
+                    scaler.update()                     
+                else:    
                     optimizer.step()
                 optimizer.zero_grad()
 
-            metric_logger.update(loss=loss.item())
+            metric_logger.update(**loss_dict)
             metric_logger.update(lr=optimizer.param_groups[0]["lr"])
 
         # after train_epoch()

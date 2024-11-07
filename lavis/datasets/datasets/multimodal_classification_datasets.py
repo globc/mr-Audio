@@ -18,8 +18,3 @@ class MultimodalClassificationDataset(BaseDataset):
     @abstractmethod
     def _build_class_labels(self):
         pass
-
-    @abstractmethod
-    def _load_auxiliary_mappings(self):
-        pass
-

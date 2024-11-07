@@ -1092,7 +1092,6 @@ class OPTForCausalLM(OPTPreTrainedModel):
         self,
         input_ids=None,
         query_embeds=None,
-        inputs_embeds=None,
         past=None,
         attention_mask=None,
         use_cache=None,
@@ -1105,15 +1104,10 @@ class OPTForCausalLM(OPTPreTrainedModel):
         if past:
             input_ids = input_ids[:, -1:]
             query_embeds = None
-
-        # TODO: add input_emebds support
-        inputs_embeds = inputs_embeds
-
         # first step, decoder_cached_states are empty
         return {
             "input_ids": input_ids,
             "query_embeds": query_embeds,
-            "inputs_embeds": inputs_embeds,
             "attention_mask": attention_mask,
             "past_key_values": past,
             "use_cache": use_cache,

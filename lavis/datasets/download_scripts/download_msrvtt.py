@@ -6,12 +6,9 @@
 """
 
 import os
-import sys
 from pathlib import Path
 
 from omegaconf import OmegaConf
-
-sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 
 from lavis.common.utils import (
     cleanup_dir,
@@ -32,13 +29,9 @@ from lavis.common.utils import (
 #    }
 # 3. Paste the link address to DATA_URL
 
-# DATA_URL = {
-#     "train": "https://download2295.mediafire.com/4bb7p74xrbgg/x3rrbe4hwp04e6w/train_val_videos.zip",
-#     "test": "https://download2390.mediafire.com/79hfq3592lqg/czh8sezbo9s4692/test_videos.zip",
-# }
 DATA_URL = {
-    "train": "https://download2391.mediafire.com/gpx338p0jvggZ_3_rB9owg5ZtbovGENS81C-uPkRAMuOG6bBo5AYJEJlN7lOYIBeXlj8_gtuNP47TQi5JD8FY8pLu6PwzysTpqG-DyOM7yq8N2sCqvVPuBIzTkvX48OW-uK_lD8YnZsNGbHqGyNKiACrsmO1-BqZRL4UgIqZel8/x3rrbe4hwp04e6w/train_val_videos.zip",
-    "test": "https://download2390.mediafire.com/w36v97vpotkgEovKMVAmQtYsshobjKdiiQtARBqvzs01wTtXNu8fO-HpSA3lgZlGgP8dMDLsPh0-rDqdSub97w1J1l99DwOAYwztwBACUqLJTjq8w3Ol2s1ZSw3euViyuQ16RawepwGfWYOju_aUKViq0O9fcNXdz1YVaq-0Nzc/czh8sezbo9s4692/test_videos.zip",
+    "train": "https://download2295.mediafire.com/4bb7p74xrbgg/x3rrbe4hwp04e6w/train_val_videos.zip",
+    "test": "https://download2390.mediafire.com/79hfq3592lqg/czh8sezbo9s4692/test_videos.zip",
 }
 
 

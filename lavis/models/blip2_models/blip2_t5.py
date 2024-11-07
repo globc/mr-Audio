@@ -22,6 +22,7 @@ class Blip2T5(Blip2Base):
     BLIP2 T5 model.
     Supported model types:
         - pretrain_flant5xl: pretrained model with FlanT5-XL
+        - pretrain_flant5xl_vitL: pretrained model with FlanT5-XL
         - pretrain_flant5xxl: pretrained model with FlanT5-XXL
         - caption_coco_flant5xl: fintuned image captioning model with FlanT5-XL
     Usage:
@@ -31,12 +32,14 @@ class Blip2T5(Blip2Base):
 
     PRETRAINED_MODEL_CONFIG_DICT = {
         "pretrain_flant5xl": "configs/models/blip2/blip2_pretrain_flant5xl.yaml",
+        "pretrain_flant5xl_vitL": "configs/models/blip2/blip2_pretrain_flant5xl_vitL.yaml",
         "pretrain_flant5xxl": "configs/models/blip2/blip2_pretrain_flant5xxl.yaml",
         "caption_coco_flant5xl": "configs/models/blip2/blip2_caption_flant5xl.yaml",
     }
 
     def __init__(
         self,
+        vit_model="eva_clip_g",
         img_size=224,
         drop_path_rate=0,
         use_grad_checkpoint=False,
@@ -56,11 +59,11 @@ class Blip2T5(Blip2Base):
         self.tokenizer = self.init_tokenizer()
 
         self.visual_encoder, self.ln_vision = self.init_vision_encoder(
-            img_size, drop_path_rate, use_grad_checkpoint, vit_precision
+            vit_model, img_size, drop_path_rate, use_grad_checkpoint, vit_precision
         )
         if freeze_vit:
             for name, param in self.visual_encoder.named_parameters():
-                param.requires_grad = False         
+                param.requires_grad = False
             self.visual_encoder = self.visual_encoder.eval()
             self.visual_encoder.train = disabled_train
             logging.info("freeze vision encoder")
@@ -119,14 +122,14 @@ class Blip2T5(Blip2Base):
                 samples["text_input"],
                 padding="longest",
                 truncation=True,
-                max_length=self.max_text_length,
+                max_length=self.max_txt_len,
                 return_tensors="pt",
             ).to(image.device)
             output_tokens = self.t5_tokenizer(
                 samples["text_output"],
                 padding="longest",
                 truncation=True,
-                max_length=self.max_text_length,
+                max_length=self.max_txt_len,
                 return_tensors="pt",
             ).to(image.device)
 
@@ -365,6 +368,7 @@ class Blip2T5(Blip2Base):
 
     @classmethod
     def from_config(cls, cfg):
+        vit_model = cfg.get("vit_model", "eva_clip_g")
         img_size = cfg.get("image_size")
         num_query_token = cfg.get("num_query_token")
         t5_model = cfg.get("t5_model")
@@ -380,6 +384,7 @@ class Blip2T5(Blip2Base):
         apply_lemmatizer = cfg.get("apply_lemmatizer", False)
 
         model = cls(
+            vit_model=vit_model,
             img_size=img_size,
             drop_path_rate=drop_path_rate,
             use_grad_checkpoint=use_grad_checkpoint,

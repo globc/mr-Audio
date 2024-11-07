@@ -13,20 +13,15 @@ datasets:
       annotations:
         train:
           url: https://storage.googleapis.com/sfr-vision-language-research/LAVIS/datasets/msrvtt/qa_train.json
-          # storage: msrvtt/annotations/qa_train.json
-          storage: annotations/msrvtt/qa_train.json
+          storage: msrvtt/annotations/qa_train.json
         val:
           url: https://storage.googleapis.com/sfr-vision-language-research/LAVIS/datasets/msrvtt/qa_val.json
-          # storage: msrvtt/annotations/qa_val.json
-          storage: annotations/msrvtt/qa_val.json
+          storage: msrvtt/annotations/qa_val.json
         test:
           url: https://storage.googleapis.com/sfr-vision-language-research/LAVIS/datasets/msrvtt/qa_test.json
-          # storage: msrvtt/annotations/qa_test.json
-          storage: annotations/msrvtt/qa_test.json
+          storage: msrvtt/annotations/qa_test.json
         ans2label:
           url: https://storage.googleapis.com/sfr-vision-language-research/LAVIS/datasets/msrvtt/train_ans2label.json
-          # storage: msrvtt/annotations/qa_ans2label.json
-          storage: annotations/msrvtt/qa_ans2label.json
+          storage: msrvtt/annotations/qa_ans2label.json
       videos:
-        # storage: msrvtt/videos
-        storage: raw/msrvtt
+        storage: msrvtt/videos

@@ -6,7 +6,7 @@
 """
 import logging
 
-import torch
+import torchz
 import torch.distributed as dist
 import torch.nn as nn
 from torch.cuda.amp import autocast as autocast
@@ -28,7 +28,8 @@ class Blip2Qformer(Blip2Base):
     """
     BLIP2 first-stage model with Q-former and ViT.
     Supported model types:
-        - pretrained: pretrained model
+        - pretrained: pretrained model with vit-g
+        - pretrain_vitL: pretrained model with vit-large
         - coco: fintuned model on coco
     Usage:
         >>> from lavis.models import load_model
@@ -37,17 +38,20 @@ class Blip2Qformer(Blip2Base):
 
     PRETRAINED_MODEL_CONFIG_DICT = {
         "pretrain": "configs/models/blip2/blip2_pretrain.yaml",
+        "pretrain_vitL": "configs/models/blip2/blip2_pretrain_vitL.yaml",
         "coco": "configs/models/blip2/blip2_coco.yaml",
     }
 
     def __init__(
         self,
+        vit_model="eva_clip_g",
         img_size=224,
         drop_path_rate=0,
         use_grad_checkpoint=False,
         vit_precision="fp16",
         freeze_vit=True,
         num_query_token=32,
+        cross_attention_freq=2,
         embed_dim=256,
         max_txt_len=32,
     ):
@@ -56,16 +60,16 @@ class Blip2Qformer(Blip2Base):
         self.tokenizer = self.init_tokenizer()
 
         self.visual_encoder, self.ln_vision = self.init_vision_encoder(
-            img_size, drop_path_rate, use_grad_checkpoint, vit_precision
+            vit_model, img_size, drop_path_rate, use_grad_checkpoint, vit_precision
         )
         if freeze_vit:
             for name, param in self.visual_encoder.named_parameters():
-                param.requires_grad = False                
+                param.requires_grad = False
             self.visual_encoder = self.visual_encoder.eval()
-            self.visual_encoder.train = disabled_train            
+            self.visual_encoder.train = disabled_train
             logging.info("freeze vision encoder")
         self.Qformer, self.query_tokens = self.init_Qformer(
-            num_query_token, self.visual_encoder.num_features
+            num_query_token, self.visual_encoder.num_features, cross_attention_freq
         )
         self.Qformer.resize_token_embeddings(len(self.tokenizer))
         state_dict = self.Qformer.state_dict()
@@ -86,7 +90,6 @@ class Blip2Qformer(Blip2Base):
     def forward(self, samples):
         image = samples["image"]
         text = samples["text_input"]
-        
         image_embeds = self.ln_vision(self.visual_encoder(image))
         image_atts = torch.ones(image_embeds.size()[:-1], dtype=torch.long).to(
             image.device
@@ -152,20 +155,37 @@ class Blip2Qformer(Blip2Base):
             image.device
         )
 
-        loss_itc = (
-            F.cross_entropy(sim_i2t, targets, label_smoothing=0.1)
-            + F.cross_entropy(sim_t2i, targets, label_smoothing=0.1)
-        ) / 2
+        if "image_id" in samples.keys(): #coco retrieval finetuning
+            image_ids = samples["image_id"].view(-1,1)
+            image_ids_all = concat_all_gather(image_ids)
+            pos_idx = torch.eq(image_ids, image_ids_all.t()).float()       
+            sim_targets = pos_idx / pos_idx.sum(1,keepdim=True)   
+            sim_targets = 0.9 * sim_targets + 0.1 * torch.ones_like(sim_targets) / sim_targets.size(1)
+
+            loss_t2i = -torch.sum(F.log_softmax(sim_t2i, dim=1)*sim_targets,dim=1).mean()
+            loss_i2t = -torch.sum(F.log_softmax(sim_i2t, dim=1)*sim_targets,dim=1).mean()     
+            loss_itc = (loss_t2i+loss_i2t)/2  
+        else:                     
+            loss_itc = (
+                F.cross_entropy(sim_i2t, targets, label_smoothing=0.1)
+                + F.cross_entropy(sim_t2i, targets, label_smoothing=0.1)
+            ) / 2
 
         ###============== Image-text Matching ===================###
         text_input_ids_world = concat_all_gather(text_tokens.input_ids)
         text_attention_mask_world = concat_all_gather(text_tokens.attention_mask)
         image_embeds_world = all_gather_with_grad(image_embeds)
         with torch.no_grad():
-            weights_t2i = F.softmax(sim_t2i, dim=1) + 1e-4
-            weights_t2i[:, rank * bs : rank * bs + bs].fill_diagonal_(0)
-            weights_i2t = F.softmax(sim_i2t, dim=1) + 1e-4
-            weights_i2t[:, rank * bs : rank * bs + bs].fill_diagonal_(0)
+            if "image_id" in samples.keys():
+                mask = torch.eq(image_ids, image_ids_all.t())
+                sim_t2i.masked_fill_(mask, -10000)
+                sim_i2t.masked_fill_(mask, -10000)
+            else:    
+                sim_t2i[:, rank * bs : rank * bs + bs].fill_diagonal_(-10000)
+                sim_i2t[:, rank * bs : rank * bs + bs].fill_diagonal_(-10000)            
+                
+            weights_t2i = F.softmax(sim_t2i, dim=1)
+            weights_i2t = F.softmax(sim_i2t, dim=1)
 
         # select a negative image for each text
         image_embeds_neg = []
@@ -243,7 +263,6 @@ class Blip2Qformer(Blip2Base):
             return_dict=True,
             labels=labels,
         )
-        
         loss_lm = lm_output.loss
 
         return BlipOutput(
@@ -399,7 +418,9 @@ class Blip2Qformer(Blip2Base):
                 image is not None
             ), "Image is not provided for mode 'image' or 'multimodal'"
             # return query features
-            image_embeds_frozen = self.ln_vision(self.visual_encoder(image))
+            with self.maybe_autocast():
+                image_embeds_frozen = self.ln_vision(self.visual_encoder(image))
+            image_embeds_frozen = image_embeds_frozen.float()
             image_atts = torch.ones(
                 image_embeds_frozen.size()[:-1], dtype=torch.long
             ).to(self.device)
@@ -437,7 +458,9 @@ class Blip2Qformer(Blip2Base):
 
         elif mode == "multimodal":
             # return multimodel query features
-            image_embeds_frozen = self.ln_vision(self.visual_encoder(image))
+            with self.maybe_autocast():
+                image_embeds_frozen = self.ln_vision(self.visual_encoder(image))
+            image_embeds_frozen = image_embeds_frozen.float()
             image_atts = torch.ones(
                 image_embeds_frozen.size()[:-1], dtype=torch.long
             ).to(self.device)
@@ -474,8 +497,10 @@ class Blip2Qformer(Blip2Base):
 
     @classmethod
     def from_config(cls, cfg):
+        vit_model = cfg.get("vit_model", "eva_clip_g")
         img_size = cfg.get("image_size")
         num_query_token = cfg.get("num_query_token")
+        cross_attention_freq = cfg.get("cross_attention_freq", 2)
 
         drop_path_rate = cfg.get("drop_path_rate", 0)
         use_grad_checkpoint = cfg.get("use_grad_checkpoint", False)
@@ -485,12 +510,14 @@ class Blip2Qformer(Blip2Base):
         max_txt_len = cfg.get("max_txt_len", 32)
 
         model = cls(
+            vit_model=vit_model,
             img_size=img_size,
             drop_path_rate=drop_path_rate,
             use_grad_checkpoint=use_grad_checkpoint,
             vit_precision=vit_precision,
             freeze_vit=freeze_vit,
             num_query_token=num_query_token,
+            cross_attention_freq=cross_attention_freq,
             max_txt_len=max_txt_len,
         )
         model.load_checkpoint_from_config(cfg)

@@ -13,9 +13,10 @@ from lavis.tasks.multimodal_classification import (
     MultimodalClassificationTask,
 )
 from lavis.tasks.retrieval import RetrievalTask
-from lavis.tasks.vqa import VQATask, GQATask, AOKVQATask, VideoQA, FrameQA
+from lavis.tasks.vqa import VQATask, GQATask, AOKVQATask, DisCRNTask, VideoQA, FrameQA
 from lavis.tasks.vqa_reading_comprehension import VQARCTask, GQARCTask
 from lavis.tasks.dialogue import DialogueTask
+from lavis.tasks.text_to_image_generation import TextToImageGenerationTask
 from lavis.tasks.moment_retrieval import MomentRetrievalTask
 from lavis.tasks.temporal_action_localization import TALTask
 
@@ -40,11 +41,14 @@ __all__ = [
     "VQARCTask",
     "GQARCTask",
     "MultimodalClassificationTask",
+    # "VideoQATask",
     # "VisualEntailmentTask",
-    "VideoQA",
-    "FrameQA",
     "ImageTextPretrainTask",
     "DialogueTask",
+    "TextToImageGenerationTask",
+    "DisCRNTask"
+    "VideoQA",
+    "FrameQA",
     "MomentRetrievalTask",
     "TALTask",
 ]

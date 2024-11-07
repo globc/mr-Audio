@@ -11,6 +11,7 @@ import os
 import random as rnd
 import tarfile
 import zipfile
+import cv2
 
 import decord
 import webdataset as wds
@@ -26,43 +27,16 @@ decord.bridge.set_bridge("torch")
 MAX_INT = registry.get("MAX_INT")
 
 
-# add for loading video
-def load_video(
-    video_path,
-    n_frms=MAX_INT,
-    height=-1,
-    width=-1,
-    sampling="uniform",
-    clip_proposal=None,
-):
+def load_video(video_path, n_frms=MAX_INT, height=-1, width=-1, sampling="uniform"):
     vr = VideoReader(uri=video_path, height=height, width=width)
+
     vlen = len(vr)
+    start, end = 0, vlen
+
     n_frms = min(n_frms, vlen)
-    fps = vr.get_avg_fps()
-    if clip_proposal is None:
-        start, end = 0, vlen
-    else:
-        start, end = int(clip_proposal[0] * fps), int(clip_proposal[1] * fps)
-        if start < 0:
-            start = 0
-        if end > vlen:
-            end = vlen
 
-    intervals = np.linspace(start=start, stop=end, num=n_frms + 1).astype(int)
-    ranges = []
-    for idx, interv in enumerate(intervals[:-1]):
-        ranges.append((interv, intervals[idx + 1]))
-
-    if sampling == "random":
-        indices = []
-        for x in ranges:
-            if x[0] == x[1]:
-                indices.append(x[0])
-            else:
-                indices.append(rnd.choice(range(x[0], x[1])))
-    elif sampling == "uniform":
-        indices = [(x[0] + x[1]) // 2 for x in ranges]
-
+    if sampling == "uniform":
+        indices = np.arange(start, end, vlen / n_frms).astype(int)
     elif sampling == "headtail":
         indices_h = sorted(rnd.sample(range(vlen // 2), n_frms // 2))
         indices_t = sorted(rnd.sample(range(vlen // 2, vlen), n_frms // 2))
@@ -70,73 +44,15 @@ def load_video(
     else:
         raise NotImplementedError
 
-    if len(indices) < n_frms:
-        rest = [indices[-1] for i in range(n_frms - len(indices))]
-        indices = indices + rest
     # get_batch -> T, H, W, C
     frms = vr.get_batch(indices).permute(3, 0, 1, 2).float()  # (C, T, H, W)
 
-    return frms, indices, fps
-
-
-def load_video_demo(
-    video_path,
-    n_frms=MAX_INT,
-    height=-1,
-    width=-1,
-    sampling="uniform",
-    clip_proposal=None,
-):
-    vr = VideoReader(uri=video_path, height=height, width=width)
-    vlen = len(vr)
-    n_frms = min(n_frms, vlen)
-    fps = vr.get_avg_fps()
-    if clip_proposal is None:
-        start, end = 0, vlen
-    else:
-        start, end = int(clip_proposal[0] * fps), int(clip_proposal[1] * fps)
-        if start < 0:
-            start = 0
-        if end > vlen:
-            end = vlen
-
-    intervals = np.linspace(start=start, stop=end, num=n_frms + 1).astype(int)
-    ranges = []
-    for idx, interv in enumerate(intervals[:-1]):
-        ranges.append((interv, intervals[idx + 1]))
-
-    if sampling == "random":
-        indices = []
-        for x in ranges:
-            if x[0] == x[1]:
-                indices.append(x[0])
-            else:
-                indices.append(rnd.choice(range(x[0], x[1])))
-    elif sampling == "uniform":
-        indices = [(x[0] + x[1]) // 2 for x in ranges]
-
-    elif sampling == "headtail":
-        indices_h = sorted(rnd.sample(range(vlen // 2), n_frms // 2))
-        indices_t = sorted(rnd.sample(range(vlen // 2, vlen), n_frms // 2))
-        indices = indices_h + indices_t
-    else:
-        raise NotImplementedError
-
-    if len(indices) < n_frms:
-        rest = [indices[-1] for i in range(n_frms - len(indices))]
-        indices = indices + rest
-    # get_batch -> T, H, W, C
-
-    frms = vr.get_batch(indices)
-    frms = frms.asnumpy()
-    frms = torch.from_numpy(frms)
-    frms = frms.permute(3, 0, 1, 2).float()  # (C, T, H, W)
-
-    return frms, indices, fps, vlen
+    return frms
 
 
 def apply_to_sample(f, sample):
-    if len(sample) == 0:
+    ## add check for datasets that return none samples for missing items
+    if sample == None or len(sample) == 0:
         return {}
 
     def _apply(x):
@@ -368,3 +284,68 @@ def save_frames_grid(img_array, out_path):
     img = Image.fromarray(ndarr)
 
     img.save(out_path)
+
+
+def uniform_frame_sampling(video_path, num_frames, target_height, target_width, start_time=None, end_time=None):
+    cap = cv2.VideoCapture(video_path)
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    frame_rate = cap.get(cv2.CAP_PROP_FPS)
+
+    if start_time is None:
+        start_time = 0
+    if end_time is None:
+        end_time = total_frames / frame_rate
+
+    start_frame = int(start_time * frame_rate)
+    end_frame = int(end_time * frame_rate)
+    frame_indices = list(range(start_frame, end_frame + 1, (end_frame - start_frame + 1) // num_frames))
+
+    frames = []
+    for frame_index in frame_indices:
+        cap.set(cv2.CAP_PROP_POS_FRAMES, frame_index)
+        ret, frame = cap.read()
+        if not ret:
+            break
+        frame = cv2.resize(frame, (target_width, target_height))
+        frames.append(frame)
+
+    cap.release()
+    return frames
+
+
+def head_tail_frame_sampling(video_path, num_frames, target_height, target_width, start_time=None, end_time=None):
+    cap = cv2.VideoCapture(video_path)
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    frame_rate = cap.get(cv2.CAP_PROP_FPS)
+
+    if start_time is None:
+        start_time = 0
+    if end_time is None:
+        end_time = total_frames / frame_rate
+
+    start_frame = int(start_time * frame_rate)
+    end_frame = int(end_time * frame_rate)
+    frame_indices = [start_frame] + [start_frame + (end_frame - start_frame) // (num_frames - 1) * i for i in range(1, num_frames - 1)] + [end_frame]
+
+    frames = []
+    for frame_index in frame_indices:
+        cap.set(cv2.CAP_PROP_POS_FRAMES, frame_index)
+        ret, frame = cap.read()
+        if not ret:
+            break
+        frame = cv2.resize(frame, (target_width, target_height))
+        frames.append(frame)
+
+    cap.release()
+    if len(frames) == 0:
+        return None
+    return torch.stack([torch.tensor(f).permute(2,0,1).float() for f in frames], dim=1)
+
+
+def load_clip(video_path, num_frames, target_height, target_width, start_time=None, end_time=None, sampling="headtail"):
+    if sampling == "headtail":
+        return head_tail_frame_sampling(video_path, num_frames, target_height, target_width, start_time, end_time)
+    elif sampling == "uniform":
+        return uniform_frame_sampling(video_path, num_frames, target_height, target_width, start_time, end_time)
+    else:
+        raise NotImplementedError
