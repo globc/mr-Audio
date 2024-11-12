@@ -50,6 +50,10 @@ class MomentRetrievalDataset(BaseDataset):
 
         video_prompt_end = "<extra_id_0>"
 
+        "text_input"
+
+
+
         # "image_id" is kept to stay compatible with the COCO evaluation format
         return {
             "video": frms,

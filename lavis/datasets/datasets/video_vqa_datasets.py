@@ -71,6 +71,9 @@ class VideoQAInstructDataset(VideoQADataset):
         frms = self.vis_processor(vpath)
         question = self.text_processor(ann["question"])
 
+
+
+
         return {
             "video": frms,
             "text_input": question,
