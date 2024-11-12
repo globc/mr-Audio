@@ -94,7 +94,7 @@ mr_BLIP_checkpoints/
 mr_BLIP_data/
 
 # venvs
-mraudio3/
+mraudio/
 
 # configs
 lavis/configs/datasets/

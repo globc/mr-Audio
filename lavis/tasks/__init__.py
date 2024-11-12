@@ -46,7 +46,7 @@ __all__ = [
     "ImageTextPretrainTask",
     "DialogueTask",
     "TextToImageGenerationTask",
-    "DisCRNTask"
+    "DisCRNTask",
     "VideoQA",
     "FrameQA",
     "MomentRetrievalTask",

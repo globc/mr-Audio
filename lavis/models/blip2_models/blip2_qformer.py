@@ -6,7 +6,7 @@
 """
 import logging
 
-import torchz
+import torch
 import torch.distributed as dist
 import torch.nn as nn
 from torch.cuda.amp import autocast as autocast

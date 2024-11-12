@@ -104,7 +104,7 @@ class BLIP2_MR(Blip2Base):
             self.visual_encoder,
             self.ln_vision,
         ) = self.init_vision_encoder(
-            img_size, drop_path_rate, use_grad_checkpoint, vit_precision
+            "eva_clip_g", img_size, drop_path_rate, use_grad_checkpoint, vit_precision
         )
 
         # freeze ViT
