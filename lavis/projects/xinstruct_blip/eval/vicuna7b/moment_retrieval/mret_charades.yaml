@@ -76,7 +76,7 @@ model:
   predict_with_gen: False
 
 datasets:
-  msrvtt_mrt_instruct:
+  charades_mrt:
     vis_processor:
       train:
         name: alpro_video_train

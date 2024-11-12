@@ -56,6 +56,7 @@ from lavis.datasets.builders.classification_builder import (
     ESC50ClassificationBuilder
 )
 from lavis.datasets.builders.imagefolder_builder import ImageNetBuilder
+from lavis.datasets.builders.moment_retrieval_for_question_answering_builder import CharadesToQAInstructBuilder
 from lavis.datasets.builders.video_qa_builder import (
     MSRVTTQABuilder, 
     MSVDQABuilder,
@@ -215,6 +216,7 @@ __all__ = [
     "VATEXCapInstructBuilder",
     "WebVid2MCapInstructBuilder",
     "MSRVTTQAInstructBuilder",
+    "CharadesToQAInstructBuilder"
     "MSVDQAInstructBuilder",
     "VALORCaptionInstructBuilder",
     "AVSDDialInstructBuilder",

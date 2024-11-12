@@ -29,7 +29,7 @@ nvidia-smi 1>&2
 export CUDA_NUM_DEVICES=$SLURM_GPUS_ON_NODE
 
 ml gcc/11 python/3.8
-source mraudio3/bin/activate
+source .mraudio3/bin/activate
 ./run_scripts/blip2-xinstruct/eval_mrt_vicuna_xinstruct.sh
 deactivate
 
