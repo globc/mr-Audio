@@ -33,6 +33,8 @@ from lavis.runners.runner_base import RunnerBase
 from lavis.tasks import *
 
 
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Evaluating")
 
@@ -43,6 +45,11 @@ def parse_args():
         help="override some settings in the used config, the key-value pair "
         "in xxx=yyy format will be merged into config file (deprecate), "
         "change to --cfg-options instead.",
+    )
+    parser.add_argument(
+        "--cpu_only",
+        action="store_true",
+        help="Force the evaluation to run on the CPU only."
     )
 
     args = parser.parse_args()
@@ -62,8 +69,14 @@ def setup_seeds(config):
     cudnn.benchmark = False
     cudnn.deterministic = True
 
-
 def main():
+    args = parse_args()
+
+    if args.cpu_only:
+        os.environ["CUDA_LAUNCH_BLOCKING"]= "1c"
+        os.environ["CUDA_VISIBLE_EDVICES"] = ""
+        torch.cuda.is_available = lambda: False  # Override torch.cuda.is_available
+        torch.backends.cudnn.enabled = False
     # allow auto-dl completes on main process without timeout when using NCCL backend.
     # os.environ["NCCL_BLOCKING_WAIT"] = "1"
 

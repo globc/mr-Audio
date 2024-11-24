@@ -13,6 +13,7 @@ import re
 
 import torch
 import torch.nn as nn
+from accelerate.commands.config.config_args import cache_dir
 from torch.cuda.amp import autocast as autocast
 from transformers import T5TokenizerFast
 from peft import LoraConfig, get_peft_model
@@ -75,11 +76,13 @@ class BLIP2_MR(Blip2Base):
         interleave_data=False,
         frame_token_aggregation=None,
         task="lora",
+        device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
     ):
         """
         apply_lemmatizer: when set to True, postprocess predict_answers() result with lemmas.
         """
         super().__init__()
+        self.device = device
 
         self.task = task
         if "TAL" in task:
@@ -117,12 +120,14 @@ class BLIP2_MR(Blip2Base):
 
         ##########################################################################
 
-        ### Text backbone ########################################################
+        ### Text backbone ######################c##################################
+        curr_path = os.getcwd() + '/cache'
+        #example: '/work/scratch/kurse/kurs00079/hm66ryjy/mr-Audio/cache'
         self.t5_tokenizer = T5TokenizerFast.from_pretrained(t5_model)
         t5_config = T5Config.from_pretrained(t5_model)
         t5_config.dense_act_fn = "gelu"
         self.t5_model = T5ForConditionalGeneration.from_pretrained(
-            t5_model, config=t5_config
+            t5_model, config=t5_config, cache_dir= curr_path
         )
 
         # Depending on the tokenizer, some numbers are represented as 2 tokens
@@ -166,7 +171,7 @@ class BLIP2_MR(Blip2Base):
             )
 
             self.t5_model = get_peft_model(self.t5_model, lora_config)
-            self.t5_model.print_trainable_parameters()
+            #self.t5_model.print_trainable_parameters()
         else:
             # freeze T5
             for name, param in self.t5_model.named_parameters():

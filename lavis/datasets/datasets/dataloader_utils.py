@@ -53,7 +53,12 @@ class PrefetchLoader(object):
 
     def __init__(self, loader):
         self.loader = loader
-        self.stream = torch.cuda.Stream()
+        #self.stream = torch.cuda.Stream()
+        # Only initialize CUDA stream if CUDA is available
+        if torch.cuda.is_available():
+            self.stream = torch.cuda.Stream()
+        else:
+            self.stream = None
 
     def __iter__(self):
         loader_it = iter(self.loader)
