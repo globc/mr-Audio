@@ -76,13 +76,16 @@ class BLIP2_MR(Blip2Base):
         interleave_data=False,
         frame_token_aggregation=None,
         task="lora",
-        device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        device= None #torch.device("cuda" if torch.cuda.is_available() else "cpu")
     ):
         """
         apply_lemmatizer: when set to True, postprocess predict_answers() result with lemmas.
         """
         super().__init__()
-        self.eigendevice = device #assign given device
+
+        self.eigendevice = torch.device('cpu' if (os.environ.get('USE_CPU_ONLY', '0') == '1')
+                                        else 'cuda' if torch.cuda.is_available() else 'cpu')
+        self.to(self.eigendevice)
 
         self.task = task
         if "TAL" in task:
@@ -110,8 +113,8 @@ class BLIP2_MR(Blip2Base):
         )
 
         #Move Vision Encoder to device
-        self.visual_encoder = self.visual_encoder.to(self.eigendevice)
-        self.ln_vision = self.ln_vision.to(self.eigendevice)
+        self.visual_encoder = self.visual_encoder
+        self.ln_vision = self.ln_vision
 
         # freeze ViT
         if freeze_vit:

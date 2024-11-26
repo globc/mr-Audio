@@ -31,11 +31,11 @@ class BaseTask:
     def setup_task(cls, **kwargs):
         return cls()
 
-    def build_model(self, cfg, device=None):
+    def build_model(self, cfg):
         model_config = cfg.model_cfg
 
         model_cls = registry.get_model_class(model_config.arch)
-        return model_cls.from_config(model_config) if device is not None else model_cls.from_config(model_config)
+        return model_cls.from_config(model_config)
 
     def build_datasets(self, cfg):
         """
