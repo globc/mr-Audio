@@ -82,7 +82,7 @@ class BLIP2_MR(Blip2Base):
         apply_lemmatizer: when set to True, postprocess predict_answers() result with lemmas.
         """
         super().__init__()
-        self.device = device
+        self.eigendevice = device #assign given device
 
         self.task = task
         if "TAL" in task:
@@ -104,11 +104,14 @@ class BLIP2_MR(Blip2Base):
 
         ### Vision backbone ######################################################
         (
-            self.visual_encoder,
-            self.ln_vision,
+            self.visual_encoder, self.ln_vision,
         ) = self.init_vision_encoder(
             img_size, drop_path_rate, use_grad_checkpoint, vit_precision
         )
+
+        #Move Vision Encoder to device
+        self.visual_encoder = self.visual_encoder.to(self.eigendevice)
+        self.ln_vision = self.ln_vision.to(self.eigendevice)
 
         # freeze ViT
         if freeze_vit:
@@ -129,6 +132,9 @@ class BLIP2_MR(Blip2Base):
         self.t5_model = T5ForConditionalGeneration.from_pretrained(
             t5_model, config=t5_config, cache_dir= curr_path
         )
+
+        #Move T5 to device
+        self.t5_model = self.t5_model.to(self.eigendevice)
 
         # Depending on the tokenizer, some numbers are represented as 2 tokens
         # this is annoying and needs to be fixed
@@ -187,6 +193,12 @@ class BLIP2_MR(Blip2Base):
             num_query_token, self.visual_encoder.num_features
         )
 
+        #Move to device
+        self.query_tokens = torch.nn.Parameter(
+            self.query_tokens.to(self.eigendevice)
+        )
+        self.Qformer = self.Qformer.to(self.eigendevice)
+
         if not self.multimodal_Qformer:
             self.Qformer.cls = None
             self.Qformer.bert.embeddings.word_embeddings = None
@@ -200,7 +212,10 @@ class BLIP2_MR(Blip2Base):
         self.num_query_token = num_query_token
         self.t5_proj = nn.Linear(
             self.Qformer.config.hidden_size, self.t5_model.config.hidden_size
-        )
+        ).to(self.eigendevice)
+
+        #Move to device
+        self.t5_proj = self.t5_proj.to(self.eigendevice)
 
         ##########################################################################
 
@@ -237,6 +252,7 @@ class BLIP2_MR(Blip2Base):
             samples["timestamps"],
             samples["duration"],
         )
+        image = image.to(self.device)
         video_prompt_end = samples["video_prompt_end"]
         query_prompt, task_prompt = samples["query_prompt"], samples["task_prompt"]
         answer = samples["relevant_windows"]
@@ -247,7 +263,8 @@ class BLIP2_MR(Blip2Base):
         with torch.cuda.amp.autocast(enabled=(self.device != torch.device("cpu"))):
             image_embeds = self.ln_vision(self.visual_encoder(image))  # bt, n, c
         image_atts = torch.ones(image_embeds.size()[:-1], dtype=torch.long).to(
-            image.device
+            self.device
+            #image.device
         )  # bt n c
 
         ### Apply Q-Former for Image Embeddings ####################################
@@ -884,7 +901,11 @@ class BLIP2_MR(Blip2Base):
         return self._lemmatizer
 
     @classmethod
-    def from_config(cls, cfg):
+    def from_config(
+            cls,
+            cfg,
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    ):
         img_size = cfg.get("image_size")
         num_query_token = cfg.get("num_query_token")
         t5_model = cfg.get("t5_model")
@@ -919,6 +940,7 @@ class BLIP2_MR(Blip2Base):
             interleave_data=interleave_data,
             frame_token_aggregation=frame_token_aggregation,
             task=task,
+            device=device
         )
         model.load_checkpoint_from_config(cfg)
 
