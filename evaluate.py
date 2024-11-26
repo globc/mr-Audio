@@ -71,7 +71,7 @@ def setup_seeds(config):
 
 def main():
     args = parse_args()
-
+#test
     if args.cpu_only:
         os.environ["CUDA_LAUNCH_BLOCKING"]= "1c"
         os.environ["CUDA_VISIBLE_EDVICES"] = ""
