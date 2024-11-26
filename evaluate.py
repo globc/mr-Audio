@@ -71,18 +71,19 @@ def setup_seeds(config):
 
 def main():
     args = parse_args()
-#test
-    if args.cpu_only:
-        os.environ["CUDA_LAUNCH_BLOCKING"]= "1c"
-        os.environ["CUDA_VISIBLE_EDVICES"] = ""
-        torch.cuda.is_available = lambda: False  # Override torch.cuda.is_available
-        torch.backends.cudnn.enabled = False
+    device = torch.device("cpu" if args.cpu_only else "cuda" if torch.cuda.is_available() else "cpu")
+    #if args.cpu_only:
+        #os.environ["CUDA_LAUNCH_BLOCKING"]= "1"
+        #os.environ["CUDA_VISIBLE_EDVICES"] = ""
+        #torch.cuda.is_available = lambda: False  # Override torch.cuda.is_available
+        #torch.backends.cudnn.enabled = False
     # allow auto-dl completes on main process without timeout when using NCCL backend.
     # os.environ["NCCL_BLOCKING_WAIT"] = "1"
 
     # set before init_distributed_mode() to ensure the same job_id shared across all ranks.
     job_id = now()
 
+    #cfg = Config(parse_args())
     cfg = Config(parse_args())
 
     init_distributed_mode(cfg.run_cfg)
@@ -125,7 +126,10 @@ def main():
 
     task = tasks.setup_task(cfg)
     datasets = task.build_datasets(cfg)
-    model = task.build_model(cfg)
+    model = task.build_model(
+        cfg,
+        device=device  #TODO: maybe this leads to crash because of inconsistency with torch
+    )
 
     runner = RunnerBase(
         cfg=cfg, job_id=job_id, task=task, model=model, datasets=datasets
