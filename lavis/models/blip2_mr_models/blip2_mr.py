@@ -904,7 +904,7 @@ class BLIP2_MR(Blip2Base):
     def from_config(
             cls,
             cfg,
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            device = None #torch.device("cuda" if torch.cuda.is_available() else "cpu")
     ):
         img_size = cfg.get("image_size")
         num_query_token = cfg.get("num_query_token")

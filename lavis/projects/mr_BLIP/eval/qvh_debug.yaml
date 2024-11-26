@@ -7,7 +7,7 @@ model:
   arch: blip2_mr
   model_type: pretrain_flant5xl
   load_finetuned: True
-  finetuned: "mr_BLIP_checkpoints/QVH/checkpoint_best.pth"
+  finetuned: "mr_BLIP_checkpoints/mr-blip/QVH/checkpoint_best.pth"
   use_grad_checkpoint: False
   freeze_vit: True
   task: qformer_freeze_lora

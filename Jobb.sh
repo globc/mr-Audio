@@ -29,16 +29,16 @@
 # -------------------------------
 # your job's "payload" in form of commands to execute, eg.
 # specification from OMP_NUM_THREADS depends on your program
-export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
-?~@~K
+export OMP_NUM_THREADS=4 #$SLURM_CPUS_PER_TASK?~@~K
 # for checking whether and which GPUs have been allocated
 # (output appears in the "#SBATCH -e" file specified above):
 nvidia-smi 1>&2
 # if your program supports this way of getting told how many GPUs to use:
-export CUDA_NUM_DEVICES=$SLURM_GPUS_ON_NODE
+export CUDA_NUM_DEVICES=4 #$SLURM_GPUS_ON_NODE
 ml gcc/11 python/3.8
-source mraudio3/bin/activate
-./run_scripts/mr_BLIP/eval/qvh.sh
+source /home/hm66ryjy/venvs/mrBlip_venv/bin/activate
+#./run_scripts/mr_BLIP/eval/qvh.sh
+/work/scratch/kurse/kurs00079/hm66ryjy/mr-Audio/run_scripts/mr_BLIP/eval/qvh.sh
 deactivate
 EXITCODE=$?
 # any cleanup and copy commands:
