@@ -390,7 +390,7 @@ class BLIP2_MR(Blip2Base):
                 # Log iteration
                 wandb.log(log)
 
-    i        return {"loss": loss}
+            return {"loss": loss}
 
     def prompt_concatenation(
         self,
