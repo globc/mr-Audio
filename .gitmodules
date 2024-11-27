@@ -1,0 +1,3 @@
+[submodule "lavis/models/lavis/models/CLAP"]
+	path = lavis/models/lavis/models/CLAP
+	url = git@github.com:microsoft/CLAP.git
