@@ -19,11 +19,11 @@ datasets:
     vis_processor:
         train:
           name: "blip2_video_train"
-          n_frms: 20
+          n_frms: 1
           image_size: 224
         eval:
           name: "blip_video_eval"
-          n_frms: 20
+          n_frms: 1
           image_size: 224
     text_processor:
         train:

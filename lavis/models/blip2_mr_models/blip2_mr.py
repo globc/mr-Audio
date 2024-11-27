@@ -273,7 +273,7 @@ class BLIP2_MR(Blip2Base):
         ### Apply Q-Former for Image Embeddings ####################################
         query_tokens = self.query_tokens.expand(image_embeds.shape[0], -1, -1)
 
-        if self.multimodal_Qformer:
+        if self.multimodal_Qformer: #TODO: can we make use of this?
             query_atts = torch.ones(query_tokens.size()[:-1], dtype=torch.long).to(
                 self.device
             )
@@ -390,7 +390,7 @@ class BLIP2_MR(Blip2Base):
                 # Log iteration
                 wandb.log(log)
 
-        return {"loss": loss}
+    i        return {"loss": loss}
 
     def prompt_concatenation(
         self,

@@ -1927,7 +1927,7 @@ class T5ForConditionalGeneration(T5PreTrainedModel):
         loss = None
         if labels is not None:
             loss_fct = CrossEntropyLoss(ignore_index=-100, reduction=reduction)
-            loss = loss_fct(lm_logits.view(-1, lm_logits.size(-1)), labels.view(-1))
+            loss = loss_fct(lm_logits.view(-1, lm_logits.size(-1)), labels.view(-1).to(self.eigendevice))
             if reduction == "none":
                 loss = loss.view(lm_logits.size(0), -1).sum(1)
 
