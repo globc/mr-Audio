@@ -113,8 +113,8 @@ class BLIP2_MR(Blip2Base):
         )
 
         #Move Vision Encoder to device
-        self.visual_encoder = self.visual_encoder
-        self.ln_vision = self.ln_vision
+        #self.visual_encoder = self.visual_encoder
+        #self.ln_vision = self.ln_vision
 
         # freeze ViT
         if freeze_vit:
@@ -341,6 +341,12 @@ class BLIP2_MR(Blip2Base):
                 query_prompt,
                 task_prompt,
             )
+
+            
+
+
+            ############################################################################
+
 
             ### Encode answer ################################################
             output_tokens_mr = self.t5_tokenizer(
