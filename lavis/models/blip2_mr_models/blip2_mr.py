@@ -35,6 +35,11 @@ from lavis.models.blip2_mr_models.utils import (
     get_timestamps_as_framenumbers,
 )
 
+from audioinclusion.FrameAudio import FrameAudio
+from audioinclusion.AudioEmbeddings import AudioEmbeddings
+
+
+
 # set the environment variable TOKENIZERS_PARALLELISM = false
 # to disable tokenizers parallelism
 os.environ["TOKENIZERS_PARALLELISM"] = "true"
@@ -341,10 +346,34 @@ class BLIP2_MR(Blip2Base):
                 query_prompt,
                 task_prompt,
             )
+            # TODO: Add CLAP####################################################################################
+            # 1. Find a way to get audio data from video, preprocess it somewhere and include it into "samples",
+            # feed it through pipeline until it is here
 
-            
+            # 2. Import CLAP and feed the audio through it
+
+            # 3. Include the Embeddings (CLAP output) into the LLM input
+
+            # 4. Train the pipeline, but CLAP is frozen
+
+           audio_segment = FrameAudio(
+                video_path= ,
+                frame_index= samples['timestamps']
+        ).get_audio_segment().prepare_audio()
+
+            audio_embedding = AudioEmbeddings(audio_segment).get_audio_embeddings()
 
 
+
+            frame_data = {
+           #     "frame_embedding": frame_embedding,  # Frame embedding from BLIP-2
+           #     "audio_embedding": audio_embeddings,
+           #     "timestamp": timestamp_seconds,
+                #...
+            }
+
+
+            #TODO: ##############################################################################################
             ############################################################################
 
 
