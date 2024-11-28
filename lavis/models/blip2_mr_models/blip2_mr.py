@@ -336,7 +336,7 @@ class BLIP2_MR(Blip2Base):
         )  # b, t * n, c
         frames_atts_for_t5 = frames_atts_for_t5.reshape(b, -1)  # b, t * n
 
-        with torch.cuda.amp.autocast(dtype=torch.bfloat16):
+        with (torch.cuda.amp.autocast(dtype=torch.float16)):
             inputs_embs_mr, inputs_atts_mr, video_prompt = self.prompt_concatenation(
                 timestamps,
                 durations,
@@ -355,11 +355,20 @@ class BLIP2_MR(Blip2Base):
             # 3. Include the Embeddings (CLAP output) into the LLM input
 
             # 4. Train the pipeline, but CLAP is frozen
+            path = os.getcwd() + "/mr_BLIP_data/data/QVH/videos/./"
+            if len(samples['video_filename']):
+                print(f"More than one filename for index{samples['index']}, choosing first one")
+                video_filename = samples['video_filename'][0]
+            else: video_filename = samples['video_filename']
 
-           audio_segment = FrameAudio(
-                video_path= ,
+            audio_segment = FrameAudio(
+                video_path= path + video_filename + ".mp4",
                 frame_index= samples['timestamps']
-        ).get_audio_segment().prepare_audio()
+                ).get_audio_segment()
+            #waveform = FrameAudio(
+            #    video_path= path + video_filename + ".mp4",
+            #    frame_index= samples['timestamps']
+            #    ).prepare_audio()
 
             audio_embedding = AudioEmbeddings(audio_segment).get_audio_embeddings()
 

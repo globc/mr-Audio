@@ -34,6 +34,11 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data import DataLoader, DistributedSampler
 from torch.utils.data.dataset import ChainDataset
 
+import collections
+import copy
+import re
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+
 
 @registry.register_runner("runner_base")
 class RunnerBase:
@@ -532,6 +537,43 @@ class RunnerBase:
                 else:
                     sampler = None
 
+                #Audio MR
+                #def custom_collate_fn(batch):
+                #    from collections import defaultdict
+                #    collated_batch = defaultdict(list)
+                #    for sample in batch:
+                #        for key, value in sample.items():
+                #            collated_batch[key].append(value)
+                #        return dict(collated_batch)
+                np_str_obj_array_pattern = re.compile(r"[SaUO]")
+
+                def default_collate(batch):
+                    r"""
+                    Custom collate function that handles the 'video' field.
+                    """
+                    elem = batch[0]
+                    elem_type = type(elem)
+                    if isinstance(elem, torch.Tensor):
+                        return torch.stack(batch, 0)
+                    elif isinstance(elem, float):
+                        return torch.tensor(batch, dtype=torch.float64)
+                    elif isinstance(elem, int):
+                        return torch.tensor(batch)
+                    elif isinstance(elem, str):
+                        return batch
+                    elif isinstance(elem, collections.abc.Mapping):
+
+                        return elem_type({key: default_collate([d[key] for d in batch]) for key in elem})
+                    elif isinstance(elem, tuple) and hasattr(elem, "_fields"):  # namedtuple
+                        return elem_type(*(default_collate(samples) for samples in zip(*batch)))
+                    elif isinstance(elem, collections.abc.Sequence):
+
+                        transposed = zip(*batch)
+                        return [default_collate(samples) for samples in transposed]
+                    else:
+                        return batch
+
+
                 loader = DataLoader(
                     dataset,
                     batch_size=bsz,
@@ -539,7 +581,7 @@ class RunnerBase:
                     pin_memory=True,
                     sampler=sampler,
                     shuffle=sampler is None and is_train,
-                    collate_fn=collate_fn,
+                    collate_fn= collate_fn, # default_collate, #custom_collate,
                     drop_last=True if is_train else False,
                 )
                 loader = PrefetchLoader(loader)

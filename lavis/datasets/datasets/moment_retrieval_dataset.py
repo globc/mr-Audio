@@ -51,6 +51,12 @@ class MomentRetrievalDataset(BaseDataset):
         video_prompt_end = "<extra_id_0>"
 
         # "image_id" is kept to stay compatible with the COCO evaluation format
+        # modify samples here
+        if len(vname) > 1: #TODO: check if this is bad
+            print("2 entries at index", index)
+            print("video name", vname)
+
+
         return {
             "video": frms,
             "duration": duration,
@@ -60,4 +66,6 @@ class MomentRetrievalDataset(BaseDataset):
             "query_prompt": query_prompt,
             "task_prompt": task_prompt,
             "relevant_windows": relevant_windows,
+            "video_filename": vname,
+            "index": index
         }
