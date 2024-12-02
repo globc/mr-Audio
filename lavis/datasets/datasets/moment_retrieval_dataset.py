@@ -52,9 +52,9 @@ class MomentRetrievalDataset(BaseDataset):
 
         # "image_id" is kept to stay compatible with the COCO evaluation format
         # modify samples here
-        if len(vname) > 1: #TODO: check if this is bad
-            print("2 entries at index", index)
-            print("video name", vname)
+        #if len(self.annotation[index]['video']) > 1: #TODO: check if this is bad
+         #   print("2 entries at index", index)
+         #   print("video name", vname)
 
 
         return {

@@ -356,13 +356,16 @@ class BLIP2_MR(Blip2Base):
 
             # 4. Train the pipeline, but CLAP is frozen
             path = os.getcwd() + "/mr_BLIP_data/data/QVH/videos/./"
-            if len(samples['video_filename']):
+            if isinstance(samples.get('video_filename'), list) and len(samples['video_filename']) == 2:
+                print(f"There are two strings for 'video_filename' {samples['index']}")
+                #for some indices, there are multiple videos written into the vname within the dict
                 print(f"More than one filename for index{samples['index']}, choosing first one")
                 video_filename = samples['video_filename'][0]
             else: video_filename = samples['video_filename']
 
-            audio_segment = FrameAudio(
+            audio_segment, audio_name = FrameAudio(
                 video_path= path + video_filename + ".mp4",
+                vname = samples['video_filename'],
                 frame_index= samples['timestamps']
                 ).get_audio_segment()
             #waveform = FrameAudio(
@@ -370,14 +373,14 @@ class BLIP2_MR(Blip2Base):
             #    frame_index= samples['timestamps']
             #    ).prepare_audio()
 
-            audio_embedding = AudioEmbeddings(audio_segment).get_audio_embeddings()
+            audio_embedding = AudioEmbeddings().get_audio_embeddings(path_to_file = path + video_filename + ".mp4",audio_name =audio_name)
 
 
 
             frame_data = {
-           #     "frame_embedding": frame_embedding,  # Frame embedding from BLIP-2
-           #     "audio_embedding": audio_embeddings,
-           #     "timestamp": timestamp_seconds,
+                "frame_embedding": frame_embedding,  # Frame embedding from BLIP-2
+                "audio_embedding": audio_embeddings,
+                "timestamp": timestamp_seconds,
                 #...
             }
 
@@ -436,6 +439,7 @@ class BLIP2_MR(Blip2Base):
 
             return {"loss": loss}
 
+    #TODO: add audio embeddings here
     def prompt_concatenation(
         self,
         timestamps,
