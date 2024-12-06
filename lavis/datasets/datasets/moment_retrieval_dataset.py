@@ -4,7 +4,7 @@ import torch
 
 from lavis.datasets.datasets.base_dataset import BaseDataset
 
-
+#TODO: just use this without the stuff that is in front of this
 class MomentRetrievalDataset(BaseDataset):
     def __init__(self, vis_processor, text_processor, vis_root, ann_paths):
         """

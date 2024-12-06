@@ -106,6 +106,11 @@ class BLIP2_MR(Blip2Base):
         self.interleave_data = interleave_data
         self.frame_token_aggregation = frame_token_aggregation
 
+        self.audio_embeddings_model = AudioEmbeddings()
+        self.audio_feature_dim = 512
+
+
+
         if self.use_wandb and is_main_process():
             self.wandb_table_data = []
             self.wandb_table_data_eval = []
@@ -255,12 +260,45 @@ class BLIP2_MR(Blip2Base):
         self,
         samples,
     ):
+        #TODO: Problem 0: How to handle multiple Filenames ? In __get_item__ there is just vname loaded, but here suddenly they are two names
+        #TODO: Problem 1: CLAP extracts NaNs from wav --> Use other extraction method, either longer extraction horizon, other tool, or use features like FFT immediately
+        #TODO: Problem 2: Align Shapes from Audio Embedding and Frame Embedding -> Use Approach from Carlotta
+            #TODO: Check out Alignment Loss, used in Action Recognition
+            #TODO: frames_for_t5_with_audio = torch.cat([frames_for_t5,audio_embeddings], dim=1),
+        #TODO: Problem 3: Adjust def prompt_concatenation function
+        #TODO: Problem 4: Adjust T5 Input Dimensions
+
+        #For Batch Size 1 and 2
+        if isinstance(samples['video_filename'], list) and len(samples['video_filename']) > 1:
+            samples['video_filename'] = samples['video_filename'][0]
+        elif isinstance(samples['video_filename'], list) and len(samples['video_filename']) == 1:
+            samples['video_filename'] = samples['video_filename'][0]
+        #my todos:
+        #get CLAP from Hugging Face
+        # get audio embeddings , Joels Code
+        #skip the faulty filenames (doubles)
+
+
         image = samples["video"]
         timestamps, durations = (
             samples["timestamps"],
             samples["duration"],
         )
         image = image.to(self.device)
+
+        path = os.getcwd() + "/mr_BLIP_data/data/QVH/videos/./"
+        audio_embeddings = []
+        audio_segment, audio_name = FrameAudio(
+                video_path=path + samples['video_filename'] + ".mp4",
+                vname=samples['video_filename'],
+                frame_index=samples['timestamps']
+            ).get_audio_segment()
+        audio_embedding = self.audio_embeddings_model.get_audio_embeddings(
+                path_to_file=[os.getcwd() + '/mr_BLIP_data/audio_files/' + audio_name + '.wav'],
+            )
+        audio_embeddings.append(audio_embedding)
+        audio_embeddings = torch.stack(audio_embeddings).to(self.eigendevice)
+
         video_prompt_end = samples["video_prompt_end"]
         query_prompt, task_prompt = samples["query_prompt"], samples["task_prompt"]
         answer = samples["relevant_windows"]
@@ -314,7 +352,13 @@ class BLIP2_MR(Blip2Base):
             )
             frames_for_projection = frames_after_qformer.last_hidden_state
 
+
         frames_for_t5 = self.t5_proj(frames_for_projection)
+
+        #Add audio embeddings to frames for t5
+        frames_for_t5 = frames_for_t5.reshape(b, t , -1).to(self.eigendevice) #TODO, check shape, audio
+        frames_for_t5_with_audio = torch.cat([frames_for_t5,audio_embeddings], dim=1)
+        frames_atts_for_t5 = torch.ones(frames_for_t5_with_audio.size()[:-1], dtype=torch.long).to(self.eigendevice)  #TODO: maybe to image.device
 
         # TODO: Use average pooling to aggregate the 32 embeddings of one frame
         if self.frame_token_aggregation:
@@ -340,7 +384,7 @@ class BLIP2_MR(Blip2Base):
             inputs_embs_mr, inputs_atts_mr, video_prompt = self.prompt_concatenation(
                 timestamps,
                 durations,
-                frames_for_t5,
+                frames_for_t5_with_audio,
                 frames_atts_for_t5,
                 video_prompt_end,
                 query_prompt,
@@ -363,26 +407,11 @@ class BLIP2_MR(Blip2Base):
                 video_filename = samples['video_filename'][0]
             else: video_filename = samples['video_filename']
 
-            audio_segment, audio_name = FrameAudio(
-                video_path= path + video_filename + ".mp4",
-                vname = samples['video_filename'],
-                frame_index= samples['timestamps']
-                ).get_audio_segment()
-            #waveform = FrameAudio(
-            #    video_path= path + video_filename + ".mp4",
-            #    frame_index= samples['timestamps']
-            #    ).prepare_audio()
-
-            audio_embedding = AudioEmbeddings().get_audio_embeddings(path_to_file = path + video_filename + ".mp4",audio_name =audio_name)
 
 
 
-            frame_data = {
-                "frame_embedding": frame_embedding,  # Frame embedding from BLIP-2
-                "audio_embedding": audio_embeddings,
-                "timestamp": timestamp_seconds,
-                #...
-            }
+            #audio_embedding = AudioEmbeddings().get_audio_embeddings(path_to_file = path + video_filename + ".mp4",audio_name =audio_name)
+
 
 
             #TODO: ##############################################################################################
@@ -446,9 +475,13 @@ class BLIP2_MR(Blip2Base):
         durations,
         frames_for_t5,
         frames_atts_for_t5,
+        audio_for_t5,  # TODO
+        audio_atts_t5, #TODO
         video_prompt_end,
         query_prompt,
         task_prompt,
+        audio_embeddings=None,
+        audio_atts=None
     ):
 
         ### video prompt
@@ -686,7 +719,7 @@ class BLIP2_MR(Blip2Base):
             )
 
             video_prompt = [
-                p + "frames" + end_p
+                p + "frames with audio" + end_p   #TODO: specify the prompt more precisely
                 for (p, end_p) in zip(video_prompt, video_prompt_end)
             ]
 
