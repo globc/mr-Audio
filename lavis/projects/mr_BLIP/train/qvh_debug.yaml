@@ -44,8 +44,8 @@ run:
   warmup_steps: 2255 # 451 iters/ epoch * 50 epochs * 0.1 = 2255
   weight_decay: 0.05
   max_epoch: 50
-  batch_size_train: 2
-  batch_size_eval: 2
+  batch_size_train: 1
+  batch_size_eval: 1
   num_workers: 8
   accum_grad_iters: 2
 

@@ -2,6 +2,7 @@
 import os
 
 from lavis.models.CLAP.msclap import CLAP
+from transformers import ClapProcessor, ClapModel
 import torch
 import ffmpeg
 import numpy as np
@@ -18,24 +19,14 @@ class AudioEmbeddings:
 
 
     #@classmethod         add cls
-    def get_audio_embeddings(self, path_to_file, audio_name): #, audio):
+    def get_audio_embeddings(self, path_to_file): #, audio):
         with torch.no_grad():
             #audio_time_series = self.read_audio(path_to_file, audio_name)#, audio)
 
-            audio_path = [os.getcwd() + '/mr_BLIP_data/audio_files/' + audio_name + '.wav']
-            audio_embeddings = self.clap_model.get_audio_embeddings(
-                audio_files= audio_path
-            )
+            processor = ClapProcessor.from_pretrained("openai/clap")
+            model = ClapModel.from_pretrained("openai/clap")
         return audio_embeddings
 
-    #def read_audio(self, audio_path, resample=True):
-    #    torchaudio.set_audio_backend("ffmpeg")
-    #    waveform, self.sample_rate = torchaudio.load(audio_path)
-    #    if resample and self.sample_rate != 48000:
-    #        resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=48000)
-    #        waveform = resampler(waveform)
-    #        self.sample_rate = 48000  #  Update sample rate after resampling
-    #    return waveform
 
     def read_audio(self, path_to_file, audio, resample=True):
 
