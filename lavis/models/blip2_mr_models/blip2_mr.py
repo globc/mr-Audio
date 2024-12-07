@@ -37,6 +37,7 @@ from lavis.models.blip2_mr_models.utils import (
 
 from audioinclusion.FrameAudio import FrameAudio
 from audioinclusion.AudioEmbeddings import AudioEmbeddings
+from audioinclusion.AudioEmbeddingsCLAP import CLAPAudioEmbeddings
 
 
 
@@ -373,7 +374,13 @@ class BLIP2_MR(Blip2Base):
             #    frame_index= samples['timestamps']
             #    ).prepare_audio()
 
-            audio_embedding = AudioEmbeddings().get_audio_embeddings(path_to_file = path + video_filename + ".mp4",audio_name =audio_name)
+            #audio_embedding = AudioEmbeddings().get_audio_embeddings(path_to_file = path + video_filename + ".mp4",audio_name =audio_name)
+
+            """
+            Example how the CLAP Embeddings could be loaded
+            """
+            audio_clips = CLAPAudioEmbeddings().read_vid_with_audio(path_to_file=path + video_filename + ".mp4")
+            audio_embedding = CLAPAudioEmbeddings().get_audio_embeddings(audio_clips)
 
 
 
