@@ -1,7 +1,7 @@
 #from lavis.models.CLAP.examples.zero_shot_classification import audio_embeddings
 import os
 
-from lavis.models.CLAP.msclap import CLAP
+#from lavis.models.CLAP.msclap import CLAP
 import torch
 import ffmpeg
 import numpy as np
@@ -15,21 +15,27 @@ import torchaudio.transforms as T
 
 class CLAPAudioEmbeddings:
     def __init__(self):
-        self.clap_model =  ClapModel.from_pretrained("laion/clap-htsat-fused")
-        self.processor = ClapProcessor.from_pretrained("laion/clap-htsat-fused")
-        if not (os.environ.get('USE_CPU_ONLY', '0') == '0'):
-            self.clap_model.to("cuda")
-            self.processor.to("cuda")
+        self.eigendevice = torch.device('cpu' if (os.environ.get('USE_CPU_ONLY', '0') == '1')
+                                        else 'cuda' if torch.cuda.is_available() else 'cpu')
+        self.clap_model = ClapModel.from_pretrained("laion/clap-htsat-fused",
+                                                    cache_dir=os.getcwd() + "/cache")
+        self.processor = ClapProcessor.from_pretrained("laion/clap-htsat-fused",
+                                                    cache_dir=os.getcwd() + "/cache")
+
+        #self.to(self.eigendevice)
+        #if not (os.environ.get('USE_CPU_ONLY', '0') == '0'):
+        #    self.clap_model.to("cuda")
+        #    self.processor.to("cuda")
 
 
-    @staticmethod
+    #@staticmethod
     def get_audio_embeddings(self, audio_clips, sr=48000):
         audio_inputs = self.processor(audios=audio_clips, sampling_rate=sr, return_tensors="pt", padding=True)
         with torch.no_grad():
-            audio_embeddings = self.model.get_audio_features(**audio_inputs)
+            audio_embeddings = self.clap_model.get_audio_features(**audio_inputs)
         return audio_embeddings
 
-    @staticmethod
+    #@staticmethod
     def read_audio(self, path_to_file, target_sr=48000):
         audio_waveform, sr = torchaudio.load(path_to_file)
 
@@ -44,7 +50,7 @@ class CLAPAudioEmbeddings:
 
         return audio_tensor, sr
 
-    @staticmethod
+    #@staticmethod
     def read_vid_with_audio(self, path_to_file, target_sr=48000, unit="sec"):
         video_frames, audio_waveform, info = torchvision.io.read_video(path_to_file, pts_unit=unit)
 
@@ -60,8 +66,8 @@ class CLAPAudioEmbeddings:
 
         return video_frames, audio_tensor, info
 
-    @staticmethod
-    def resample_audio(waveform, orig_sr, target_sr):
+    #@staticmethod
+    def resample_audio(self,waveform, orig_sr, target_sr):
         resampler = T.Resample(orig_freq=orig_sr, new_freq=target_sr)
         audio_waveform = resampler(waveform)  # Shape: [1, Resampled Samples]
         return audio_waveform

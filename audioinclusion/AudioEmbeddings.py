@@ -1,8 +1,8 @@
 #from lavis.models.CLAP.examples.zero_shot_classification import audio_embeddings
 import os
 
-from lavis.models.CLAP.msclap import CLAP
-from transformers import ClapProcessor, ClapModel
+#from lavis.models.CLAP.msclap import CLAP
+#from transformers import ClapProcessor, ClapModel
 import torch
 import ffmpeg
 import numpy as np

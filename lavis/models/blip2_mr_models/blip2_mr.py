@@ -36,7 +36,7 @@ from lavis.models.blip2_mr_models.utils import (
 )
 
 from audioinclusion.FrameAudio import FrameAudio
-from audioinclusion.AudioEmbeddings import AudioEmbeddings
+#from audioinclusion.AudioEmbeddings import AudioEmbeddings
 from audioinclusion.AudioEmbeddingsCLAP import CLAPAudioEmbeddings
 
 
@@ -107,7 +107,7 @@ class BLIP2_MR(Blip2Base):
         self.interleave_data = interleave_data
         self.frame_token_aggregation = frame_token_aggregation
 
-        self.audio_embeddings_model = AudioEmbeddings()
+        self.audio_embeddings_model = CLAPAudioEmbeddings()
         self.audio_feature_dim = 512
 
 
@@ -225,7 +225,10 @@ class BLIP2_MR(Blip2Base):
 
         self.num_query_token = num_query_token
         self.t5_proj = nn.Linear(
-            self.Qformer.config.hidden_size, self.t5_model.config.hidden_size
+            self.audio_feature_dim * 2, self.t5_model.config.hidden_size
+        ).to(self.eigendevice)
+        self.frame_down_proj = nn.Linear(
+            self.Qformer.config.hidden_size, self.audio_feature_dim
         ).to(self.eigendevice)
 
         #Move to device
@@ -288,17 +291,23 @@ class BLIP2_MR(Blip2Base):
         image = image.to(self.device)
 
         path = os.getcwd() + "/mr_BLIP_data/data/QVH/videos/./"
-        audio_embeddings = []
+
+
         audio_segment, audio_name = FrameAudio(
                 video_path=path + samples['video_filename'] + ".mp4",
                 vname=samples['video_filename'],
                 frame_index=samples['timestamps']
             ).get_audio_segment()
-        audio_embedding = self.audio_embeddings_model.get_audio_embeddings(
-                path_to_file=[os.getcwd() + '/mr_BLIP_data/audio_files/' + audio_name + '.wav'],
-            )
-        audio_embeddings.append(audio_embedding)
-        audio_embeddings = torch.stack(audio_embeddings).to(self.eigendevice)
+        #audio_embedding = self.audio_embeddings_model.get_audio_embeddings(
+        #        path_to_file=[os.getcwd() + '/mr_BLIP_data/audio_files/' + audio_name + '.wav'],
+        #    )
+        #audio_embeddings.append(audio_embedding)
+
+        audiopath = os.getcwd() + "/mr_BLIP_data/audio_files"
+        audio_clips, sr = self.audio_embeddings_model.read_audio(path_to_file= audiopath + "/" + audio_name + ".wav")
+        audio_embeddings = self.audio_embeddings_model.get_audio_embeddings(audio_clips=audio_clips).to(self.eigendevice)
+
+        #audio_embeddings = torch.stack(audio_embeddings).to(self.eigendevice)
 
         video_prompt_end = samples["video_prompt_end"]
         query_prompt, task_prompt = samples["query_prompt"], samples["task_prompt"]
@@ -353,13 +362,20 @@ class BLIP2_MR(Blip2Base):
             )
             frames_for_projection = frames_after_qformer.last_hidden_state
 
+        #audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frames_for_projection.size(1), -1)
 
-        frames_for_t5 = self.t5_proj(frames_for_projection)
+        #todo: forward aufräumen...
+        #TODO: Downsample frame token embeddings from 32x768 to 32x512 w/ nn.Linear
+        #TODO: otorch. cat --> [1, 32, 512+512], hältfe audio, hälfte frame embedding, 32 mal selbes audio embedding, 32 unterschiedloche frame embeddings
+        #TODO: Idee ist gemeinsamen Embeddingspace für AUdio und Frame zu haben
+        frame_down_proj = self.frame_down_proj(frames_for_projection)
+        combined_video_audio_frame = torch.cat([audio_embeddings, frame_down_proj.to(self.eigendevice)], dim=-1)
+        frames_for_t5 = self.t5_proj(combined_video_audio_frame)
 
         #Add audio embeddings to frames for t5
-        frames_for_t5 = frames_for_t5.reshape(b, t , -1).to(self.eigendevice) #TODO, check shape, audio
-        frames_for_t5_with_audio = torch.cat([frames_for_t5,audio_embeddings], dim=1)
-        frames_atts_for_t5 = torch.ones(frames_for_t5_with_audio.size()[:-1], dtype=torch.long).to(self.eigendevice)  #TODO: maybe to image.device
+        #frames_for_t5 = frames_for_t5.reshape(b, t , -1).to(self.eigendevice) #TODO, check shape, audio
+        #frames_for_t5_with_audio = torch.cat([frames_for_t5,audio_embeddings], dim=1)
+        #frames_atts_for_t5 = torch.ones(frames_for_t5_with_audio.size()[:-1], dtype=torch.long).to(self.eigendevice)  #TODO: maybe to image.device
 
         # TODO: Use average pooling to aggregate the 32 embeddings of one frame
         if self.frame_token_aggregation:
@@ -421,8 +437,6 @@ class BLIP2_MR(Blip2Base):
 
 
 
-            #TODO: ##############################################################################################
-            ############################################################################
 
 
             ### Encode answer ################################################
