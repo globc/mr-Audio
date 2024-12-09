@@ -35,6 +35,8 @@ from lavis.models.blip2_mr_models.utils import (
     get_timestamps_as_framenumbers,
 )
 
+from lavis.models.blip2_mr_models.model_helpers import *
+
 from audioinclusion.FrameAudio import FrameAudio
 #from audioinclusion.AudioEmbeddings import AudioEmbeddings
 from audioinclusion.AudioEmbeddingsCLAP import CLAPAudioEmbeddings
@@ -70,7 +72,7 @@ class BLIP2_MR(Blip2Base):
         img_size=224,
         drop_path_rate=0,
         use_grad_checkpoint=False,
-        vit_precision="fp16",
+        vit_precision="fp32", #"fp16",
         freeze_vit=True,
         num_query_token=32,
         t5_model="google/flan-t5-xl",
@@ -224,15 +226,23 @@ class BLIP2_MR(Blip2Base):
             self.Qformer_tokenizer = self.init_tokenizer()
 
         self.num_query_token = num_query_token
-        self.t5_proj = nn.Linear(
+
+        self.t5_proj_2 = nn.Linear(
             self.audio_feature_dim * 2, self.t5_model.config.hidden_size
         ).to(self.eigendevice)
+
+        #Original:
+        self.t5_proj = nn.Linear(
+            self.Qformer.config.hidden_size, self.t5_model.config.hidden_size).to(self.eigendevice)
+
         self.frame_down_proj = nn.Linear(
             self.Qformer.config.hidden_size, self.audio_feature_dim
         ).to(self.eigendevice)
 
-        #Move to device
-        self.t5_proj = self.t5_proj.to(self.eigendevice)
+        #TODO: Bild 2: torch.cat ist das Plus (fusion), dann fusion layer vor self.t5_proj
+        self.fusion_layer = nn.Linear(
+           self.audio_feature_dim * 2,self.Qformer.config.hidden_size
+        )
 
         ##########################################################################
 
@@ -277,100 +287,62 @@ class BLIP2_MR(Blip2Base):
             samples['video_filename'] = samples['video_filename'][0]
         elif isinstance(samples['video_filename'], list) and len(samples['video_filename']) == 1:
             samples['video_filename'] = samples['video_filename'][0]
-        #my todos:
-        #get CLAP from Hugging Face
-        # get audio embeddings , Joels Code
-        #skip the faulty filenames (doubles)
 
 
-        image = samples["video"]
-        timestamps, durations = (
-            samples["timestamps"],
-            samples["duration"],
-        )
-        image = image.to(self.device)
+        #Sample
+        image = samples["video"].to(self.device)
+        video_prompt_end = samples["video_prompt_end"]
+        query_prompt, task_prompt = samples["query_prompt"], samples["task_prompt"]
+        answer = samples["relevant_windows"]
+        timestamps, durations = (samples["timestamps"],samples["duration"])
 
+        #Paths for Audio and Video
         path = os.getcwd() + "/mr_BLIP_data/data/QVH/videos/./"
+        audiopath = os.getcwd() + "/mr_BLIP_data/audio_files"
 
 
+        #Audio
         audio_segment, audio_name = FrameAudio(
                 video_path=path + samples['video_filename'] + ".mp4",
                 vname=samples['video_filename'],
                 frame_index=samples['timestamps']
             ).get_audio_segment()
-        #audio_embedding = self.audio_embeddings_model.get_audio_embeddings(
-        #        path_to_file=[os.getcwd() + '/mr_BLIP_data/audio_files/' + audio_name + '.wav'],
-        #    )
-        #audio_embeddings.append(audio_embedding)
 
-        audiopath = os.getcwd() + "/mr_BLIP_data/audio_files"
         audio_clips, sr = self.audio_embeddings_model.read_audio(path_to_file= audiopath + "/" + audio_name + ".wav")
         audio_embeddings = self.audio_embeddings_model.get_audio_embeddings(audio_clips=audio_clips).to(self.eigendevice)
 
-        #audio_embeddings = torch.stack(audio_embeddings).to(self.eigendevice)
 
-        video_prompt_end = samples["video_prompt_end"]
-        query_prompt, task_prompt = samples["query_prompt"], samples["task_prompt"]
-        answer = samples["relevant_windows"]
-
-        # uniform sampling
+        #Image
         b, t, c, w, h = image.shape
-        image = image.reshape(-1, c, w, h)
-        with torch.cuda.amp.autocast(enabled=(self.device != torch.device("cpu"))):
-            image_embeds = self.ln_vision(self.visual_encoder(image))  # bt, n, c
-        image_atts = torch.ones(image_embeds.size()[:-1], dtype=torch.long).to(
-            self.device
-            #image.device
-        )  # bt n c
+        image_embeds, image_atts = self.uniform_sampling(image=image, c=c, w=w, h=h)
+
 
         ### Apply Q-Former for Image Embeddings ####################################
         query_tokens = self.query_tokens.expand(image_embeds.shape[0], -1, -1)
 
-        if self.multimodal_Qformer: #TODO: can we make use of this?
-            query_atts = torch.ones(query_tokens.size()[:-1], dtype=torch.long).to(
-                self.device
-            )
 
-            text = self.Qformer_tokenizer(
-                [
-                    q for q in query_prompt for _ in range(t)
-                ],  # apply query to each frame
-                return_tensors="pt",
-                padding=True,
-            ).to(self.device)
 
-            attention_mask = torch.cat([query_atts, text.attention_mask], dim=1)
 
-            output = self.Qformer.bert(
-                text.input_ids,
-                query_embeds=query_tokens,
-                attention_mask=attention_mask,
-                encoder_hidden_states=image_embeds,
-                encoder_attention_mask=image_atts,
-                return_dict=True,
-            )
-
-            frames_for_projection = output.last_hidden_state[
-                :, : query_tokens.size(1), :
-            ]
+        if self.multimodal_Qformer:
+            query_atts, attention_mask, text, output = self.setup_multimodalQformer(query_tokens=query_tokens, query_prompt=query_prompt, image_embeds=image_embeds, image_atts=image_atts, t=t)
         else:
-            frames_after_qformer = self.Qformer.bert(
-                query_embeds=query_tokens,
-                encoder_hidden_states=image_embeds,
-                encoder_attention_mask=image_atts,
-                return_dict=True,
-            )
-            frames_for_projection = frames_after_qformer.last_hidden_state
+            frames_after_qformer, frames_for_projection = self.setup_unimodalQfomer(query_tokens=query_tokens, image_embeds=image_embeds, image_atts=image_atts)
 
+
+
+
+
+        #alternative to downsampling layers
         #audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frames_for_projection.size(1), -1)
 
-        #todo: forward aufräumen...
         #TODO: Downsample frame token embeddings from 32x768 to 32x512 w/ nn.Linear
-        #TODO: otorch. cat --> [1, 32, 512+512], hältfe audio, hälfte frame embedding, 32 mal selbes audio embedding, 32 unterschiedloche frame embeddings
-        #TODO: Idee ist gemeinsamen Embeddingspace für AUdio und Frame zu haben
-        frame_down_proj = self.frame_down_proj(frames_for_projection)
-        combined_video_audio_frame = torch.cat([audio_embeddings, frame_down_proj.to(self.eigendevice)], dim=-1)
-        frames_for_t5 = self.t5_proj(combined_video_audio_frame)
+        #TODO: torch. cat --> [1, 32, 512+512], hälfte audio, hälfte frame embedding, 32 mal selbes audio embedding, 32 unterschiedloche frame embeddings
+        #TODO: Idee ist gemeinsamen Embeddingspace für Audio und Frame zu haben
+
+        frame_down_proj = self.frame_down_proj(frames_for_projection).to(self.eigendevice)
+        audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frame_down_proj.shape[1], -1).to(self.eigendevice)
+        combined_video_audio_frame = torch.cat([audio_embeddings, frame_down_proj], dim=-1).to(self.eigendevice)
+        frames_for_t5 = self.t5_proj(combined_video_audio_frame).to(self.eigendevice)
 
         #Add audio embeddings to frames for t5
         #frames_for_t5 = frames_for_t5.reshape(b, t , -1).to(self.eigendevice) #TODO, check shape, audio
@@ -385,23 +357,15 @@ class BLIP2_MR(Blip2Base):
             ], "Invalid aggregation method, please choose from ['mean']"
             frames_for_t5 = frames_for_t5.mean(dim=1, keepdim=True)
 
-        # reshape the frames for t5 from (bt, n, c) to (b, t * n, c)
-        frames_for_t5 = frames_for_t5.reshape(
-            b, t, frames_for_t5.shape[-2], -1
-        )  # b, t, n, c
-        frames_atts_for_t5 = torch.ones(frames_for_t5.size()[:-1], dtype=torch.long).to(
-            image.device
-        )  # b, t, n
-        frames_for_t5 = frames_for_t5.reshape(
-            b, -1, frames_for_t5.shape[-1]
-        )  # b, t * n, c
-        frames_atts_for_t5 = frames_atts_for_t5.reshape(b, -1)  # b, t * n
+        frames_for_t5, frames_atts_for_t5 = self.reshape_frames_for_t5(frames_for_t5= frames_for_t5, b=b, t=t, image=image)
+
+
 
         with (torch.cuda.amp.autocast(dtype=torch.float16)):
             inputs_embs_mr, inputs_atts_mr, video_prompt = self.prompt_concatenation(
                 timestamps,
                 durations,
-                frames_for_t5_with_audio,
+                #frames_for_t5_with_audio,
                 frames_atts_for_t5,
                 video_prompt_end,
                 query_prompt,
@@ -1193,3 +1157,94 @@ class BLIP2_MR(Blip2Base):
                 )
 
         return tokens, token_embs
+
+    def uniform_sampling(
+            self,
+            image: torch.Tensor,
+            c: int,
+            w: int,
+            h: int,
+    ):
+        # uniform sampling
+        image = image.reshape(-1, c, w, h)
+        with torch.cuda.amp.autocast(enabled=(self.eigendevice != torch.device("cpu"))): #switch to self.device for original
+            image_embeds = self.ln_vision(self.visual_encoder(image))  # bt, n, c
+        image_atts = torch.ones(image_embeds.size()[:-1], dtype=torch.long).to(
+            self.eigen_device
+            #self.device #maybe set back for training
+            # image.device
+        )  # bt n c
+
+        return image_embeds, image_atts
+
+    def setup_multimodalQformer(
+            self,
+            query_tokens,
+            query_prompt,
+            image_embeds,
+            image_atts,
+            t
+    ):
+        query_atts = torch.ones(query_tokens.size()[:-1], dtype=torch.long).to(self.device)
+        text = self.Qformer_tokenizer(
+            [
+                q for q in query_prompt for _ in range(t)
+            ],  # apply query to each frame
+            return_tensors="pt",
+            padding=True,
+        ).to(self.device)
+
+        attention_mask = torch.cat([query_atts, text.attention_mask], dim=1)
+
+        output = self.Qformer.bert(
+            text.input_ids,
+            query_embeds=query_tokens,
+            attention_mask=attention_mask,
+            encoder_hidden_states=image_embeds,
+            encoder_attention_mask=image_atts,
+            return_dict=True,
+        )
+
+        frames_for_projection = output.last_hidden_state[
+                                :, : query_tokens.size(1), :
+                                ]
+        return query_atts, attention_mask, text, output
+
+    def setup_unimodalQfomer(
+            self,
+            query_tokens: torch.Tensor,
+            image_embeds: torch.Tensor,
+            image_atts: torch.Tensor,
+    ):
+
+        frames_after_qformer = self.Qformer.bert(
+            query_embeds=query_tokens,
+            encoder_hidden_states=image_embeds,
+            encoder_attention_mask=image_atts,
+            return_dict=True,
+        )
+        frames_for_projection = frames_after_qformer.last_hidden_state
+
+        return frames_after_qformer, frames_for_projection
+
+
+    def reshape_frames_for_t5(
+            self,
+            frames_for_t5: torch.Tensor,
+            b: int,
+            t: int,
+            image,
+    ):
+        # reshape the frames for t5 from (bt, n, c) to (b, t * n, c)
+        frames_for_t5 = frames_for_t5.reshape(
+            b, t, frames_for_t5.shape[-2], -1
+        )  # b, t, n, c
+        frames_atts_for_t5 = torch.ones(frames_for_t5.size()[:-1], dtype=torch.long).to(
+            image.device
+        )  # b, t, n
+        frames_atts_for_t5 = frames_for_t5.reshape(
+            b, -1, frames_for_t5.shape[-1]
+        )  # b, t * n, c
+        frames_atts_for_t5 = frames_atts_for_t5.reshape(b, -1)  # b, t * n
+
+        return frames_for_t5, frames_atts_for_t5

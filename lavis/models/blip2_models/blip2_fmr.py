@@ -36,7 +36,7 @@ class Blip2FMR(Blip2Base):
     }
 
     def __init__( self, img_size=224, drop_path_rate=0,
-        use_grad_checkpoint=False, vit_precision="fp16", freeze_vit=True,
+        use_grad_checkpoint=False, vit_precision="fp32", freeze_vit=True,
         num_query_token=32, t5_model="google/flan-t5-xl", prompt="",
         max_txt_len=32, frame_num=8, answer_num=5, apply_lemmatizer=False, task='qa'):
         """
