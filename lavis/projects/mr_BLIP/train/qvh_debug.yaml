@@ -9,6 +9,7 @@ model:
   load_finetuned: False # True
   use_grad_checkpoint: False
   freeze_vit: True
+  vit_precision: fp32
   task: qformer_freeze_lora
   input_time_format: seconds_integers # [seconds_integers | seconds_floats | relative_integers | relative_floats | framenumbers]
   interleave_data: True

@@ -69,11 +69,14 @@ class RunnerBase:
 
         # self.setup_seeds()
         self.setup_output_dir()
+        self.eigendevice = torch.device('cpu' if (os.environ.get('USE_CPU_ONLY', '0') == '1')
+                                        else 'cuda' if torch.cuda.is_available() else 'cpu')
+        #self.to(self.eigendevice)
 
     @property
     def device(self):
         if self._device is None:
-            self._device = torch.device(self.config.run_cfg.device)
+            self._device = self.eigendevice #torch.device(self.config.run_cfg.device)
 
         return self._device
 

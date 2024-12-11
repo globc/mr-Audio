@@ -84,7 +84,8 @@ class BLIP2_MR(Blip2Base):
         interleave_data=False,
         frame_token_aggregation=None,
         task="lora",
-        device= None #torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        device= torch.device('cpu' if (os.environ.get('USE_CPU_ONLY', '0') == '1')
+                                        else 'cuda' if torch.cuda.is_available() else 'cpu')
     ):
         """
         apply_lemmatizer: when set to True, postprocess predict_answers() result with lemmas.
@@ -982,7 +983,7 @@ class BLIP2_MR(Blip2Base):
 
         drop_path_rate = cfg.get("drop_path_rate", 0)
         use_grad_checkpoint = cfg.get("use_grad_checkpoint", False)
-        vit_precision = cfg.get("vit_precision", "fp16")
+        vit_precision = cfg.get("vit_precision", "fp32")
         freeze_vit = cfg.get("freeze_vit", True)
         input_time_format = cfg.get("input_time_format", "seconds_integers")
         interleave_data = cfg.get("interleave_data", True)
