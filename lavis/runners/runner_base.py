@@ -50,6 +50,8 @@ class RunnerBase:
     """
 
     def __init__(self, cfg, task, model, datasets, job_id):
+        self.eigendevice = torch.device('cpu' if (os.environ.get('USE_CPU_ONLY', '0') == '1')
+                                        else 'cuda' if torch.cuda.is_available() else 'cpu')
         self.config = cfg
         self.job_id = job_id
 
@@ -88,7 +90,7 @@ class RunnerBase:
         """
         # move model to device
         if self._model.device != self.device:
-            self._model = self._model.to(self.device)
+            self._model = self._model.to(self.eigendevice)
 
             # distributed training wrapper
             if self.use_distributed:

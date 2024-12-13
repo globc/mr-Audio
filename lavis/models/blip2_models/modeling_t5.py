@@ -1118,8 +1118,8 @@ class T5Stack(T5PreTrainedModel):
             ), "You have to initialize the model with valid token embeddings"
             inputs_embeds = self.embed_tokens(input_ids)
 
-        batch_size, seq_length = input_shape
-
+        _, batch_size, seq_length = input_shape
+        # input_shape = torch.Size([1, 6, 32]) TODO: Check what is extracted
         # required mask seq length can be calculated via length of past
         mask_seq_length = (
             past_key_values[0][0].shape[2] + seq_length

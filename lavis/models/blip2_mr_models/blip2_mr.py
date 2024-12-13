@@ -340,9 +340,14 @@ class BLIP2_MR(Blip2Base):
         #TODO: Idee ist gemeinsamen Embeddingspace für Audio und Frame zu haben
 
         frame_down_proj = self.frame_down_proj(frames_for_projection).to(self.eigendevice)
+        print(f"frame_down_proj: {frame_down_proj.shape}")
         audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frame_down_proj.shape[1], -1).to(self.eigendevice)
+
         combined_video_audio_frame = torch.cat([audio_embeddings, frame_down_proj], dim=-1).to(self.eigendevice)
-        frames_for_t5 = self.t5_proj(combined_video_audio_frame).to(self.eigendevice)
+        print(f"combined_video_audio_frame: {combined_video_audio_frame.shape}")
+        fused_data = self.fusion_layer(combined_video_audio_frame).to(self.eigendevice)
+        print(f"fused_data: {fused_data.shape}")
+        frames_for_t5 = self.t5_proj(fused_data).to(self.eigendevice)
 
         #Add audio embeddings to frames for t5
         #frames_for_t5 = frames_for_t5.reshape(b, t , -1).to(self.eigendevice) #TODO, check shape, audio
@@ -358,44 +363,37 @@ class BLIP2_MR(Blip2Base):
             frames_for_t5 = frames_for_t5.mean(dim=1, keepdim=True)
 
         frames_for_t5, frames_atts_for_t5 = self.reshape_frames_for_t5(frames_for_t5= frames_for_t5, b=b, t=t, image=image)
+        print(f"frames_for_t5 after reshaping: {frames_for_t5.shape}")
 
 
-
-        with (torch.cuda.amp.autocast(dtype=torch.float16)):
+        with (torch.cuda.amp.autocast(dtype=torch.float32)):
+            print(f"Starting Prompt Concat")
             inputs_embs_mr, inputs_atts_mr, video_prompt = self.prompt_concatenation(
-                timestamps,
-                durations,
-                #frames_for_t5_with_audio,
-                frames_atts_for_t5,
-                video_prompt_end,
-                query_prompt,
-                task_prompt,
+                timestamps=timestamps,
+                durations=durations,
+                frames_for_t5=frames_for_t5,
+                frames_atts_for_t5=frames_atts_for_t5,
+                video_prompt_end=video_prompt_end,
+                query_prompt=query_prompt,
+                task_prompt=task_prompt,
             )
-            # TODO: Add CLAP####################################################################################
-            # 1. Find a way to get audio data from video, preprocess it somewhere and include it into "samples",
-            # feed it through pipeline until it is here
-
-            # 2. Import CLAP and feed the audio through it
-
-            # 3. Include the Embeddings (CLAP output) into the LLM input
-
-            # 4. Train the pipeline, but CLAP is frozen
-            path = os.getcwd() + "/mr_BLIP_data/data/QVH/videos/./"
-            if isinstance(samples.get('video_filename'), list) and len(samples['video_filename']) == 2:
-                print(f"There are two strings for 'video_filename' {samples['index']}")
-                #for some indices, there are multiple videos written into the vname within the dict
-                print(f"More than one filename for index{samples['index']}, choosing first one")
-                video_filename = samples['video_filename'][0]
-            else: video_filename = samples['video_filename']
 
 
-            #audio_embedding = AudioEmbeddings().get_audio_embeddings(path_to_file = path + video_filename + ".mp4",audio_name =audio_name)
+            #path = os.getcwd() + "/mr_BLIP_data/data/QVH/videos/./"
+            #if isinstance(samples.get('video_filename'), list) and len(samples['video_filename']) == 2:
+            #    print(f"There are two strings for 'video_filename' {samples['index']}")
+            #    #for some indices, there are multiple videos written into the vname within the dict
+            #    print(f"More than one filename for index{samples['index']}, choosing first one")
+            #    video_filename = samples['video_filename'][0]
+            #else: video_filename = samples['video_filename']
+
+
 
             """
             Example how the CLAP Embeddings could be loaded
             """
-            audio_clips = CLAPAudioEmbeddings().read_vid_with_audio(path_to_file=path + video_filename + ".mp4")
-            audio_embedding = CLAPAudioEmbeddings().get_audio_embeddings(audio_clips)
+            #audio_clips = CLAPAudioEmbeddings().read_vid_with_audio(path_to_file=path + video_filename + ".mp4")
+            #audio_embedding = CLAPAudioEmbeddings().get_audio_embeddings(audio_clips)
 
 
 
@@ -460,13 +458,13 @@ class BLIP2_MR(Blip2Base):
         durations,
         frames_for_t5,
         frames_atts_for_t5,
-        audio_for_t5,  # TODO
-        audio_atts_t5, #TODO
+        #audio_for_t5,  # TODO
+        #audio_atts_t5, #TODO
         video_prompt_end,
         query_prompt,
         task_prompt,
-        audio_embeddings=None,
-        audio_atts=None
+        #audio_embeddings=None,
+        #audio_atts=None
     ):
 
         ### video prompt
@@ -567,7 +565,7 @@ class BLIP2_MR(Blip2Base):
             interleaved_video_prompt_embs = []
             video_prompt = []
 
-            b, t_n, c = frames_for_t5.shape
+            batch_size, b, t_n, c = frames_for_t5.shape
             if self.frame_token_aggregation:
                 n = 1
             else:
@@ -595,6 +593,8 @@ class BLIP2_MR(Blip2Base):
                     )
 
                     # frame i and corresponding timestamp
+                    timestamp_emb = timestamp_emb.unsqueeze(1)
+                    timestamp_emb = timestamp_emb.expand(-1, frame_emb.shape[1], -1)
                     frame_and_time = torch.cat(
                         [
                             frame_emb,
@@ -612,6 +612,12 @@ class BLIP2_MR(Blip2Base):
                 )
 
                 duration_emb = batch_duration_embs[j]
+
+                seperator_emb = seperator_emb.unsqueeze(1)
+                duration_emb = duration_emb.unsqueeze(1)
+
+                seperator_emb = seperator_emb.expand(-1, interleaved_prompt.shape[1], -1)
+                duration_emb = duration_emb.expand(-1, interleaved_prompt.shape[1], -1)
                 interleaved_prompt = torch.cat(
                     [interleaved_prompt, seperator_emb, duration_emb]
                 )
@@ -644,6 +650,13 @@ class BLIP2_MR(Blip2Base):
             ).to(frames_for_t5.device)
 
             ### Concatenate interleaved_video_prompt, video_prompt_end, text_prompt
+
+            #TODO: Check if Data is used correctly
+            video_prompt_end_embs = video_prompt_end_embs.unsqueeze(1)
+            text_prompt_embs = text_prompt_embs.unsqueeze(1)
+
+            video_prompt_end_embs = video_prompt_end_embs.expand(-1, -1, interleaved_video_prompt_embs.shape[2], -1) # interleaved_video_prompt_embs.shape[1]
+            #text_prompt_embs = text_prompt_embs.expand(-1, -1 , -1, -1) #interleaved_video_prompt_embs.shape[1]
             inputs_embs_mr = torch.cat(
                 [
                     interleaved_video_prompt_embs,
@@ -1170,7 +1183,7 @@ class BLIP2_MR(Blip2Base):
         with torch.cuda.amp.autocast(enabled=(self.eigendevice != torch.device("cpu"))): #switch to self.device for original
             image_embeds = self.ln_vision(self.visual_encoder(image))  # bt, n, c
         image_atts = torch.ones(image_embeds.size()[:-1], dtype=torch.long).to(
-            self.eigen_device
+            self.eigendevice
             #self.device #maybe set back for training
             # image.device
         )  # bt n c
