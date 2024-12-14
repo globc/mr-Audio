@@ -28,7 +28,7 @@ class MomentRetrievalDataset(BaseDataset):
         vname = ann["video"]
         video_path = os.path.join(self.vis_root, vname + ".mp4")
 
-        frms, indices, fps = self.vis_processor(video_path, clip_proposal=clip)
+        frms, indices, fps, audio, sr = self.vis_processor(video_path, clip_proposal=clip)
         query = ann["query"]
         relevant_windows = str(ann["relevant_windows"])
 
@@ -67,5 +67,7 @@ class MomentRetrievalDataset(BaseDataset):
             "task_prompt": task_prompt,
             "relevant_windows": relevant_windows,
             "video_filename": vname,
-            "index": index
+            "index": index,
+            "audio": audio,
+            "sr": sr,
         }

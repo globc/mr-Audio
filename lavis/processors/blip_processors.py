@@ -15,6 +15,7 @@ from lavis.processors.randaugment import RandomAugment
 from omegaconf import OmegaConf
 from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
+from audioinclusion.intervals import *
 
 MAX_INT = registry.get("MAX_INT")
 
@@ -316,7 +317,7 @@ class Blip2VideoTrainProcessor(BlipVideoBaseProcessor):
 
     def __call__(self, vpath, clip_proposal=None):
 
-        clip, indices, fps = load_video(
+        clip, indices, fps, audio, sr = load_video_frames_with_audio(
             video_path=vpath,
             n_frms=self.n_frms,
             height=self.image_size,
@@ -326,7 +327,7 @@ class Blip2VideoTrainProcessor(BlipVideoBaseProcessor):
             clip_proposal=clip_proposal,
         )
 
-        return self.transform(clip), indices, fps
+        return self.transform(clip), indices, fps, audio, sr
 
     @classmethod
     def from_config(cls, cfg=None):
@@ -369,7 +370,7 @@ class BlipVideoEvalProcessor(BlipVideoBaseProcessor):
         self.n_frms = n_frms
 
     def __call__(self, vpath, clip_proposal=None):
-        clip, indices, fps = load_video(
+        clip, indices, fps, audio, sr = load_video_frames_with_audio(
             video_path=vpath,
             n_frms=self.n_frms,
             height=self.image_size,
@@ -378,7 +379,7 @@ class BlipVideoEvalProcessor(BlipVideoBaseProcessor):
             clip_proposal=clip_proposal,
         )
 
-        return self.transform(clip), indices, fps
+        return self.transform(clip), indices, fps, audio, sr
 
     @classmethod
     def from_config(cls, cfg=None):

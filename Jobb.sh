@@ -36,10 +36,13 @@ nvidia-smi 1>&2
 # if your program supports this way of getting told how many GPUs to use:
 export CUDA_NUM_DEVICES=4 #$SLURM_GPUS_ON_NODE
 ml gcc/11 python/3.8
-source /home/hm66ryjy/venvs/mrBlip_venv/bin/activate
+#source /home/hm66ryjy/venvs/mrAudio_venv/bin/activate
+conda init
+conda activate mrAudioConda
 #./run_scripts/mr_BLIP/eval/qvh.sh
-/work/scratch/kurse/kurs00079/hm66ryjy/mr-Audio/run_scripts/mr_BLIP/eval/qvh.sh
-deactivate
+/work/scratch/kurse/kurs00079/hm66ryjy/mr-Audio/run_scripts/mr_BLIP/train/qvh.sh
+conda init
+conda deactivate
 EXITCODE=$?
 # any cleanup and copy commands:
 # end this job script with precisely the exit status of your scientific program above:
