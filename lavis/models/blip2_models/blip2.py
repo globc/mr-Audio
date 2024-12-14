@@ -9,6 +9,7 @@ import logging
 import os
 import time
 import datetime
+import contextlib
 
 import torch
 import torch.nn as nn
@@ -27,10 +28,20 @@ from transformers import BertTokenizer
 
 class Blip2Base(BaseModel):
     @classmethod
-    def init_tokenizer(cls):
-        tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+    def init_tokenizer(cls, truncation_side="right"):
+        tokenizer = BertTokenizer.from_pretrained("bert-base-uncased", truncation_side=truncation_side)
         tokenizer.add_special_tokens({"bos_token": "[DEC]"})
         return tokenizer
+    
+    def maybe_autocast(self, dtype=torch.float16):
+        # if on cpu, don't use autocast
+        # if on gpu, use autocast with dtype if provided, otherwise use torch.float16
+        enable_autocast = self.device != torch.device("cpu")
+
+        if enable_autocast:
+            return torch.cuda.amp.autocast(dtype=dtype)
+        else:
+            return contextlib.nullcontext()
 
     @classmethod
     def init_Qformer(cls, num_query_token, vision_width):

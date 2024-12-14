@@ -49,8 +49,10 @@ from lavis.models.gpt_models.gpt_dialogue import GPTDialogue
 
 from lavis.processors.base_processor import BaseProcessor
 
-from lavis.models.blip2_mr_models.blip2_mr import BLIP2_MR
-from lavis.models.blip2_mr_models.blip2_mr_opt import Blip2_OPT_MR
+# from lavis.models.blip2_mr_models.blip2_mr import BLIP2_MR
+# from lavis.models.blip2_mr_models.blip2_mr_opt import Blip2_OPT_MR
+
+from lavis.models.mr_audio_models.xinstructblip import XInstructBLIP
 
 __all__ = [
     "load_model",
@@ -85,8 +87,9 @@ __all__ = [
     "XBertLMHeadDecoder",
     "GPTDialogue",
     "Blip2FMR",
-    "BLIP2_MR",
-    "Blip2_OPT_MR",
+    # "BLIP2_MR",
+    # "Blip2_OPT_MR",
+    "XInstructBLIP",
 ]
 
 

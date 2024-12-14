@@ -7,8 +7,8 @@
 
 from lavis.common.registry import registry
 from lavis.common.utils import get_cache_path
-from lavis.datasets.builders.base_dataset_builder import BaseDatasetBuilder
-from lavis.datasets.datasets.moment_retrieval_dataset import MomentRetrievalDataset
+from lavis.datasets.builders.base_dataset_builder import BaseDatasetBuilder, MultiModalDatasetBuilder
+from lavis.datasets.datasets.moment_retrieval_dataset import MomentRetrievalDataset, MomentRetrievalDataset_Audio
 
 
 class MomentRetrievalBuilder(BaseDatasetBuilder):
@@ -20,6 +20,19 @@ class MomentRetrievalBuilder(BaseDatasetBuilder):
 
         return datasets
 
+
+@registry.register_builder("qvh_audio")
+class QVHAudioBuilder(MultiModalDatasetBuilder):
+    train_dataset_cls = MomentRetrievalDataset_Audio
+    eval_dataset_cls = MomentRetrievalDataset_Audio
+    DATASET_CONFIG_DICT = {
+        "default": "configs/empty.yaml",
+    }
+
+    def build(self):
+        datasets = super().build()
+
+        return datasets
 
 @registry.register_builder("qvh")
 class QVHBuilder(MomentRetrievalBuilder):
