@@ -608,7 +608,7 @@ class T5Attention(nn.Module):
                 position_bias = position_bias[:, :, -hidden_states.size(1) :, :]
                 position_bias = position_bias.to(self.eigendevice)
 
-            if mask is not None:
+            if mask is not None: #TODO: Find out shapes
                 mask = mask.to(self.eigendevice)
                 position_bias = (
                     position_bias + mask
