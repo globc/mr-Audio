@@ -379,22 +379,6 @@ class BLIP2_MR(Blip2Base):
             )
 
 
-            #path = os.getcwd() + "/mr_BLIP_data/data/QVH/videos/./"
-            #if isinstance(samples.get('video_filename'), list) and len(samples['video_filename']) == 2:
-            #    print(f"There are two strings for 'video_filename' {samples['index']}")
-            #    #for some indices, there are multiple videos written into the vname within the dict
-            #    print(f"More than one filename for index{samples['index']}, choosing first one")
-            #    video_filename = samples['video_filename'][0]
-            #else: video_filename = samples['video_filename']
-
-
-
-            """
-            Example how the CLAP Embeddings could be loaded
-            """
-            #audio_clips = CLAPAudioEmbeddings().read_vid_with_audio(path_to_file=path + video_filename + ".mp4")
-            #audio_embedding = CLAPAudioEmbeddings().get_audio_embeddings(audio_clips)
-
 
 
 
@@ -565,7 +549,7 @@ class BLIP2_MR(Blip2Base):
             interleaved_video_prompt_embs = []
             video_prompt = []
 
-            batch_size, b, t_n, c = frames_for_t5.shape
+            b, t_n, c = frames_for_t5.shape
             if self.frame_token_aggregation:
                 n = 1
             else:
@@ -593,8 +577,8 @@ class BLIP2_MR(Blip2Base):
                     )
 
                     # frame i and corresponding timestamp
-                    timestamp_emb = timestamp_emb.unsqueeze(1)
-                    timestamp_emb = timestamp_emb.expand(-1, frame_emb.shape[1], -1)
+                    #timestamp_emb = timestamp_emb.unsqueeze(1)
+                    #timestamp_emb = timestamp_emb.expand(-1, frame_emb.shape[1], -1)
                     frame_and_time = torch.cat(
                         [
                             frame_emb,
@@ -613,11 +597,11 @@ class BLIP2_MR(Blip2Base):
 
                 duration_emb = batch_duration_embs[j]
 
-                seperator_emb = seperator_emb.unsqueeze(1)
-                duration_emb = duration_emb.unsqueeze(1)
+                #seperator_emb = seperator_emb.unsqueeze(1)
+                #duration_emb = duration_emb.unsqueeze(1)
 
-                seperator_emb = seperator_emb.expand(-1, interleaved_prompt.shape[1], -1)
-                duration_emb = duration_emb.expand(-1, interleaved_prompt.shape[1], -1)
+                #seperator_emb = seperator_emb.expand(-1, interleaved_prompt.shape[1], -1)
+                #duration_emb = duration_emb.expand(-1, interleaved_prompt.shape[1], -1)
                 interleaved_prompt = torch.cat(
                     [interleaved_prompt, seperator_emb, duration_emb]
                 )
@@ -656,11 +640,11 @@ class BLIP2_MR(Blip2Base):
             print(f"video_prompt_embs Shape: {interleaved_video_prompt_embs.shape}")
             print(f"text_prompt_embs Shape: {text_prompt_embs.shape}")
             print(f"interleaved_video_prompt_embs Shape: {interleaved_video_prompt_embs.shape}")
-            video_prompt_end_embs = video_prompt_end_embs.unsqueeze(1)
-            text_prompt_embs = text_prompt_embs.unsqueeze(1)
+            #video_prompt_end_embs = video_prompt_end_embs.unsqueeze(1)
+            #text_prompt_embs = text_prompt_embs.unsqueeze(1)
 
-            video_prompt_end_embs = video_prompt_end_embs.expand(-1, -1, interleaved_video_prompt_embs.shape[2], -1) # interleaved_video_prompt_embs.shape[1]
-            #text_prompt_embs = text_prompt_embs.expand(-1, -1 , -1, -1) #interleaved_video_prompt_embs.shape[1]
+            #video_prompt_end_embs = video_prompt_end_embs.expand(-1, -1, interleaved_video_prompt_embs.shape[2], -1) # interleaved_video_prompt_embs.shape[1]
+            #####text_prompt_embs = text_prompt_embs.expand(-1, -1 , -1, -1) #interleaved_video_prompt_embs.shape[1]
             print(f"After reshaping, video_prompt_embs Shape: {interleaved_video_prompt_embs.shape}")
             print(f"After reshaping, text_prompt_embs Shape: {text_prompt_embs.shape}")
             print(f"After reshaping, interleaved_video_prompt_embs Shape: {interleaved_video_prompt_embs.shape}")
@@ -1247,7 +1231,6 @@ class BLIP2_MR(Blip2Base):
 
         return frames_after_qformer, frames_for_projection
 
-
     def reshape_frames_for_t5(
             self,
             frames_for_t5: torch.Tensor,
@@ -1255,14 +1238,14 @@ class BLIP2_MR(Blip2Base):
             t: int,
             image,
     ):
-        # reshape the frames for t5 from (bt, n, c) to (b, t * n, c)
+        # Reshape the frames for t5 from (bt, n, c) to (b, t * n, c)
         frames_for_t5 = frames_for_t5.reshape(
             b, t, frames_for_t5.shape[-2], -1
         )  # b, t, n, c
         frames_atts_for_t5 = torch.ones(frames_for_t5.size()[:-1], dtype=torch.long).to(
             image.device
         )  # b, t, n
-        frames_atts_for_t5 = frames_for_t5.reshape(
+        frames_for_t5 = frames_for_t5.reshape(
             b, -1, frames_for_t5.shape[-1]
         )  # b, t * n, c
         frames_atts_for_t5 = frames_atts_for_t5.reshape(b, -1)  # b, t * n
