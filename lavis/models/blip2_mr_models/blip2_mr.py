@@ -400,7 +400,7 @@ class BLIP2_MR(Blip2Base):
 
             ### Apply moment retrieval prompt ######################################
             outputs_loc = self.t5_model(
-                inputs_embeds=inputs_embs_mr, #shape: torch.Size([1, 6, 32, 2048])
+                inputs_embeds=inputs_embs_mr,
                 attention_mask=inputs_atts_mr,
                 decoder_attention_mask=output_tokens_mask_mr,
                 return_dict=True,
