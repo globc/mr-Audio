@@ -379,6 +379,9 @@ class RunnerBase:
                 train_stats = self.train_epoch(cur_epoch)
                 self.log_stats(split_name="train", stats=train_stats)
 
+            # save checkpoint every epoch
+            self._save_checkpoint(cur_epoch, is_best=False)
+
             # evaluation phase
             if len(self.valid_splits) > 0:
                 for split_name in self.valid_splits:
