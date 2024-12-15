@@ -16,7 +16,7 @@ unset SLURM_EXPORT_ENV
 #source $WORK/venvs/mrAudio/bin/activate
 
 ml gcc/11 cuda/12.1.1
-conda activate mrCLAP
-
+#conda activate mrCLAP
+source mrAudio_venv/bin/activate
 ./run_scripts/mr_BLIP/train/charades.sh
 conda deactivate

@@ -1,15 +1,15 @@
 #!/bin/bash
 #SBATCH -J mr_audio
 # Please check paths (directories have to exist beforehand):
-#SBATCH -e test.err
-#SBATCH -o test.out
+#SBATCH --output=logs/job%j%x.out
+#SBATCH --error=logs/job%j%x.err
 #
 # CPU specification
 #SBATCH -n 1 # 1 process
 #SBATCH -c 4 # 4 CPU cores per process
 # can be referenced as $SLURM_CPUS_PER_TASK?~@~K in the "payload" part
 #SBATCH --mem-per-cpu=17500 # Hauptspeicher in MByte pro Rechenkern
-#SBATCH -t 01:30:00 # in hours:minutes, or '#SBATCH -t 10' - just minutes
+#SBATCH -t 24:0:00 # in hours:minutes, or '#SBATCH -t 10' - just minutes
 
 #SBATCH --mail-type=END,FAIL # notifications for job done & fail
 #SBATCH --mail-user=h.maraqten@ŋmail.com # your email
@@ -31,15 +31,15 @@ nvidia-smi 1>&2
 export CUDA_NUM_DEVICES=$SLURM_GPUS_ON_NODE
 
 ml gcc/11 python/3.8 cuda/11.8
-source mraudio/bin/activate
+source mrAudio_venv/bin/activate
 
 #pip install git+https://github.com/salesforce/LAVIS --no-deps
 #pip install -r requirements_xinstructblip.txt
 ####./scripts/X-InstructBLIP/qvh.sh
 ####./scripts/X-InstructBLIP/charades_sta.sh
 
-./work/scratch/kurse/kurs00079/hm66ryjy/mr-Audio/run_scripts/mr_BLIP/train/qvh.sh
-deactivate
+./run_scripts/mr_BLIP/train/charades.sh
+
 
 EXITCODE=$?
 # any cleanup and copy commands:
