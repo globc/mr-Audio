@@ -99,7 +99,7 @@ class XInstructBLIP(Blip2Base):
             self.pretrained_audio_qformer = "https://storage.googleapis.com/sfr-xinstructblip-data-research/model/xinstructblip_checkpoints/vicuna7b/audio_qformer_improved.pth"
 
             checkpoint_path = audio_path
-            load_ln_path = self.pretrained_video_qformer
+            load_ln_path = self.pretrained_audio_qformer
             load_ln_type = "audio"
 
             self.audio_encoder, self.audio_ln = self.init_audio_encoder("beats",
