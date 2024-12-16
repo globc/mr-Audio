@@ -7,8 +7,7 @@ import contextlib
 
 from torch.nn.modules.module import _IncompatibleKeys
 from lavis.common.registry import registry
-from transformers import LlamaTokenizer
-from lavis.models.blip2_models.modeling_llama import LlamaForCausalLM
+from transformers import LlamaTokenizer, LlamaForCausalLM
 from lavis.models.blip2_models.blip2 import Blip2Base, disabled_train
 
 from lavis.common.utils import is_url
