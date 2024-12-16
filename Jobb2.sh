@@ -8,8 +8,10 @@
 #SBATCH -n 1 # 1 process
 #SBATCH -c 4 # 4 CPU cores per process
 # can be referenced as $SLURM_CPUS_PER_TASK?~@~K in the "payload" part
-#SBATCH --mem-per-cpu=17500 # Hauptspeicher in MByte pro Rechenkern
+#SBATCH --mem-per-cpu=32000 # Hauptspeicher in MByte pro Rechenkern
 #SBATCH -t 24:0:00 # in hours:minutes, or '#SBATCH -t 10' - just minutes
+#SB#ATCH #--mem=32G
+
 
 #SBATCH --mail-type=END,FAIL # notifications for job done & fail
 #SBATCH --mail-user=h.maraqten@ŋmail.com # your email
@@ -38,7 +40,7 @@ source mrAudio_venv/bin/activate
 ####./scripts/X-InstructBLIP/qvh.sh
 ####./scripts/X-InstructBLIP/charades_sta.sh
 
-./run_scripts/mr_BLIP/train/charades.sh
+./run_scripts/mr_BLIP/train/qvh.sh
 
 
 EXITCODE=$?
