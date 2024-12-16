@@ -6,13 +6,13 @@
 model:
   arch: blip2_vicuna_xinstruct_mr
   model_type: vicuna7b
-  model_path: "/home/atuin/g102ea/shared/group_2/checkpoints/X-InstructBLIP/vicuna-7b-v1.1" 
-  audio_path: "/home/atuin/g102ea/shared/group_2/checkpoints/X-InstructBLIP/BEATs_iter3_plus_AS2M.pt"
+  model_path: D:/projects/mrAudio/checkpoints/X-InstructBLIP/vicuna-7b-v1.1/
+  audio_path: D:/projects/mrAudio/checkpoints/X-InstructBLIP/BEATs_iter3_plus_AS2M.pt/
   enumerate_inputs: False
   modalities: ["audio", "video"] # TODO set to ["video"] for baselines
   lora: True
   interleave_seconds: True
-  finetuned: ""
+  finetuned: none
 
 datasets:
   qvh_audio: # name of the dataset builder
@@ -21,22 +21,22 @@ datasets:
     video_processor:
         train:
           name: "alpro_video_train_stamps"
-          n_frms: 60
+          n_frms: 1
           image_size: 224
         eval:
           name: "alpro_video_eval_stamps"
-          n_frms: 60
+          n_frms: 1
           image_size: 224
 
     audio_processor:
         train:
           name: beats_audio
           sampling_rate: 16000
-          n_frames: 60
+          n_frames: 1
         eval:
           name: beats_audio
           sampling_rate: 16000
-          n_frames: 60
+          n_frames: 1
           is_eval: False
 
     text_processor:
@@ -50,25 +50,25 @@ datasets:
       annotations:
         train:
           url:
-            - /home/atuin/g102ea/shared/qvh/lavis/train.json
+            - "D:/projects/mrAudio/data/qvh/highlight_train_release.jsonl"
           storage:
-            - /home/atuin/g102ea/shared/qvh/lavis/train.json
+            - "D:/projects/mrAudio/data/qvh/highlight_train_release.jsonl"
         val:
           url:
-            - /home/atuin/g102ea/shared/qvh/lavis/val.json
+            - "D:/projects/mrAudio/data/qvh/highlight_val_release.jsonl"
           storage:
-            - /home/atuin/g102ea/shared/qvh/lavis/val.json
+            - "D:/projects/mrAudio/data/qvh/highlight_val_release.jsonl"
         test:
           # url: Your/path/to/test_dummy.json
           # storage: Your/path/to/test_dummy.json
           url:
-            - /home/atuin/g102ea/shared/qvh/lavis/val.json
+            - "D:/projects/mrAudio/data/qvh/highlight_test_release.jsonl"
           storage:
-            - /home/atuin/g102ea/shared/qvh/lavis/val.json
+            - "D:/projects/mrAudio/data/qvh/highlight_test_release.jsonl"
       video:
-        storage: /home/atuin/g102ea/shared/qvh/qvh/videos
+        storage: "D:/projects/mrAudio/data/qvh/videos"
       audio:
-        storage: /home/atuin/g102ea/shared/qvh/qvh/videos
+        storage: "D:/projects/mrAudio/data/qvh/videos"
 
 run:
   task: moment_retrieval
@@ -80,13 +80,13 @@ run:
   warmup_steps: 9025 # 1805 iters/ epoch * 50 epochs * 0.1 = 9025
   weight_decay: 0.05
   max_epoch: 50
-  batch_size_train: 1
+  batch_size_train: 2
   batch_size_eval: 1
-  num_workers: 2
-  accum_grad_iters: 2
+  num_workers: 1
+  accum_grad_iters: 1
 
   seed: 42
-  output_dir: "result/xinstructblip/QVH/"
+  output_dir: D:/projects/mrAudio/data/qvh
 
   amp: True
   resume_ckpt_path: null
@@ -97,7 +97,7 @@ run:
   test_splits: ["test"]
 
   device: "cuda"
-  world_size: 4
+  world_size: 2
   dist_url: "env://"
   distributed: True
   find_unused_parameters: False
