@@ -155,7 +155,7 @@ class XInstructBLIP(Blip2Base):
             self.llm_model.resize_token_embeddings(len(self.llm_tokenizer))
             
             # reduce memory usage
-            # self.llm_model.gradient_checkpointing_enable() # does not work with find_unused_parameters = True
+            self.llm_model.gradient_checkpointing_enable() # does not work with find_unused_parameters = True
             self.llm_model.enable_input_require_grads()
             self.llm_model.lm_head = CastOutputToFloat(self.llm_model.lm_head)
             self.llm_model.config.use_cache = False  # silence the warnings. Please re-enable for inference!

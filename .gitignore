@@ -55,6 +55,7 @@ result/
 
 !LICENSE.txt
 !requirements.txt
+!requirements_xinstructblip.txt
 
 # Translations
 *.mo

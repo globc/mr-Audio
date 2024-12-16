@@ -240,7 +240,6 @@ class MomentRetrievalTask(BaseTask):
 
             with torch.cuda.amp.autocast(enabled=use_amp):
                 loss = self.train_step(model=model, samples=samples)
-                print(str(loss))
 
             # after_train_step()
             if use_amp:
