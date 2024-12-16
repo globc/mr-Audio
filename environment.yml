@@ -237,8 +237,6 @@ dependencies:
       - pytube==15.0.0
       - pytz==2024.2
       - pywavelets==1.4.1
-      - pywin32==308
-      - pywinpty==2.0.14
       - pyyaml==6.0.2
       - pyyaml-env-tag==0.1
       - pyzmq==26.2.0
