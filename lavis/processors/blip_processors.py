@@ -16,6 +16,7 @@ from omegaconf import OmegaConf
 from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
 from audioinclusion.intervals import *
+from audioinclusion.AudioEmbeddingsCLAP import CLAPAudioEmbeddings
 
 MAX_INT = registry.get("MAX_INT")
 
@@ -324,7 +325,7 @@ class Blip2VideoTrainProcessor(BlipVideoBaseProcessor):
             width=self.image_size,
             sampling="random",
             # sampling="uniform",
-            clip_proposal=clip_proposal,
+            clip_proposal=clip_proposal
         )
 
         return self.transform(clip), indices, fps, audio, sr
@@ -376,7 +377,7 @@ class BlipVideoEvalProcessor(BlipVideoBaseProcessor):
             height=self.image_size,
             width=self.image_size,
             sampling="uniform",
-            clip_proposal=clip_proposal,
+            clip_proposal=clip_proposal
         )
 
         return self.transform(clip), indices, fps, audio, sr

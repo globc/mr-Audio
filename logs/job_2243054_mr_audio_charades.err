@@ -1,0 +1,136 @@
+Loading cuda/11.8.0
+  ERROR: Conflicting cuda is loaded
+WARNING:__main__:
+*****************************************
+Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+*****************************************
+Traceback (most recent call last):
+  File "train.py", line 19, in <module>
+Traceback (most recent call last):
+  File "train.py", line 19, in <module>
+Traceback (most recent call last):
+  File "train.py", line 19, in <module>
+Traceback (most recent call last):
+  File "train.py", line 19, in <module>
+    import lavis.tasks as tasks
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/__init__.py", line 15, in <module>
+    import lavis.tasks as tasks
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/__init__.py", line 15, in <module>
+        import lavis.tasks as tasksfrom lavis.datasets.builders import *
+
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/__init__.py", line 15, in <module>
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/builders/__init__.py", line 8, in <module>
+    import lavis.tasks as tasks
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/__init__.py", line 15, in <module>
+    from lavis.datasets.builders import *
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/builders/__init__.py", line 8, in <module>
+    from lavis.datasets.builders import *
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/builders/__init__.py", line 8, in <module>
+    from lavis.datasets.builders import *
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/builders/__init__.py", line 8, in <module>
+    from lavis.datasets.builders.base_dataset_builder import load_dataset_config
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/builders/base_dataset_builder.py", line 17, in <module>
+    from lavis.datasets.builders.base_dataset_builder import load_dataset_config
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/builders/base_dataset_builder.py", line 17, in <module>
+    from lavis.datasets.builders.base_dataset_builder import load_dataset_config    
+from lavis.datasets.builders.base_dataset_builder import load_dataset_config
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/builders/base_dataset_builder.py", line 17, in <module>
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/builders/base_dataset_builder.py", line 17, in <module>
+    from lavis.datasets.data_utils import extract_archive
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/data_utils.py", line 20, in <module>
+    from lavis.datasets.data_utils import extract_archive
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/data_utils.py", line 20, in <module>
+    from lavis.datasets.data_utils import extract_archive
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/data_utils.py", line 20, in <module>
+    from lavis.datasets.data_utils import extract_archive
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/data_utils.py", line 20, in <module>
+    import torchaudio
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torchaudio/__init__.py", line 2, in <module>
+    import torchaudio
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torchaudio/__init__.py", line 2, in <module>
+    import torchaudio
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torchaudio/__init__.py", line 2, in <module>
+    from . import _extension  # noqa  # usort: skip
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torchaudio/_extension/__init__.py", line 38, in <module>
+    import torchaudio
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torchaudio/__init__.py", line 2, in <module>
+    from . import _extension  # noqa  # usort: skip
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torchaudio/_extension/__init__.py", line 38, in <module>
+    from . import _extension  # noqa  # usort: skip
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torchaudio/_extension/__init__.py", line 38, in <module>
+    from . import _extension  # noqa  # usort: skip
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torchaudio/_extension/__init__.py", line 38, in <module>
+    _load_lib("libtorchaudio")    _load_lib("libtorchaudio")
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torchaudio/_extension/utils.py", line 60, in _load_lib
+
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torchaudio/_extension/utils.py", line 60, in _load_lib
+    _load_lib("libtorchaudio")
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torchaudio/_extension/utils.py", line 60, in _load_lib
+    torch.ops.load_library(path)
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torch/_ops.py", line 1295, in load_library
+    torch.ops.load_library(path)
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torch/_ops.py", line 1295, in load_library
+    _load_lib("libtorchaudio")
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torchaudio/_extension/utils.py", line 60, in _load_lib
+    torch.ops.load_library(path)
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torch/_ops.py", line 1295, in load_library
+    torch.ops.load_library(path)
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torch/_ops.py", line 1295, in load_library
+        ctypes.CDLL(path)ctypes.CDLL(path)
+
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/ctypes/__init__.py", line 373, in __init__
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/ctypes/__init__.py", line 373, in __init__
+    ctypes.CDLL(path)
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/ctypes/__init__.py", line 373, in __init__
+    ctypes.CDLL(path)
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/ctypes/__init__.py", line 373, in __init__
+        self._handle = _dlopen(self._name, mode)self._handle = _dlopen(self._name, mode)
+
+OSErrorOSError: : libcudart.so.11.0: cannot open shared object file: No such file or directorylibcudart.so.11.0: cannot open shared object file: No such file or directory    
+self._handle = _dlopen(self._name, mode)
+
+OSError: libcudart.so.11.0: cannot open shared object file: No such file or directory
+    self._handle = _dlopen(self._name, mode)
+OSError: libcudart.so.11.0: cannot open shared object file: No such file or directory
+W1215 17:11:57.830628 22549992711168 torch/distributed/elastic/multiprocessing/api.py:858] Sending process 437882 closing signal SIGTERM
+W1215 17:11:57.831132 22549992711168 torch/distributed/elastic/multiprocessing/api.py:858] Sending process 437884 closing signal SIGTERM
+E1215 17:11:57.894972 22549992711168 torch/distributed/elastic/multiprocessing/api.py:833] failed (exitcode: 1) local_rank: 1 (pid: 437883) of binary: /home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/bin/python
+Traceback (most recent call last):
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/runpy.py", line 194, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/runpy.py", line 87, in _run_code
+    exec(code, run_globals)
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torch/distributed/run.py", line 905, in <module>
+    main()
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 348, in wrapper
+    return f(*args, **kwargs)
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torch/distributed/run.py", line 901, in main
+    run(args)
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torch/distributed/run.py", line 892, in run
+    elastic_launch(
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torch/distributed/launcher/api.py", line 133, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torch/distributed/launcher/api.py", line 264, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+train.py FAILED
+------------------------------------------------------------
+Failures:
+[1]:
+  time      : 2024-12-15_17:11:57
+  host      : a0901.nhr.fau.de
+  rank      : 3 (local_rank: 3)
+  exitcode  : 1 (pid: 437885)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2024-12-15_17:11:57
+  host      : a0901.nhr.fau.de
+  rank      : 1 (local_rank: 1)
+  exitcode  : 1 (pid: 437883)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================

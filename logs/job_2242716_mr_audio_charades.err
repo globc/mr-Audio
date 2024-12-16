@@ -1,0 +1,130 @@
+WARNING:__main__:
+*****************************************
+Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+*****************************************
+/home/hpc/g102ea/g102ea22/.local/lib/python3.9/site-packages/fairscale/experimental/nn/offload.py:19: FutureWarning: `torch.cuda.amp.custom_fwd(args...)` is deprecated. Please use `torch.amp.custom_fwd(args..., device_type='cuda')` instead.
+  return torch.cuda.amp.custom_fwd(orig_func)  # type: ignore
+/home/hpc/g102ea/g102ea22/.local/lib/python3.9/site-packages/fairscale/experimental/nn/offload.py:30: FutureWarning: `torch.cuda.amp.custom_bwd(args...)` is deprecated. Please use `torch.amp.custom_bwd(args..., device_type='cuda')` instead.
+  return torch.cuda.amp.custom_bwd(orig_func)  # type: ignore
+/home/hpc/g102ea/g102ea22/.local/lib/python3.9/site-packages/fairscale/experimental/nn/offload.py:19: FutureWarning: `torch.cuda.amp.custom_fwd(args...)` is deprecated. Please use `torch.amp.custom_fwd(args..., device_type='cuda')` instead.
+  return torch.cuda.amp.custom_fwd(orig_func)  # type: ignore
+/home/hpc/g102ea/g102ea22/.local/lib/python3.9/site-packages/fairscale/experimental/nn/offload.py:30: FutureWarning: `torch.cuda.amp.custom_bwd(args...)` is deprecated. Please use `torch.amp.custom_bwd(args..., device_type='cuda')` instead.
+  return torch.cuda.amp.custom_bwd(orig_func)  # type: ignore
+/home/hpc/g102ea/g102ea22/.local/lib/python3.9/site-packages/fairscale/experimental/nn/offload.py:19: FutureWarning: `torch.cuda.amp.custom_fwd(args...)` is deprecated. Please use `torch.amp.custom_fwd(args..., device_type='cuda')` instead.
+  return torch.cuda.amp.custom_fwd(orig_func)  # type: ignore
+/home/hpc/g102ea/g102ea22/.local/lib/python3.9/site-packages/fairscale/experimental/nn/offload.py:30: FutureWarning: `torch.cuda.amp.custom_bwd(args...)` is deprecated. Please use `torch.amp.custom_bwd(args..., device_type='cuda')` instead.
+  return torch.cuda.amp.custom_bwd(orig_func)  # type: ignore
+/home/hpc/g102ea/g102ea22/.local/lib/python3.9/site-packages/fairscale/experimental/nn/offload.py:19: FutureWarning: `torch.cuda.amp.custom_fwd(args...)` is deprecated. Please use `torch.amp.custom_fwd(args..., device_type='cuda')` instead.
+  return torch.cuda.amp.custom_fwd(orig_func)  # type: ignore
+/home/hpc/g102ea/g102ea22/.local/lib/python3.9/site-packages/fairscale/experimental/nn/offload.py:30: FutureWarning: `torch.cuda.amp.custom_bwd(args...)` is deprecated. Please use `torch.amp.custom_bwd(args..., device_type='cuda')` instead.
+  return torch.cuda.amp.custom_bwd(orig_func)  # type: ignore
+Traceback (most recent call last):
+  File "/home/hpc/g102ea/g102ea22/.local/lib/python3.9/site-packages/urllib3/connection.py", line 174, in _new_conn
+    conn = connection.create_connection(
+  File "/home/hpc/g102ea/g102ea22/.local/lib/python3.9/site-packages/urllib3/util/connection.py", line 95, in create_connection
+    raise err
+  File "/home/hpc/g102ea/g102ea22/.local/lib/python3.9/site-packages/urllib3/util/connection.py", line 85, in create_connection
+    sock.connect(sa)
+socket.timeout: timed out
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/hpc/g102ea/g102ea22/.local/lib/python3.9/site-packages/urllib3/connectionpool.py", line 716, in urlopen
+    httplib_response = self._make_request(
+  File "/home/hpc/g102ea/g102ea22/.local/lib/python3.9/site-packages/urllib3/connectionpool.py", line 404, in _make_request
+    self._validate_conn(conn)
+  File "/home/hpc/g102ea/g102ea22/.local/lib/python3.9/site-packages/urllib3/connectionpool.py", line 1061, in _validate_conn
+    conn.connect()
+  File "/home/hpc/g102ea/g102ea22/.local/lib/python3.9/site-packages/urllib3/connection.py", line 363, in connect
+    self.sock = conn = self._new_conn()
+  File "/home/hpc/g102ea/g102ea22/.local/lib/python3.9/site-packages/urllib3/connection.py", line 179, in _new_conn
+    raise ConnectTimeoutError(
+urllib3.exceptions.ConnectTimeoutError: (<urllib3.connection.HTTPSConnection object at 0x151d4301c520>, 'Connection to cdn-lfs.hf.co timed out. (connect timeout=10)')
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/apps/python/3.9-anaconda/lib/python3.9/site-packages/requests/adapters.py", line 439, in send
+    resp = conn.urlopen(
+  File "/home/hpc/g102ea/g102ea22/.local/lib/python3.9/site-packages/urllib3/connectionpool.py", line 802, in urlopen
+    retries = retries.increment(
+  File "/home/hpc/g102ea/g102ea22/.local/lib/python3.9/site-packages/urllib3/util/retry.py", line 594, in increment
+    raise MaxRetryError(_pool, url, error or ResponseError(cause))
+urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='cdn-lfs.hf.co', port=443): Max retries exceeded with url: /repos/16/41/16418edd56a7c42307a0f361531c01ee227a92a98628972bd433062c276dad7c/d60acb128cf7b7f2536e8f38a5b18a05535c9e14c7a355904270e15b0945ea86?response-content-disposition=inline%3B+filename*%3DUTF-8%27%27spiece.model%3B+filename%3D%22spiece.model%22%3B&Expires=1734524846&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTczNDUyNDg0Nn19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2RuLWxmcy5oZi5jby9yZXBvcy8xNi80MS8xNjQxOGVkZDU2YTdjNDIzMDdhMGYzNjE1MzFjMDFlZTIyN2E5MmE5ODYyODk3MmJkNDMzMDYyYzI3NmRhZDdjL2Q2MGFjYjEyOGNmN2I3ZjI1MzZlOGYzOGE1YjE4YTA1NTM1YzllMTRjN2EzNTU5MDQyNzBlMTViMDk0NWVhODY~cmVzcG9uc2UtY29udGVudC1kaXNwb3NpdGlvbj0qIn1dfQ__&Signature=IwugtcdRK3SacEUYFPkTsOthP5frOXqxdZRUXLlPDl47TSrCcJAI-4O1r9X8p8pUK7H50U92aAZJFxzgp5Smr3orqalmtFMrz4Q0UBkxj7m5CWIno8HJt0W5b4bcRkAF5MWrcBNuVQ7zYkF~qRXNcRi6JxzWYMDiSmSS1F16wlO3vNUfO5FZTLukwMedDE~pvYAO~HXYigFtap7w7qhEg-eI5hOz-VhFoY8lofVU~~blmWScW1~ddrBMW5REAv9chUt3CUAB5uOGXVUT0x-nlDbme00HWzpaS8y5J4d7L8qoKV5C0w6AZMLpNcDz2po2Z0m7HR693BptVeo6fe~Txg__&Key-Pair-Id=K3RPWS32NSSJCE (Caused by ConnectTimeoutError(<urllib3.connection.HTTPSConnection object at 0x151d4301c520>, 'Connection to cdn-lfs.hf.co timed out. (connect timeout=10)'))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/train.py", line 19, in <module>
+    import lavis.tasks as tasks
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/__init__.py", line 16, in <module>
+    from lavis.models import *
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/models/__init__.py", line 52, in <module>
+    from lavis.models.blip2_mr_models.blip2_mr import BLIP2_MR
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/models/blip2_mr_models/blip2_mr.py", line 52, in <module>
+    class BLIP2_MR(Blip2Base):
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/models/blip2_mr_models/blip2_mr.py", line 1040, in BLIP2_MR
+    tokenizer=T5TokenizerFast.from_pretrained("google/flan-t5-xl"),
+  File "/home/hpc/g102ea/g102ea22/.local/lib/python3.9/site-packages/transformers/tokenization_utils_base.py", line 1988, in from_pretrained
+    resolved_vocab_files[file_id] = cached_file(
+  File "/home/hpc/g102ea/g102ea22/.local/lib/python3.9/site-packages/transformers/utils/hub.py", line 403, in cached_file
+    resolved_file = hf_hub_download(
+  File "/home/hpc/g102ea/g102ea22/.local/lib/python3.9/site-packages/huggingface_hub/utils/_validators.py", line 114, in _inner_fn
+    return fn(*args, **kwargs)
+  File "/home/hpc/g102ea/g102ea22/.local/lib/python3.9/site-packages/huggingface_hub/file_download.py", line 862, in hf_hub_download
+    return _hf_hub_download_to_cache_dir(
+  File "/home/hpc/g102ea/g102ea22/.local/lib/python3.9/site-packages/huggingface_hub/file_download.py", line 1011, in _hf_hub_download_to_cache_dir
+    _download_to_tmp_and_move(
+  File "/home/hpc/g102ea/g102ea22/.local/lib/python3.9/site-packages/huggingface_hub/file_download.py", line 1545, in _download_to_tmp_and_move
+    http_get(
+  File "/home/hpc/g102ea/g102ea22/.local/lib/python3.9/site-packages/huggingface_hub/file_download.py", line 368, in http_get
+    r = _request_wrapper(
+  File "/home/hpc/g102ea/g102ea22/.local/lib/python3.9/site-packages/huggingface_hub/file_download.py", line 300, in _request_wrapper
+    response = get_session().request(method=method, url=url, **params)
+  File "/apps/python/3.9-anaconda/lib/python3.9/site-packages/requests/sessions.py", line 542, in request
+    resp = self.send(prep, **send_kwargs)
+  File "/apps/python/3.9-anaconda/lib/python3.9/site-packages/requests/sessions.py", line 655, in send
+    r = adapter.send(request, **kwargs)
+  File "/home/hpc/g102ea/g102ea22/.local/lib/python3.9/site-packages/huggingface_hub/utils/_http.py", line 93, in send
+    return super().send(request, *args, **kwargs)
+  File "/apps/python/3.9-anaconda/lib/python3.9/site-packages/requests/adapters.py", line 504, in send
+    raise ConnectTimeout(e, request=request)
+requests.exceptions.ConnectTimeout: (MaxRetryError("HTTPSConnectionPool(host='cdn-lfs.hf.co', port=443): Max retries exceeded with url: /repos/16/41/16418edd56a7c42307a0f361531c01ee227a92a98628972bd433062c276dad7c/d60acb128cf7b7f2536e8f38a5b18a05535c9e14c7a355904270e15b0945ea86?response-content-disposition=inline%3B+filename*%3DUTF-8%27%27spiece.model%3B+filename%3D%22spiece.model%22%3B&Expires=1734524846&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTczNDUyNDg0Nn19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2RuLWxmcy5oZi5jby9yZXBvcy8xNi80MS8xNjQxOGVkZDU2YTdjNDIzMDdhMGYzNjE1MzFjMDFlZTIyN2E5MmE5ODYyODk3MmJkNDMzMDYyYzI3NmRhZDdjL2Q2MGFjYjEyOGNmN2I3ZjI1MzZlOGYzOGE1YjE4YTA1NTM1YzllMTRjN2EzNTU5MDQyNzBlMTViMDk0NWVhODY~cmVzcG9uc2UtY29udGVudC1kaXNwb3NpdGlvbj0qIn1dfQ__&Signature=IwugtcdRK3SacEUYFPkTsOthP5frOXqxdZRUXLlPDl47TSrCcJAI-4O1r9X8p8pUK7H50U92aAZJFxzgp5Smr3orqalmtFMrz4Q0UBkxj7m5CWIno8HJt0W5b4bcRkAF5MWrcBNuVQ7zYkF~qRXNcRi6JxzWYMDiSmSS1F16wlO3vNUfO5FZTLukwMedDE~pvYAO~HXYigFtap7w7qhEg-eI5hOz-VhFoY8lofVU~~blmWScW1~ddrBMW5REAv9chUt3CUAB5uOGXVUT0x-nlDbme00HWzpaS8y5J4d7L8qoKV5C0w6AZMLpNcDz2po2Z0m7HR693BptVeo6fe~Txg__&Key-Pair-Id=K3RPWS32NSSJCE (Caused by ConnectTimeoutError(<urllib3.connection.HTTPSConnection object at 0x151d4301c520>, 'Connection to cdn-lfs.hf.co timed out. (connect timeout=10)'))"), '(Request ID: 4262853f-0346-459a-9e0b-30dd4c67411c)')
+W1215 13:28:06.949777 408910 torch/distributed/elastic/multiprocessing/api.py:897] Sending process 408978 closing signal SIGTERM
+W1215 13:28:06.950641 408910 torch/distributed/elastic/multiprocessing/api.py:897] Sending process 408979 closing signal SIGTERM
+W1215 13:28:06.951470 408910 torch/distributed/elastic/multiprocessing/api.py:897] Sending process 408980 closing signal SIGTERM
+E1215 13:28:07.279955 408910 torch/distributed/elastic/multiprocessing/api.py:869] failed (exitcode: 1) local_rank: 0 (pid: 408977) of binary: /apps/python/3.9-anaconda/bin/python
+Traceback (most recent call last):
+  File "/apps/python/3.9-anaconda/lib/python3.9/runpy.py", line 197, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/apps/python/3.9-anaconda/lib/python3.9/runpy.py", line 87, in _run_code
+    exec(code, run_globals)
+  File "/home/hpc/g102ea/g102ea22/.local/lib/python3.9/site-packages/torch/distributed/run.py", line 923, in <module>
+    main()
+  File "/home/hpc/g102ea/g102ea22/.local/lib/python3.9/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 355, in wrapper
+    return f(*args, **kwargs)
+  File "/home/hpc/g102ea/g102ea22/.local/lib/python3.9/site-packages/torch/distributed/run.py", line 919, in main
+    run(args)
+  File "/home/hpc/g102ea/g102ea22/.local/lib/python3.9/site-packages/torch/distributed/run.py", line 910, in run
+    elastic_launch(
+  File "/home/hpc/g102ea/g102ea22/.local/lib/python3.9/site-packages/torch/distributed/launcher/api.py", line 138, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+  File "/home/hpc/g102ea/g102ea22/.local/lib/python3.9/site-packages/torch/distributed/launcher/api.py", line 269, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+train.py FAILED
+------------------------------------------------------------
+Failures:
+  <NO_OTHER_FAILURES>
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2024-12-15_13:28:06
+  host      : a0605.nhr.fau.de
+  rank      : 0 (local_rank: 0)
+  exitcode  : 1 (pid: 408977)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================

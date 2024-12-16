@@ -1,42 +1,28 @@
-#!/bin/bash
-#SBATCH -J mr_audio
-# Please check paths (directories have to exist beforehand):
-#SBATCH -e test.err
-#SBATCH -o test.out
-#
-# CPU specification
-#SBATCH -n 1 # 1 process
-#SBATCH -c 4 # 4 CPU cores per process
-# can be referenced as $SLURM_CPUS_PER_TASK?~@~K in the "payload" part
-#SBATCH --mem-per-cpu=17500 # Hauptspeicher in MByte pro Rechenkern
-#SBATCH -t 01:30:00 # in hours:minutes, or '#SBATCH -t 10' - just minutes
+#!/bin/bash -l
+#SBATCH --job-name=mr_audio_charades
+#SBATCH --time=24:00:00
+#SBATCH --gres=gpu:a100:4 -C a100_80
 
-#SBATCH --mail-type=END,FAIL # notifications for job done & fail
-#SBATCH --mail-user=h.maraqten@ŋmail.com # your email
+#SBATCH --output=logs/job_%j_%x.out
+#SBATCH --error=logs/job_%j_%x.err
 
-#SBATCH -A kurs00079
-#SBATCH -p kurs00079
-#SBATCH --reservation=kurs00079
-# GPU specification
-#SBATCH --gres=gpu:v100:4 # 1 GPUs of type NVidia "Volta 100"
-# can be referenced down below as $SLURM_GPUS_ON_NODE
-# -------------------------------
-# your job's "payload" in form of commands to execute, eg.
-# specification from OMP_NUM_THREADS depends on your program
-export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
-# for checking whether and which GPUs have been allocated
-# (output appears in the "#SBATCH -e" file specified above):
-nvidia-smi 1>&2
-# if your program supports this way of getting told how many GPUs to use:
-export CUDA_NUM_DEVICES=$SLURM_GPUS_ON_NODE
 
-ml gcc/11 python/3.8 cuda/11.8
-source $WORK/venvs/mrAudio/bin/activate
+unset SLURM_EXPORT_ENV
 
-./"$WORK/mr-Audio/run_scripts/mr_BLIP/train/charades.sh"
-deactivate
+#export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+#export CUDA_NUM_DEVICES=$SLURM_GPUS_ON_NODE
 
-EXITCODE=$?
-# any cleanup and copy commands:
-# end this job script with precisely the exit status of your scientific program above:
-exit $EXITCODE
+#ml gcc/11 python/3.8 cuda/11.8
+#ml gcc/11 python/3.9-anaconda cuda/12.1
+
+source $WORK/venvs/mrBlipAudio/bin/activate
+
+export http_proxy=http://proxy:80
+export https_proxy=http://proxy:80
+
+ml gcc/11 cuda/12.1.1 cudnn/8.9.6.50-12.x
+#conda activate mrBlipAudio
+
+./run_scripts/mr_BLIP/train/charades.sh
+#conda deactivate
+

@@ -1,0 +1,28 @@
+Sun Dec 15 08:52:15 2024       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 560.35.03              Driver Version: 560.35.03      CUDA Version: 12.6     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA A100-SXM4-40GB          On  |   00000000:49:00.0 Off |                    0 |
+| N/A   32C    P0             54W /  400W |       1MiB /  40960MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   1  NVIDIA A100-SXM4-40GB          On  |   00000000:4F:00.0 Off |                    0 |
+| N/A   35C    P0             59W /  400W |       1MiB /  40960MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+/var/tmp/slurmd_spool/job2242414/slurm_script: line 18: module: command not found
+/var/tmp/slurmd_spool/job2242414/slurm_script: line 19: module: command not found
+/var/tmp/slurmd_spool/job2242414/slurm_script: line 20: module: command not found
+/var/tmp/slurmd_spool/job2242414/slurm_script: line 24: .//home/atuin/g102ea/g102ea22/mr-Audio/run_scripts/mr_BLIP/train/charades.sh: No such file or directory

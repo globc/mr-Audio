@@ -3,6 +3,8 @@ import torchvision.io
 import decord
 from decord import VideoReader, AudioReader
 import torchaudio
+import os
+#from audioinclusion.AudioEmbeddingsCLAP import CLAPAudioEmbeddings
 
 def load_video_frames_with_audio(video_path,
                                       n_frms=float('inf'),
@@ -72,11 +74,14 @@ def load_video_frames_with_audio(video_path,
 
     # Split audio into equally long sequences
     audio_segments = torch.split(audio, segment_duration, dim=1)
+    padded_segments = [pad_or_random_crop(seg, 48000) for seg in audio_segments[:n_frms]]
+    
 
     if height > 0 and width > 0:
         frms = torch.nn.functional.interpolate(frms, size=(height, width), mode='bilinear', align_corners=False)
 
-    return frms, indices.tolist(), fps, torch.stack(audio_segments[:n_frms], dim=1).squeeze(0), sample_rate
+    return frms, indices.tolist(), fps, torch.stack(padded_segments, dim=1).squeeze(0), sample_rate
+    #return frms, indices.tolist(), fps, audio.squeeze(0), sample_rate
 
 import sys
 MAX_INT=sys.maxsize
@@ -201,7 +206,7 @@ def sample_intervals_torch(sampling, start, end, n_frms, duration):
             if start == end:
                 indices.append(torch.tensor(start))
             else:
-                indices.append(torch.randint(start, end + 1, (1,)))
+                indices.append(torch.randint(start, end, (1,)))
         indices = torch.cat(indices)
     elif sampling == "headtail":
         indices_h = torch.randperm(duration // 2)[:n_frms // 2]
@@ -217,3 +222,35 @@ def sample_intervals_torch(sampling, start, end, n_frms, duration):
         indices = torch.cat((indices, padding))
 
     return indices, ranges
+
+def pad_or_random_crop(tensor, target_length, padding_value=0):
+    """
+    Pads or crops the features of a tensor to match the target length.
+
+    Args:
+        tensor (torch.Tensor): Input tensor of shape [20, features].
+        target_length (int): The desired length of the features dimension.
+        padding_value (float): The value to use for padding if features are shorter than the target_length.
+
+    Returns:
+        torch.Tensor: Tensor of shape [T, target_length].
+    """
+    num_rows, num_features = tensor.shape
+
+    if num_features < target_length:
+        # Pad the tensor along the features dimension
+        pad_size = target_length - num_features
+        padded_tensor = torch.nn.functional.pad(
+            tensor, (0, pad_size), mode='constant', value=padding_value
+        )
+        return padded_tensor
+
+    elif num_features > target_length:
+        # Randomly crop a continuous sequence of target_length
+        start_idx = torch.randint(0, num_features - target_length, (1,))
+        cropped_tensor = tensor[:, start_idx : start_idx + target_length]
+        return cropped_tensor
+
+    else:
+        # If already the target length, return the tensor as is
+        return tensor

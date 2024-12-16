@@ -33,6 +33,15 @@ from lavis.models import *
 from lavis.processors import *
 from lavis.runners import *
 from lavis.tasks import *
+import urllib3, socket
+from urllib3.connection import HTTPConnection
+
+HTTPConnection.default_socket_options = ( 
+    HTTPConnection.default_socket_options + [
+    (socket.SOL_SOCKET, socket.SO_SNDBUF, 2000000), 
+    (socket.SOL_SOCKET, socket.SO_RCVBUF, 2000000)
+    ])
+
 
 
 def parse_args():

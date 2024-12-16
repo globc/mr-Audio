@@ -302,10 +302,12 @@ class BLIP2_MR(Blip2Base):
 
         #audio_clips, sr = self.audio_embeddings_model.read_audio(path_to_file= audiopath + "/" + audio_name + ".wav")
 
-        audio_clips = samples["audio"].to(self.eigendevice)
-        sr = samples["sr"].to(self.eigendevice)
-        audio_embeddings = self.audio_embeddings_model.get_audio_embeddings(audio_clips=audio_clips, sr=sr).to(self.eigendevice)
-
+        audio_clips = samples["audio"]#.to(self.eigendevice)
+        print(f"audio_clip shape: {audio_clips.shape}")
+        #sr = samples["sr"].to(self.eigendevice)
+        audio_embeddings = self.audio_embeddings_model.get_audio_embeddings(audio_clips=audio_clips, sr=48000).to(self.eigendevice)
+        #audio_embeddings = samples["audio"]
+        print(f"emb shaoe: {audio_embeddings.shape}")
 
         #Image
         b, t, c, w, h = image.shape
@@ -336,9 +338,12 @@ class BLIP2_MR(Blip2Base):
 
         frame_down_proj = self.frame_down_proj(frames_for_projection).to(self.eigendevice)
         print(f"frame_down_proj: {frame_down_proj.shape}")
+        # flatten audio embeddings like the image tensors
+        audio_embeddings = audio_embeddings.reshape(-1, audio_embeddings.shape[2])
         audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frame_down_proj.shape[1], -1).to(self.eigendevice)
+        print(f"emb shaoe: {audio_embeddings.shape}")
 
-        combined_video_audio_frame = torch.cat([audio_embeddings, frame_down_proj], dim=-1).to(self.eigendevice)
+        combined_video_audio_frame = torch.cat([frame_down_proj, audio_embeddings], dim=-1).to(self.eigendevice)
         print(f"combined_video_audio_frame: {combined_video_audio_frame.shape}")
         fused_data = self.fusion_layer(combined_video_audio_frame).to(self.eigendevice)
         print(f"fused_data: {fused_data.shape}")

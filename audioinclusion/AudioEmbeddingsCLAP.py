@@ -17,10 +17,13 @@ class CLAPAudioEmbeddings:
     def __init__(self):
         self.eigendevice = torch.device('cpu' if (os.environ.get('USE_CPU_ONLY', '0') == '1')
                                         else 'cuda' if torch.cuda.is_available() else 'cpu')
+
         self.clap_model = ClapModel.from_pretrained("laion/clap-htsat-fused",
                                                     cache_dir=os.getcwd() + "/cache")
+        self.clap_model.to(self.eigendevice)
         self.processor = ClapProcessor.from_pretrained("laion/clap-htsat-fused",
                                                     cache_dir=os.getcwd() + "/cache")
+        #self.processor.to(self.eigendevice)
 
         #self.to(self.eigendevice)
         #if not (os.environ.get('USE_CPU_ONLY', '0') == '0'):
@@ -30,10 +33,18 @@ class CLAPAudioEmbeddings:
 
     #@staticmethod
     def get_audio_embeddings(self, audio_clips, sr=48000):
-        audio_inputs = self.processor(audios=audio_clips, sampling_rate=sr, return_tensors="pt", padding=True)
-        with torch.no_grad():
-            audio_embeddings = self.clap_model.get_audio_features(**audio_inputs)
-        return audio_embeddings
+        #with torch.cuda.amp.autocast(enabled=(self.eigendevice != torch.device("cpu"))):
+        print(f"audio shape: {audio_clips.shape}")
+        embeddings_lst = []
+        for batch in audio_clips:
+            audio_inputs = self.processor(audios=batch.cpu().numpy(), sampling_rate=sr, return_tensors="pt", padding=True)
+            audio_inputs = audio_inputs.to(self.eigendevice)
+            with torch.no_grad():
+                audio_embeddings = self.clap_model.get_audio_features(**audio_inputs)
+            embeddings_lst.append(audio_embeddings)
+        embeddings = torch.stack(embeddings_lst, dim=0)
+        print(f"audio embdinngs shape: {embeddings.shape}")
+        return embeddings
 
     #@staticmethod
     def read_audio(self, path_to_file, target_sr=48000):

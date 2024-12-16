@@ -1,0 +1,68 @@
+### Starting TaskPrologue of job 2243026 on a0901 at Sun Dec 15 16:57:59 CET 2024
+Running on cores 0-31,64-79,110-125 with governor ondemand
+Sun Dec 15 16:57:59 2024       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 560.35.03              Driver Version: 560.35.03      CUDA Version: 12.6     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA A100-SXM4-40GB          On  |   00000000:0E:00.0 Off |                    0 |
+| N/A   34C    P0             56W /  400W |       1MiB /  40960MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   1  NVIDIA A100-SXM4-40GB          On  |   00000000:13:00.0 Off |                    0 |
+| N/A   35C    P0             56W /  400W |       1MiB /  40960MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   2  NVIDIA A100-SXM4-40GB          On  |   00000000:90:00.0 Off |                    0 |
+| N/A   41C    P0             55W /  400W |       1MiB /  40960MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   3  NVIDIA A100-SXM4-40GB          On  |   00000000:D1:00.0 Off |                    0 |
+| N/A   39C    P0             62W /  400W |       1MiB /  40960MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+### Finished TaskPrologue
+
+0,1,2,3
+4
+| distributed init (rank 0, world 4): env://
+| distributed init (rank 2, world 4): env://
+| distributed init (rank 1, world 4): env://
+| distributed init (rank 3, world 4): env://
+=== JOB_STATISTICS ===
+=== current date     : Sun Dec 15 16:59:30 CET 2024
+= Job-ID             : 2243026 on alex
+= Job-Name           : mr_audio_charades
+= Job-Command        : /home/atuin/g102ea/g102ea22/mr-Audio/train_charades_sta.sh
+= Initial workdir    : /home/atuin/g102ea/g102ea22/mr-Audio
+= Queue/Partition    : a100
+= Slurm account      : g102ea with QOS=normal
+= Features           : a100_40
+= Requested resources:  for 20:00:00
+= Elapsed runtime    : 00:01:31
+= Total RAM usage    : 1.7 GiB of assigned  GiB (%)
+= Node list          : a0901
+= Subm/Elig/Start/End: 2024-12-15T16:57:57 / 2024-12-15T16:57:57 / 2024-12-15T16:57:58 / 2024-12-15T16:59:29
+======================
+=== Quota infos ======
+    Path              Used     SoftQ    HardQ    Gracetime  Filec    FileQ    FiHaQ    FileGrace    
+    /home/hpc           37.9G   104.9G   209.7G        N/A      94K     500K   1,000K        N/A    
+    /home/vault          0.0K  1048.6G  2097.2G        N/A       1      200K     400K        N/A    
+======================
+=== GPU utilization ==
+gpu_name, gpu_bus_id, pid, gpu_utilization [%], mem_utilization [%], max_memory_usage [MiB], time [ms]
+NVIDIA A100-SXM4-40GB, 00000000:0E:00.0, 436224, 0 %, 0 %, 1506 MiB, 24444 ms
+NVIDIA A100-SXM4-40GB, 00000000:13:00.0, 436225, 12 %, 0 %, 1650 MiB, 24676 ms
+NVIDIA A100-SXM4-40GB, 00000000:90:00.0, 436226, 15 %, 0 %, 1650 MiB, 20091 ms
+NVIDIA A100-SXM4-40GB, 00000000:D1:00.0, 436227, 14 %, 0 %, 1506 MiB, 24935 ms

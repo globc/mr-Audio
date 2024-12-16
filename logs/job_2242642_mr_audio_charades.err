@@ -1,0 +1,300 @@
+Sun Dec 15 12:15:08 2024       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 560.35.03              Driver Version: 560.35.03      CUDA Version: 12.6     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA A100-SXM4-40GB          On  |   00000000:90:00.0 Off |                    0 |
+| N/A   36C    P0             58W /  400W |       1MiB /  40960MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   1  NVIDIA A100-SXM4-40GB          On  |   00000000:96:00.0 Off |                    0 |
+| N/A   35C    P0             68W /  400W |       1MiB /  40960MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+
+libgomp: Invalid value for environment variable OMP_NUM_THREADS
+
+libgomp: 
+libgomp: Invalid value for environment variable OMP_NUM_THREADS
+Invalid value for environment variable OMP_NUM_THREADS
+
+libgomp: Invalid value for environment variable OMP_NUM_THREADS
+
+libgomp: Invalid value for environment variable OMP_NUM_THREADS
+
+libgomp: Invalid value for environment variable OMP_NUM_THREADS
+
+libgomp: Invalid value for environment variable OMP_NUM_THREADS
+
+libgomp: Invalid value for environment variable OMP_NUM_THREADS
+
+libgomp: Invalid value for environment variable OMP_NUM_THREADS
+Traceback (most recent call last):
+  File "train.py", line 19, in <module>
+Traceback (most recent call last):
+  File "train.py", line 19, in <module>
+Traceback (most recent call last):
+Traceback (most recent call last):
+  File "train.py", line 19, in <module>
+  File "train.py", line 19, in <module>
+Traceback (most recent call last):
+Traceback (most recent call last):
+  File "train.py", line 19, in <module>
+  File "train.py", line 19, in <module>
+Traceback (most recent call last):
+  File "train.py", line 19, in <module>
+    import lavis.tasks as tasks
+      File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/__init__.py", line 15, in <module>
+import lavis.tasks as tasks
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/__init__.py", line 15, in <module>
+Traceback (most recent call last):
+  File "train.py", line 19, in <module>
+    import lavis.tasks as tasks
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/__init__.py", line 15, in <module>
+    import lavis.tasks as tasks
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/__init__.py", line 15, in <module>
+        import lavis.tasks as tasksfrom lavis.datasets.builders import *
+
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/__init__.py", line 15, in <module>
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/builders/__init__.py", line 8, in <module>
+    from lavis.datasets.builders import *
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/builders/__init__.py", line 8, in <module>
+    import lavis.tasks as tasks
+      File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/__init__.py", line 15, in <module>
+from lavis.datasets.builders import *
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/builders/__init__.py", line 8, in <module>
+            import lavis.tasks as tasksfrom lavis.datasets.builders import *    import lavis.tasks as tasks
+
+from lavis.datasets.builders import *
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/__init__.py", line 15, in <module>
+
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/builders/__init__.py", line 8, in <module>
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/__init__.py", line 15, in <module>
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/builders/__init__.py", line 8, in <module>
+        from lavis.datasets.builders.base_dataset_builder import load_dataset_configfrom lavis.datasets.builders.base_dataset_builder import load_dataset_config
+
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/builders/base_dataset_builder.py", line 17, in <module>
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/builders/base_dataset_builder.py", line 17, in <module>
+    from lavis.datasets.builders import *
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/builders/__init__.py", line 8, in <module>
+    from lavis.datasets.builders.base_dataset_builder import load_dataset_config
+        from lavis.datasets.builders.base_dataset_builder import load_dataset_config  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/builders/base_dataset_builder.py", line 17, in <module>
+from lavis.datasets.data_utils import extract_archive
+
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/builders/base_dataset_builder.py", line 17, in <module>
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/data_utils.py", line 20, in <module>
+    from lavis.datasets.builders import *
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/builders/__init__.py", line 8, in <module>
+    from lavis.datasets.data_utils import extract_archive
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/data_utils.py", line 20, in <module>
+    from lavis.datasets.builders import *
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/builders/__init__.py", line 8, in <module>
+    from lavis.datasets.builders.base_dataset_builder import load_dataset_config
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/builders/base_dataset_builder.py", line 17, in <module>
+    from lavis.datasets.builders.base_dataset_builder import load_dataset_config
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/builders/base_dataset_builder.py", line 17, in <module>
+    from lavis.datasets.data_utils import extract_archive
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/data_utils.py", line 20, in <module>
+    import torchaudio
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torchaudio/__init__.py", line 2, in <module>
+    from lavis.datasets.builders.base_dataset_builder import load_dataset_config
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/builders/base_dataset_builder.py", line 17, in <module>
+    from lavis.datasets.builders.base_dataset_builder import load_dataset_config
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/builders/base_dataset_builder.py", line 17, in <module>
+    from lavis.datasets.data_utils import extract_archive
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/data_utils.py", line 20, in <module>
+    import torchaudio
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torchaudio/__init__.py", line 2, in <module>
+    import torchaudio    
+from lavis.datasets.data_utils import extract_archive    
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torchaudio/__init__.py", line 2, in <module>
+from lavis.datasets.data_utils import extract_archive  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/data_utils.py", line 20, in <module>
+
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/data_utils.py", line 20, in <module>
+    from lavis.datasets.data_utils import extract_archive
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/data_utils.py", line 20, in <module>
+    import torchaudio
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torchaudio/__init__.py", line 2, in <module>
+    import torchaudio
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torchaudio/__init__.py", line 2, in <module>
+    from lavis.datasets.data_utils import extract_archive
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/data_utils.py", line 20, in <module>
+    import torchaudio
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torchaudio/__init__.py", line 2, in <module>
+    import torchaudio
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torchaudio/__init__.py", line 2, in <module>
+    import torchaudio
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torchaudio/__init__.py", line 2, in <module>
+            from . import _extension  # noqa  # usort: skip        from . import _extension  # noqa  # usort: skipfrom . import _extension  # noqa  # usort: skip    
+    from . import _extension  # noqa  # usort: skipfrom . import _extension  # noqa  # usort: skip
+
+from . import _extension  # noqa  # usort: skip  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torchaudio/_extension/__init__.py", line 38, in <module>
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torchaudio/_extension/__init__.py", line 38, in <module>
+from . import _extension  # noqa  # usort: skip
+
+
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torchaudio/_extension/__init__.py", line 38, in <module>
+
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torchaudio/_extension/__init__.py", line 38, in <module>
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torchaudio/_extension/__init__.py", line 38, in <module>
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torchaudio/_extension/__init__.py", line 38, in <module>
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torchaudio/_extension/__init__.py", line 38, in <module>
+    from . import _extension  # noqa  # usort: skip
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torchaudio/_extension/__init__.py", line 38, in <module>
+                            _load_lib("libtorchaudio")_load_lib("libtorchaudio")_load_lib("libtorchaudio")_load_lib("libtorchaudio")_load_lib("libtorchaudio")_load_lib("libtorchaudio")_load_lib("libtorchaudio")
+
+
+
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torchaudio/_extension/utils.py", line 60, in _load_lib
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torchaudio/_extension/utils.py", line 60, in _load_lib
+
+
+
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torchaudio/_extension/utils.py", line 60, in _load_lib
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torchaudio/_extension/utils.py", line 60, in _load_lib
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torchaudio/_extension/utils.py", line 60, in _load_lib
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torchaudio/_extension/utils.py", line 60, in _load_lib
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torchaudio/_extension/utils.py", line 60, in _load_lib
+    _load_lib("libtorchaudio")
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torchaudio/_extension/utils.py", line 60, in _load_lib
+                    torch.ops.load_library(path)torch.ops.load_library(path)torch.ops.load_library(path)torch.ops.load_library(path)    torch.ops.load_library(path)
+
+
+
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torch/_ops.py", line 1295, in load_library
+torch.ops.load_library(path)
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torch/_ops.py", line 1295, in load_library
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torch/_ops.py", line 1295, in load_library
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torch/_ops.py", line 1295, in load_library
+
+      File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torch/_ops.py", line 1295, in load_library
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torch/_ops.py", line 1295, in load_library
+torch.ops.load_library(path)
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torch/_ops.py", line 1295, in load_library
+    torch.ops.load_library(path)
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torch/_ops.py", line 1295, in load_library
+    ctypes.CDLL(path)
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/ctypes/__init__.py", line 373, in __init__
+                    ctypes.CDLL(path)    ctypes.CDLL(path)ctypes.CDLL(path)ctypes.CDLL(path)ctypes.CDLL(path)
+ctypes.CDLL(path)
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/ctypes/__init__.py", line 373, in __init__
+
+
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/ctypes/__init__.py", line 373, in __init__
+
+
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/ctypes/__init__.py", line 373, in __init__
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/ctypes/__init__.py", line 373, in __init__
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/ctypes/__init__.py", line 373, in __init__
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/ctypes/__init__.py", line 373, in __init__
+    ctypes.CDLL(path)
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/ctypes/__init__.py", line 373, in __init__
+                        self._handle = _dlopen(self._name, mode)self._handle = _dlopen(self._name, mode)self._handle = _dlopen(self._name, mode)self._handle = _dlopen(self._name, mode)self._handle = _dlopen(self._name, mode)self._handle = _dlopen(self._name, mode)
+
+
+
+
+
+OSErrorOSErrorOSErrorOSErrorOSError: : OSError: : : libcudart.so.11.0: cannot open shared object file: No such file or directorylibcudart.so.11.0: cannot open shared object file: No such file or directory: libcudart.so.11.0: cannot open shared object file: No such file or directorylibcudart.so.11.0: cannot open shared object file: No such file or directorylibcudart.so.11.0: cannot open shared object file: No such file or directory
+
+libcudart.so.11.0: cannot open shared object file: No such file or directory
+
+
+
+        self._handle = _dlopen(self._name, mode)self._handle = _dlopen(self._name, mode)
+
+OSError: libcudart.so.11.0: cannot open shared object file: No such file or directory
+OSError: libcudart.so.11.0: cannot open shared object file: No such file or directory
+E1215 12:16:40.761538 23131366568448 torch/distributed/elastic/multiprocessing/api.py:833] failed (exitcode: 1) local_rank: 0 (pid: 1793124) of binary: /home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/bin/python
+Traceback (most recent call last):
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/runpy.py", line 194, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/runpy.py", line 87, in _run_code
+    exec(code, run_globals)
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torch/distributed/run.py", line 905, in <module>
+    main()
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 348, in wrapper
+    return f(*args, **kwargs)
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torch/distributed/run.py", line 901, in main
+    run(args)
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torch/distributed/run.py", line 892, in run
+    elastic_launch(
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torch/distributed/launcher/api.py", line 133, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlip/lib/python3.8/site-packages/torch/distributed/launcher/api.py", line 264, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+train.py FAILED
+------------------------------------------------------------
+Failures:
+[1]:
+  time      : 2024-12-15_12:16:40
+  host      : a0905.nhr.fau.de
+  rank      : 1 (local_rank: 1)
+  exitcode  : 1 (pid: 1793125)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+[2]:
+  time      : 2024-12-15_12:16:40
+  host      : a0905.nhr.fau.de
+  rank      : 2 (local_rank: 2)
+  exitcode  : 1 (pid: 1793126)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+[3]:
+  time      : 2024-12-15_12:16:40
+  host      : a0905.nhr.fau.de
+  rank      : 3 (local_rank: 3)
+  exitcode  : 1 (pid: 1793127)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+[4]:
+  time      : 2024-12-15_12:16:40
+  host      : a0905.nhr.fau.de
+  rank      : 4 (local_rank: 4)
+  exitcode  : 1 (pid: 1793128)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+[5]:
+  time      : 2024-12-15_12:16:40
+  host      : a0905.nhr.fau.de
+  rank      : 5 (local_rank: 5)
+  exitcode  : 1 (pid: 1793129)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+[6]:
+  time      : 2024-12-15_12:16:40
+  host      : a0905.nhr.fau.de
+  rank      : 6 (local_rank: 6)
+  exitcode  : 1 (pid: 1793130)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+[7]:
+  time      : 2024-12-15_12:16:40
+  host      : a0905.nhr.fau.de
+  rank      : 7 (local_rank: 7)
+  exitcode  : 1 (pid: 1793132)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2024-12-15_12:16:40
+  host      : a0905.nhr.fau.de
+  rank      : 0 (local_rank: 0)
+  exitcode  : 1 (pid: 1793124)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================
