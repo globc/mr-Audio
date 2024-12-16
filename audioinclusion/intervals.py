@@ -5,11 +5,11 @@ from decord import VideoReader, AudioReader
 import torchaudio
 
 def load_video_frames_with_audio(video_path,
-                                      n_frms=float('inf'),
-                                      height=-1,
-                                      width=-1,
-                                      sampling="uniform",
-                                      clip_proposal=None, target_sr=48000):
+                                 n_frms=float('inf'),
+                                 height=-1,
+                                 width=-1,
+                                 sampling="uniform",
+                                 clip_proposal=None, target_sr=48000):
     """
     Load video frames and extract corresponding audio segments efficiently.
 
@@ -72,16 +72,19 @@ def load_video_frames_with_audio(video_path,
 
     # Split audio into equally long sequences
     audio_segments = torch.split(audio, segment_duration, dim=1)
-    padded_segments = [pad_or_random_crop(seg, 24000) for seg in audio_segments[:n_frms]]
+    padded_segments = [pad_or_random_crop(seg, 48000) for seg in audio_segments[:n_frms]]
 
     if height > 0 and width > 0:
         frms = torch.nn.functional.interpolate(frms, size=(height, width), mode='bilinear', align_corners=False)
 
     return frms, indices.tolist(), fps, torch.stack(padded_segments, dim=1).squeeze(0), sample_rate
 
+
 import sys
-MAX_INT=sys.maxsize
+
+MAX_INT = sys.maxsize
 decord.bridge.set_bridge("torch")
+
 
 def load_video_with_audio(video_path,
                           n_frms=float('inf'),
@@ -148,14 +151,15 @@ def load_video_with_audio(video_path,
     frame_lengths = intervals[:, 1] - intervals[:, 0]
     segment_duration = int(frame_lengths.sum() / len(intervals) * (1 / fps) * sample_rate)
 
-        # Extract audio segments efficiently
-    audio_start_indices = (intervals[:,0] / fps * sample_rate).int()
-    audio_end_indices = torch.add(audio_start_indices,segment_duration)
+    # Extract audio segments efficiently
+    audio_start_indices = (intervals[:, 0] / fps * sample_rate).int()
+    audio_end_indices = torch.add(audio_start_indices, segment_duration)
     audio_seg_indicies = [torch.arange(start, end) for start, end in zip(audio_start_indices, audio_end_indices)]
     audio_segments = torch.stack([audio.get_batch(audio_indices) for audio_indices in audio_seg_indicies])
-    audio_segments = audio_segments.permute(1,0,2).squeeze(0)
+    audio_segments = audio_segments.permute(1, 0, 2).squeeze(0)
 
     return frms, indices.tolist(), fps, audio_segments[:n_frms], sample_rate
+
 
 def thwc_to_cthw(data: torch.Tensor) -> torch.Tensor:
     """
@@ -169,6 +173,7 @@ def resample_audio(waveform, orig_sr, target_sr):
     resampler = torchaudio.transforms.Resample(orig_freq=orig_sr, new_freq=target_sr)
     audio_waveform = resampler(waveform)  # Shape: [1, Resampled Samples]
     return audio_waveform
+
 
 def sample_intervals_torch(sampling, start, end, n_frms, duration):
     """
@@ -202,7 +207,7 @@ def sample_intervals_torch(sampling, start, end, n_frms, duration):
             if start == end:
                 indices.append(torch.tensor(start))
             else:
-                indices.append(torch.randint(start, end + 1, (1,)))
+                indices.append(torch.randint(start, end, (1,)))
         indices = torch.cat(indices)
     elif sampling == "headtail":
         indices_h = torch.randperm(duration // 2)[:n_frms // 2]
@@ -218,6 +223,7 @@ def sample_intervals_torch(sampling, start, end, n_frms, duration):
         indices = torch.cat((indices, padding))
 
     return indices, ranges
+
 
 def pad_or_random_crop(tensor, target_length, padding_value=0):
     """
@@ -244,7 +250,7 @@ def pad_or_random_crop(tensor, target_length, padding_value=0):
     elif num_features > target_length:
         # Randomly crop a continuous sequence of target_length
         start_idx = torch.randint(0, num_features - target_length, (1,))
-        cropped_tensor = tensor[:, start_idx : start_idx + target_length]
+        cropped_tensor = tensor[:, start_idx: start_idx + target_length]
         return cropped_tensor
 
     else:
