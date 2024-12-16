@@ -96,7 +96,8 @@ mr_BLIP_data/
 
 # mr Blip Data
 ,r_BLIP_data/
-
+logs/
+mrAudio_venv/
 
 # IPython
 profile_default/
