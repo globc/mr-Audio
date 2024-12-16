@@ -10,17 +10,18 @@
 # can be referenced as $SLURM_CPUS_PER_TASK?~@~K in the "payload" part
 #SBATCH --mem-per-cpu=32000 # Hauptspeicher in MByte pro Rechenkern
 #SBATCH -t 24:0:00 # in hours:minutes, or '#SBATCH -t 10' - just minutes
-#SB#ATCH #--mem=32G
 
 
 #SBATCH --mail-type=END,FAIL # notifications for job done & fail
-#SBATCH --mail-user=h.maraqten@ŋmail.com # your email
+#SBATCH --mail-user=h.maraqten@gmail.com # your email
 
 #SBATCH -A kurs00079
 #SBATCH -p kurs00079
 #SBATCH --reservation=kurs00079
 # GPU specification
 #SBATCH --gres=gpu:v100:4 # 1 GPUs of type NVidia "Volta 100"
+#  #S#BATCH --mem=128G
+
 # can be referenced down below as $SLURM_GPUS_ON_NODE
 # -------------------------------
 # your job's "payload" in form of commands to execute, eg.
