@@ -9,8 +9,8 @@
 
 unset SLURM_EXPORT_ENV
 
-#export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
-#export CUDA_NUM_DEVICES=$SLURM_GPUS_ON_NODE
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+export CUDA_NUM_DEVICES=$SLURM_GPUS_ON_NODE
 
 #ml gcc/11 python/3.8 cuda/11.8
 #ml gcc/11 python/3.9-anaconda cuda/12.1
