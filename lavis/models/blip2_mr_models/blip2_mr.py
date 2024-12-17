@@ -142,8 +142,8 @@ class BLIP2_MR(Blip2Base):
         ### Text backbone ######################c##################################
         curr_path = os.getcwd() + '/cache'
         #example: '/work/scratch/kurse/kurs00079/hm66ryjy/mr-Audio/cache'
-        self.t5_tokenizer = T5TokenizerFast.from_pretrained(t5_model)
-        t5_config = T5Config.from_pretrained(t5_model)
+        self.t5_tokenizer = T5TokenizerFast.from_pretrained(t5_model, cache_dir=os.getcwd() + "/cache")
+        t5_config = T5Config.from_pretrained(t5_model, cache_dir=os.getcwd() + "/cache")
         t5_config.dense_act_fn = "gelu"
         self.t5_model = T5ForConditionalGeneration.from_pretrained(
             t5_model, config=t5_config, cache_dir= curr_path
@@ -303,11 +303,11 @@ class BLIP2_MR(Blip2Base):
         #audio_clips, sr = self.audio_embeddings_model.read_audio(path_to_file= audiopath + "/" + audio_name + ".wav")
 
         audio_clips = samples["audio"]#.to(self.eigendevice)
-        print(f"audio_clip shape: {audio_clips.shape}")
+        #print(f"audio_clip shape: {audio_clips.shape}")
         #sr = samples["sr"].to(self.eigendevice)
         audio_embeddings = self.audio_embeddings_model.get_audio_embeddings(audio_clips=audio_clips, sr=48000).to(self.eigendevice)
         #audio_embeddings = samples["audio"]
-        print(f"emb shaoe: {audio_embeddings.shape}")
+        #print(f"emb shaoe: {audio_embeddings.shape}")
 
         #Image
         b, t, c, w, h = image.shape
@@ -337,16 +337,16 @@ class BLIP2_MR(Blip2Base):
         #TODO: Idee ist gemeinsamen Embeddingspace für Audio und Frame zu haben
 
         frame_down_proj = self.frame_down_proj(frames_for_projection).to(self.eigendevice)
-        print(f"frame_down_proj: {frame_down_proj.shape}")
+        #print(f"frame_down_proj: {frame_down_proj.shape}")
         # flatten audio embeddings like the image tensors
         audio_embeddings = audio_embeddings.reshape(-1, audio_embeddings.shape[2])
         audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frame_down_proj.shape[1], -1).to(self.eigendevice)
-        print(f"emb shaoe: {audio_embeddings.shape}")
+        #print(f"emb shaoe: {audio_embeddings.shape}")
 
         combined_video_audio_frame = torch.cat([frame_down_proj, audio_embeddings], dim=-1).to(self.eigendevice)
-        print(f"combined_video_audio_frame: {combined_video_audio_frame.shape}")
+        #print(f"combined_video_audio_frame: {combined_video_audio_frame.shape}")
         fused_data = self.fusion_layer(combined_video_audio_frame).to(self.eigendevice)
-        print(f"fused_data: {fused_data.shape}")
+        #print(f"fused_data: {fused_data.shape}")
         frames_for_t5 = self.t5_proj(fused_data).to(self.eigendevice)
 
 
@@ -359,11 +359,11 @@ class BLIP2_MR(Blip2Base):
             frames_for_t5 = frames_for_t5.mean(dim=1, keepdim=True)
 
         frames_for_t5, frames_atts_for_t5 = self.reshape_frames_for_t5(frames_for_t5= frames_for_t5, b=b, t=t, image=image)
-        print(f"frames_for_t5 after reshaping: {frames_for_t5.shape}")
+        #print(f"frames_for_t5 after reshaping: {frames_for_t5.shape}")
 
 
         with (torch.cuda.amp.autocast(dtype=torch.float32)):
-            print(f"Starting Prompt Concat")
+            #print(f"Starting Prompt Concat")
             inputs_embs_mr, inputs_atts_mr, video_prompt = self.prompt_concatenation(
                 timestamps=timestamps,
                 durations=durations,
@@ -373,6 +373,7 @@ class BLIP2_MR(Blip2Base):
                 query_prompt=query_prompt,
                 task_prompt=task_prompt,
             )
+            #print(f"T5 Input Embeddings: {inputs_embs_mr}")
 
 
 
@@ -628,17 +629,17 @@ class BLIP2_MR(Blip2Base):
 
             #TODO: Check if Data is used correctly
 
-            print(f"video_prompt_embs Shape: {interleaved_video_prompt_embs.shape}")
-            print(f"text_prompt_embs Shape: {text_prompt_embs.shape}")
-            print(f"interleaved_video_prompt_embs Shape: {interleaved_video_prompt_embs.shape}")
+            #print(f"video_prompt_embs Shape: {interleaved_video_prompt_embs.shape}")
+            #print(f"text_prompt_embs Shape: {text_prompt_embs.shape}")
+            #print(f"interleaved_video_prompt_embs Shape: {interleaved_video_prompt_embs.shape}")
             #video_prompt_end_embs = video_prompt_end_embs.unsqueeze(1)
             #text_prompt_embs = text_prompt_embs.unsqueeze(1)
 
             #video_prompt_end_embs = video_prompt_end_embs.expand(-1, -1, interleaved_video_prompt_embs.shape[2], -1) # interleaved_video_prompt_embs.shape[1]
             #####text_prompt_embs = text_prompt_embs.expand(-1, -1 , -1, -1) #interleaved_video_prompt_embs.shape[1]
-            print(f"After reshaping, video_prompt_embs Shape: {interleaved_video_prompt_embs.shape}")
-            print(f"After reshaping, text_prompt_embs Shape: {text_prompt_embs.shape}")
-            print(f"After reshaping, interleaved_video_prompt_embs Shape: {interleaved_video_prompt_embs.shape}")
+            #print(f"After reshaping, video_prompt_embs Shape: {interleaved_video_prompt_embs.shape}")
+            #print(f"After reshaping, text_prompt_embs Shape: {text_prompt_embs.shape}")
+            #print(f"After reshaping, interleaved_video_prompt_embs Shape: {interleaved_video_prompt_embs.shape}")
             inputs_embs_mr = torch.cat(
                 [
                     interleaved_video_prompt_embs,
@@ -1042,7 +1043,7 @@ class BLIP2_MR(Blip2Base):
 
     def find_annoying_numbers(
         self,
-        tokenizer=T5TokenizerFast.from_pretrained("google/flan-t5-xl"),
+        tokenizer=T5TokenizerFast.from_pretrained("google/flan-t5-xl", cache_dir=os.getcwd() + "/cache"),
         range_end=300,
     ):
         """
