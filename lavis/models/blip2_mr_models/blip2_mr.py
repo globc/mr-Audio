@@ -746,6 +746,10 @@ class BLIP2_MR(Blip2Base):
         query_prompt, task_prompt = samples["query_prompt"], samples["task_prompt"]
         answer = samples["relevant_windows"]
 
+        audio_clips = samples["audio"]
+        audio_embeddings = self.audio_embeddings_model.get_audio_embeddings(audio_clips=audio_clips, sr=48000).to(
+            self.device)
+
         # uniform sampling
         b, t, c, w, h = image.shape
         image = image.reshape(-1, c, w, h)
@@ -764,7 +768,22 @@ class BLIP2_MR(Blip2Base):
             encoder_attention_mask=image_atts,
             return_dict=True,
         )
-        frames_for_t5 = self.t5_proj(frames_after_qformer.last_hidden_state)
+
+
+        ## Add audio
+        frame_down_proj = self.frame_down_proj(frames_after_qformer).to(self.device)
+
+        audio_embeddings = audio_embeddings.reshape(-1, audio_embeddings.shape[2])
+        audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frame_down_proj.shape[1], -1).to(self.device)
+        # print(f"emb shaoe: {audio_embeddings.shape}")
+
+        combined_video_audio_frame = torch.cat([frame_down_proj, audio_embeddings], dim=-1).to(self.device)
+        # print(f"combined_video_audio_frame: {combined_video_audio_frame.shape}")
+        fused_data = self.fusion_layer(combined_video_audio_frame).to(self.device)
+        # print(f"fused_data: {fused_data.shape}")
+        frames_for_t5 = self.t5_proj(fused_data).to(self.device)
+
+        #frames_for_t5 = self.t5_proj(frames_after_qformer.last_hidden_state)
 
         if self.frame_token_aggregation:
             assert self.frame_token_aggregation in [
