@@ -7,5 +7,9 @@ echo $NUM_GPUS
 
 echo $CFG_PATH
 
+export TORCH_USE_CUDA_DSA=1
+export CUDA_LAUNCH_BLOCKING=1
+
+
 
 python -m torch.distributed.run --nproc_per_node=$NUM_GPUS --master_port=$MASTER_PORT train.py --cfg-path=$CFG_PATH
