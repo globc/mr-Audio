@@ -307,7 +307,8 @@ class XInstructBLIP(Blip2Base):
         for modality in curr_modalities:
             num[modality] = len(embeds[modality])
             bs = embeds[modality][0].shape[0]
-            indices = [j_ + r for r, j in enumerate([[i * bs for i in range(num[modality])]] * bs) for j_ in j]
+            indices = torch.tensor([j_ + r for r, j in enumerate([[i * bs for i in range(num[modality])]] * bs) for j_ in j])
+            indices = torch.clamp(indices, min=0, max=self.llm_model.embed_tokens.num_embeddings-1)
             reordered_embeds = torch.cat(embeds[modality])[indices]
             reordered_atts = torch.cat(data_atts[modality])[indices]
             query_output = getattr(self, f"{modality}_Qformer").bert(
@@ -516,7 +517,8 @@ class XInstructBLIP(Blip2Base):
             Qformer_atts[modality] = torch.cat([query_atts[modality], text_Qformer.attention_mask], dim=1)
             num[modality] = len(embeds[modality])
             bs = embeds[modality][0].shape[0]
-            indices = [j_ + r for r, j in enumerate([[i * bs for i in range(num[modality])]] * bs) for j_ in j]
+            indices = torch.tensor([j_ + r for r, j in enumerate([[i * bs for i in range(num[modality])]] * bs) for j_ in j])
+            indices = torch.clamp(indices, min=0, max=self.llm_model.embed_tokens.num_embeddings-1)
             reordered_embeds = torch.cat(embeds[modality])[indices]
             reordered_atts = torch.cat(data_atts[modality])[indices]
             query_output = getattr(self, f"{modality}_Qformer").bert(
