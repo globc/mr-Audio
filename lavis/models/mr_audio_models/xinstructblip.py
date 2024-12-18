@@ -422,6 +422,10 @@ class XInstructBLIP(Blip2Base):
                 max_new_tokens=self.max_new_tokens,
                 eos_token_id=self.llm_tokenizer.eos_token_id,
             )
+
+        if torch.isnan(outputs).any() or torch.isinf(outputs).any():
+            print("NaN or infinity values detected!")
+        outputs = torch.nan_to_num(outputs)
         outputs[outputs == self.llm_tokenizer.pad_token_id] = self.llm_tokenizer.eos_token_id
 
         outputs[outputs == 0] = 2  # convert output id 0 to 2 (eos_token_id)
