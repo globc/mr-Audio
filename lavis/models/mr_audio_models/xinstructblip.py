@@ -444,6 +444,13 @@ class XInstructBLIP(Blip2Base):
                 "duration"],
         }
 
+    def normalize_embedding(self, embedding):
+        # Min-Max Scaling
+        min_value = embedding.min()
+        max_value = embedding.max()
+        normalized_embedding = (embedding - min_value) / (max_value - min_value)
+        return normalized_embedding
+
     def forward(self, samples):
 
         if samples is None or samples == {} or not any([modality in samples for modality in self.modalities]):
@@ -466,9 +473,12 @@ class XInstructBLIP(Blip2Base):
                 for j in range(data.size(2)):
                     this_frame = data[:, :, j, :, :]
                     with self.maybe_autocast():
-                        embeds[modality].append(ln(encoder(this_frame)))
+                        embed = ln(encoder(this_frame))
+                        embed = self.normalize_embedding(embed)
+                        embeds[modality].append(embed)
                         data_atts[modality].append(
-                            torch.ones(embeds[modality][j].size()[:-1], dtype=torch.long).to(self.device))
+                            torch.ones(embed.size()[:-1], dtype=torch.long).to(self.device)
+                        )
                 # B, Token Size, LM EMB
                 query_tokens[modality] = getattr(self, f"{modality}_query_tokens").expand(data.size(0), -1, -1)
 
@@ -478,9 +488,12 @@ class XInstructBLIP(Blip2Base):
                 for j in range(data.size(1)):
                     this_frame = data[:, j, :, :]
                     with self.maybe_autocast():
-                        embeds[modality].append(ln(encoder(this_frame)))
+                        embed = ln(encoder(this_frame))
+                        embed = self.normalize_embedding(embed)
+                        embeds[modality].append(embed)
                     data_atts[modality].append(
-                        torch.ones(embeds[modality][j].size()[:-1], dtype=torch.long).to(self.device))
+                        torch.ones(embed.size()[:-1], dtype=torch.long).to(self.device)
+                    )
                 # B, Token Size, LM EMB
                 query_tokens[modality] = getattr(self, f"{modality}_query_tokens").expand(data.size(0), -1, -1)
 
