@@ -172,7 +172,7 @@ class XInstructBLIP(Blip2Base):
             from lavis.models.mr_audio_models.utils import get_peft_config
             self.llm_model = LlamaForCausalLM.from_pretrained(
                 model_path,
-                device_map=self.device,
+
                 use_safetensors=True,
                 load_in_8bit=validate_weights(model_path),
                 torch_dtype=torch.float16
