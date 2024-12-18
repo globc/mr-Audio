@@ -29,9 +29,9 @@ export CUDA_NUM_DEVICES=$SLURM_GPUS_ON_NODE
 
 ml gcc/11 python/3.8 cuda/11.8
 source mraudio/bin/activate
-pip install -r requirements_xinstructblip.txt
-####./scripts/X-InstructBLIP/qvh.sh
-####./scripts/X-InstructBLIP/charades_sta.sh
+pip install -r requirements.txt
+
+export CFG_PATH=lavis/projects/mr_Audio/train/xinstructblip/qvh.yaml
 
 ./run_scripts/mr_Audio/train/X-InstructBLIP/qvh.sh
 deactivate

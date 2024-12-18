@@ -23,6 +23,7 @@ source ~/miniconda3/bin/activate
 conda activate mraudio
 # pip install git+https://github.com/salesforce/LAVIS --no-deps
 # pip install -r requirements_xinstructblip.txt
+export CFG_PATH=lavis/projects/mr_Audio/train/xinstructblip/qvh.yaml
 
 ./run_scripts/mr_Audio/train/X-InstructBLIP/qvh.sh
 conda deactivate
