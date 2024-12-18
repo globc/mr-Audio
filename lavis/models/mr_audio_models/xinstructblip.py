@@ -49,6 +49,33 @@ def concat_text_input_output(input_ids, input_atts, output_ids, output_atts):
     return llm_tokens, input_part_targets_len
 
 
+def validate_weights(model_path: str) -> bool:
+    """
+    Validate model weights before quantization
+    Returns True if weights are valid for 8-bit quantization
+    """
+    try:
+        # Load a small portion of weights to check validity
+        state_dict = torch.load(f"{model_path}/pytorch_model-00001-of-00002.bin", map_location="cpu")
+
+        # Check for zero or near-zero weights
+        for name, tensor in state_dict.items():
+            if torch.any(torch.abs(tensor) < 1e-7):
+                print(f"Warning: Near-zero weights found in {name}")
+                return False
+
+            # Check for NaN or infinite values
+            if torch.any(torch.isnan(tensor)) or torch.any(torch.isinf(tensor)):
+                print(f"Error: Invalid values found in {name}")
+                return False
+
+        return True
+
+    except Exception as e:
+        print(f"Error validating weights: {str(e)}")
+        return False
+
+
 @registry.register_model("blip2_vicuna_xinstruct_mr")
 class XInstructBLIP(Blip2Base):
     PRETRAINED_MODEL_CONFIG_DICT = {
@@ -145,7 +172,9 @@ class XInstructBLIP(Blip2Base):
             from lavis.models.mr_audio_models.utils import get_peft_config
             self.llm_model = LlamaForCausalLM.from_pretrained(
                 model_path,
-                load_in_8bit=True,
+                device_map=self.device,
+                use_safetensors=True,
+                load_in_8bit=validate_weights(model_path),
                 torch_dtype=torch.float16
             )
             self.llm_model.resize_token_embeddings(len(self.llm_tokenizer))
@@ -154,7 +183,7 @@ class XInstructBLIP(Blip2Base):
             self.llm_model.gradient_checkpointing_enable()  # does not work with find_unused_parameters = True
             self.llm_model.enable_input_require_grads()
             self.llm_model.lm_head = CastOutputToFloat(self.llm_model.lm_head)
-            self.llm_model.config.use_cache = False  # silence the warnings. Please re-enable for inference!
+            self.llm_model.config.use_cache = True  # silence the warnings. Please re-enable for inference!
             self.llm_hidden_size = self.llm_model.config.hidden_size
 
             self.llm_model = get_peft_model(model=self.llm_model, peft_config=get_peft_config(self.llm_model))
