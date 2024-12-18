@@ -7,7 +7,8 @@ import contextlib
 
 from torch.nn.modules.module import _IncompatibleKeys
 from lavis.common.registry import registry
-from transformers import LlamaTokenizer, LlamaForCausalLM
+from transformers import LlamaTokenizer
+from lavis.models.blip2_models.modeling_llama import LlamaForCausalLM
 from lavis.models.blip2_models.blip2 import Blip2Base, disabled_train
 
 from lavis.common.utils import is_url
@@ -172,7 +173,6 @@ class XInstructBLIP(Blip2Base):
             from lavis.models.mr_audio_models.utils import get_peft_config
             self.llm_model = LlamaForCausalLM.from_pretrained(
                 model_path,
-
                 use_safetensors=True,
                 load_in_8bit=validate_weights(model_path),
                 torch_dtype=torch.float16
@@ -180,10 +180,10 @@ class XInstructBLIP(Blip2Base):
             self.llm_model.resize_token_embeddings(len(self.llm_tokenizer))
 
             # reduce memory usage
-            self.llm_model.gradient_checkpointing_enable()  # does not work with find_unused_parameters = True
+            # self.llm_model.gradient_checkpointing_enable() # does not work with find_unused_parameters = True
             self.llm_model.enable_input_require_grads()
             self.llm_model.lm_head = CastOutputToFloat(self.llm_model.lm_head)
-            self.llm_model.config.use_cache = True  # silence the warnings. Please re-enable for inference!
+            self.llm_model.config.use_cache = False  # silence the warnings. Please re-enable for inference!
             self.llm_hidden_size = self.llm_model.config.hidden_size
 
             self.llm_model = get_peft_model(model=self.llm_model, peft_config=get_peft_config(self.llm_model))
@@ -323,10 +323,9 @@ class XInstructBLIP(Blip2Base):
             inputs_llm[modality] = getattr(self, f"{modality}_llm_proj")(
                 query_outputs[modality].last_hidden_state[:, :query_tokens[modality].size(1), :])
             # bs, num, num query tokens, llm emb size -> bs, num*num query tokens, llm emb size
-            inputs_llm[modality] = inputs_llm[modality].reshape(bs, num[modality], self.num_query_token, -1).view(bs,
-                                                                                                                  num[
-                                                                                                                      modality] * self.num_query_token,
-                                                                                                                  -1)
+            inputs_llm[modality] = inputs_llm[modality].reshape(
+                bs, num[modality], self.num_query_token, -1).view(bs,
+                                                                  num[modality] * self.num_query_token, -1)
             atts_llm[modality] = torch.ones(inputs_llm[modality].size()[:-1], dtype=torch.long).to(self.device)
 
         ## remove trailing whitespace 
@@ -384,7 +383,7 @@ class XInstructBLIP(Blip2Base):
             for modality in ['video', 'audio']:
                 att_list.extend([torch.tensor(self.tokenized_cue[modality].attention_mask).to(self.device).repeat(
                     atts_llm[modality].shape[0], 1),
-                                 atts_llm[modality].view(bs, num[modality], self.num_query_token)[:, pos, :]])
+                    atts_llm[modality].view(bs, num[modality], self.num_query_token)[:, pos, :]])
                 inp_list.extend([self.emb_cue[modality].to(self.device).repeat(inputs_llm[modality].shape[0], 1, 1),
                                  inputs_llm[modality].view(bs, num[modality], self.num_query_token, -1)[:, pos, :, :]])
 
@@ -600,7 +599,7 @@ class XInstructBLIP(Blip2Base):
             for modality in ['video', 'audio']:
                 att_list.extend([torch.tensor(self.tokenized_cue[modality].attention_mask).to(self.device).repeat(
                     atts_llm[modality].shape[0], 1),
-                                 atts_llm[modality].view(bs, num[modality], self.num_query_token)[:, pos, :]])
+                    atts_llm[modality].view(bs, num[modality], self.num_query_token)[:, pos, :]])
                 inp_list.extend([self.emb_cue[modality].to(self.device).repeat(inputs_llm[modality].shape[0], 1, 1),
                                  inputs_llm[modality].view(bs, num[modality], self.num_query_token, -1)[:, pos, :, :]])
 
@@ -739,9 +738,9 @@ class XInstructBLIP(Blip2Base):
                 cached_file = download_cached_file(
                     url_or_filename, check_hash=False, progress=True
                 )
-                checkpoint = torch.load(cached_file, map_location="cpu",weights_only=True)
+                checkpoint = torch.load(cached_file, map_location="cpu")
             elif os.path.isfile(url_or_filename):
-                checkpoint = torch.load(url_or_filename, map_location="cpu",weights_only=True)
+                checkpoint = torch.load(url_or_filename, map_location="cpu")
             else:
                 raise RuntimeError("checkpoint url or path is invalid")
 
@@ -769,9 +768,9 @@ class XInstructBLIP(Blip2Base):
                 cached_file = download_cached_file(
                     url_or_filename, check_hash=False, progress=True
                 )
-                checkpoint = torch.load(cached_file, map_location="cpu",weights_only=True)
+                checkpoint = torch.load(cached_file, map_location="cpu")
             elif os.path.isfile(url_or_filename):
-                checkpoint = torch.load(url_or_filename, map_location="cpu",weights_only=True)
+                checkpoint = torch.load(url_or_filename, map_location="cpu")
             else:
                 raise RuntimeError("checkpoint url or path is invalid")
             if load_projection_type:
@@ -795,9 +794,9 @@ class XInstructBLIP(Blip2Base):
             cached_file = download_cached_file(
                 url_or_filename, check_hash=False, progress=True
             )
-            checkpoint = torch.load(cached_file, map_location="cpu",weights_only=True)
+            checkpoint = torch.load(cached_file, map_location="cpu")
         elif os.path.isfile(url_or_filename):
-            checkpoint = torch.load(url_or_filename, map_location="cpu",weights_only=True)
+            checkpoint = torch.load(url_or_filename, map_location="cpu")
         else:
             raise RuntimeError("checkpoint url or path is invalid")
 
