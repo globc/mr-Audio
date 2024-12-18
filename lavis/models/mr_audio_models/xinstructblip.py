@@ -186,8 +186,12 @@ class XInstructBLIP(Blip2Base):
             self.llm_model.config.use_cache = False  # silence the warnings. Please re-enable for inference!
             self.llm_hidden_size = self.llm_model.config.hidden_size
 
-            self.llm_model = get_peft_model(model=self.llm_model, peft_config=get_peft_config(self.llm_model))
+            def updated_get_peft_config(model):
+                peft_config = get_peft_config(model)
+                peft_config.target_modules = [nn.Linear, nn.MultiHeadAttention]
+                return peft_config
 
+            self.llm_model = get_peft_model(model=self.llm_model, peft_config=updated_get_peft_config(self.llm_model))
             # LLM frozen by peft by default
 
         else:
