@@ -424,6 +424,10 @@ class XInstructBLIP(Blip2Base):
                 eos_token_id=self.llm_tokenizer.eos_token_id,
             )
         outputs[outputs == self.llm_tokenizer.pad_token_id] = self.llm_tokenizer.eos_token_id
+
+        outputs[outputs == 0] = 2  # convert output id 0 to 2 (eos_token_id)
+        outputs = outputs.clamp(0, self.llm_tokenizer.vocab_size - 1)
+
         output_text = self.llm_tokenizer.batch_decode(outputs, skip_special_tokens=True)
         output_text = [o.strip() for o in output_text]
         print(output_text)
