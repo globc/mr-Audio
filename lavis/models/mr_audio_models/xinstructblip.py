@@ -7,8 +7,7 @@ import contextlib
 
 from torch.nn.modules.module import _IncompatibleKeys
 from lavis.common.registry import registry
-from transformers import LlamaTokenizer
-from lavis.models.blip2_models.modeling_llama import LlamaForCausalLM
+from transformers import LlamaTokenizer,LlamaForCausalLM
 from lavis.models.blip2_models.blip2 import Blip2Base, disabled_train
 
 from lavis.common.utils import is_url
@@ -428,7 +427,7 @@ class XInstructBLIP(Blip2Base):
         outputs[outputs == 0] = 2  # convert output id 0 to 2 (eos_token_id)
         outputs = outputs.clamp(0, self.llm_tokenizer.vocab_size - 1)
 
-        output_text = self.llm_tokenizer.batch_decode(outputs, skip_special_tokens=True)
+        output_text = self.llm_tokenizer.batch_decode(outputs, skip_special_tokens=True,clean_up_tokenization_spaces=True)
         output_text = [o.strip() for o in output_text]
         print(output_text)
 
