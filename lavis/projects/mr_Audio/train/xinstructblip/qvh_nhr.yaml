@@ -21,22 +21,22 @@ datasets:
     video_processor:
       train:
         name: "alpro_video_train_stamps"
-        n_frms: 60
+        n_frms: 2
         image_size: 224
       eval:
         name: "alpro_video_eval_stamps"
-        n_frms: 60
+        n_frms: 2
         image_size: 224
 
     audio_processor:
       train:
         name: beats_audio
         sampling_rate: 16000
-        n_frames: 60
+        n_frames: 2
       eval:
         name: beats_audio
         sampling_rate: 16000
-        n_frames: 60
+        n_frames: 2
         is_eval: False
 
     text_processor:
@@ -50,9 +50,9 @@ datasets:
       annotations:
         train:
           url:
-            - /home/atuin/g102ea/shared/qvh/lavis/train.json
+            - /home/atuin/g102ea/shared/qvh/lavis/train_10.json
           storage:
-            - /home/atuin/g102ea/shared/qvh/lavis/train.json
+            - /home/atuin/g102ea/shared/qvh/lavis/train_10.json
         val:
           url:
             - /home/atuin/g102ea/shared/qvh/lavis/val_10.json
