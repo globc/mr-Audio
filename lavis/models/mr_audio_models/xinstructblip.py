@@ -308,7 +308,7 @@ class XInstructBLIP(Blip2Base):
             num[modality] = len(embeds[modality])
             bs = embeds[modality][0].shape[0]
             indices = torch.tensor([j_ + r for r, j in enumerate([[i * bs for i in range(num[modality])]] * bs) for j_ in j])
-            indices = torch.clamp(indices, min=0, max=self.llm_model.model.shared.num_embeddings-1)
+            indices = torch.clamp(indices, min=0, max=self.llm_model.get_input_embeddings().num_embeddings-1)
             reordered_embeds = torch.cat(embeds[modality])[indices]
             reordered_atts = torch.cat(data_atts[modality])[indices]
             query_output = getattr(self, f"{modality}_Qformer").bert(
