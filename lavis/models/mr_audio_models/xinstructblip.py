@@ -177,6 +177,16 @@ class XInstructBLIP(Blip2Base):
                 load_in_8bit=validate_weights(model_path),
                 torch_dtype=torch.float16
             )
+            print(self.llm_model)
+            print(self.llm_model.state_dict().keys())
+            print(self.llm_model.config)
+            print(self.llm_model.get_input_embeddings().weight.shape)
+
+            input_ids = torch.randint(0, 100, (1, 10))
+            attention_mask = torch.ones((1, 10))
+            outputs = self.llm_model(input_ids, attention_mask=attention_mask)
+            print(outputs.last_hidden_state.shape)
+
             self.llm_model.resize_token_embeddings(len(self.llm_tokenizer))
 
             # reduce memory usage
