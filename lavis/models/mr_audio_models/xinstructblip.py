@@ -56,7 +56,7 @@ def validate_weights(model_path: str) -> bool:
     """
     try:
         # Load a small portion of weights to check validity
-        state_dict = torch.load(f"{model_path}/pytorch_model-00001-of-00002.bin", map_location="cpu")
+        state_dict = torch.load(f"{model_path}/pytorch_model-00001-of-00002.bin", map_location="cpu",weights_only=True)
 
         # Check for zero or near-zero weights
         for name, tensor in state_dict.items():
@@ -739,9 +739,9 @@ class XInstructBLIP(Blip2Base):
                 cached_file = download_cached_file(
                     url_or_filename, check_hash=False, progress=True
                 )
-                checkpoint = torch.load(cached_file, map_location="cpu")
+                checkpoint = torch.load(cached_file, map_location="cpu",weights_only=True)
             elif os.path.isfile(url_or_filename):
-                checkpoint = torch.load(url_or_filename, map_location="cpu")
+                checkpoint = torch.load(url_or_filename, map_location="cpu",weights_only=True)
             else:
                 raise RuntimeError("checkpoint url or path is invalid")
 
@@ -769,9 +769,9 @@ class XInstructBLIP(Blip2Base):
                 cached_file = download_cached_file(
                     url_or_filename, check_hash=False, progress=True
                 )
-                checkpoint = torch.load(cached_file, map_location="cpu")
+                checkpoint = torch.load(cached_file, map_location="cpu",weights_only=True)
             elif os.path.isfile(url_or_filename):
-                checkpoint = torch.load(url_or_filename, map_location="cpu")
+                checkpoint = torch.load(url_or_filename, map_location="cpu",weights_only=True)
             else:
                 raise RuntimeError("checkpoint url or path is invalid")
             if load_projection_type:
@@ -795,9 +795,9 @@ class XInstructBLIP(Blip2Base):
             cached_file = download_cached_file(
                 url_or_filename, check_hash=False, progress=True
             )
-            checkpoint = torch.load(cached_file, map_location="cpu")
+            checkpoint = torch.load(cached_file, map_location="cpu",weights_only=True)
         elif os.path.isfile(url_or_filename):
-            checkpoint = torch.load(url_or_filename, map_location="cpu")
+            checkpoint = torch.load(url_or_filename, map_location="cpu",weights_only=True)
         else:
             raise RuntimeError("checkpoint url or path is invalid")
 

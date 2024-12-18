@@ -24,9 +24,9 @@ class BeatsEncoder(BaseEncoder):
             cached_file = download_cached_file(
                 checkpoint_path, check_hash=False, progress=True
             )
-            checkpoint = torch.load(cached_file)
+            checkpoint = torch.load(cached_file,weights_only=True)
         elif os.path.isfile(checkpoint_path):
-            checkpoint = torch.load(checkpoint_path)
+            checkpoint = torch.load(checkpoint_path,weights_only=True)
 
         cfg = BEATsConfig(checkpoint['cfg'])
         self.num_features = cfg.encoder_embed_dim
