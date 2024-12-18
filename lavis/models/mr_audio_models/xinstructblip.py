@@ -18,7 +18,7 @@ from lavis.models.eva_vit import create_eva_vit_g
 from transformers import BertTokenizer
 from lavis.models.blip2_mr_models.utils import post_process
 
-from peft import get_peft_model
+from peft import get_peft_model, PeftModel
 
 
 class CastOutputToFloat(nn.Sequential):
@@ -177,32 +177,24 @@ class XInstructBLIP(Blip2Base):
                 load_in_8bit=validate_weights(model_path),
                 torch_dtype=torch.float16
             )
-            print(self.llm_model)
-            print(self.llm_model.state_dict().keys())
-            print(self.llm_model.config)
-            print(self.llm_model.get_input_embeddings().weight.shape)
-
-            input_ids = torch.randint(0, 100, (1, 10))
-            attention_mask = torch.ones((1, 10))
-            outputs = self.llm_model(input_ids, attention_mask=attention_mask)
-            print(outputs.last_hidden_state.shape)
-
             self.llm_model.resize_token_embeddings(len(self.llm_tokenizer))
 
             # reduce memory usage
-            # self.llm_model.gradient_checkpointing_enable() # does not work with find_unused_parameters = True
+            self.llm_model.gradient_checkpointing_enable()  # does not work with find_unused_parameters = True
             self.llm_model.enable_input_require_grads()
             self.llm_model.lm_head = CastOutputToFloat(self.llm_model.lm_head)
             self.llm_model.config.use_cache = False  # silence the warnings. Please re-enable for inference!
             self.llm_hidden_size = self.llm_model.config.hidden_size
 
-            def updated_get_peft_config(model):
-                peft_config = get_peft_config(model)
-                peft_config.target_modules = [nn.Linear, nn.MultiHeadAttention]
-                return peft_config
+            for param in self.llm_model.model.embed_tokens.parameters():
+                param.requires_grad = False
 
-            self.llm_model = get_peft_model(model=self.llm_model, peft_config=updated_get_peft_config(self.llm_model))
-            # LLM frozen by peft by default
+            for name, module in self.llm_model.model.layers.named_modules():
+                if isinstance(module, torch.nn.Linear):
+                    for param in module.parameters():
+                        param.requires_grad = False
+
+
 
         else:
             self.llm_model = LlamaForCausalLM.from_pretrained(
@@ -342,7 +334,7 @@ class XInstructBLIP(Blip2Base):
                                                                   num[modality] * self.num_query_token, -1)
             atts_llm[modality] = torch.ones(inputs_llm[modality].size()[:-1], dtype=torch.long).to(self.device)
 
-        ## remove trailing whitespace 
+        ## remove trailing whitespace
         prompt = [p.strip() for p in prompt]
 
         llm_tokens = self.llm_tokenizer(
@@ -613,7 +605,7 @@ class XInstructBLIP(Blip2Base):
             for modality in ['video', 'audio']:
                 att_list.extend([torch.tensor(self.tokenized_cue[modality].attention_mask).to(self.device).repeat(
                     atts_llm[modality].shape[0], 1),
-                    atts_llm[modality].view(bs, num[modality], self.num_query_token)[:, pos, :]])
+                                 atts_llm[modality].view(bs, num[modality], self.num_query_token)[:, pos, :]])
                 inp_list.extend([self.emb_cue[modality].to(self.device).repeat(inputs_llm[modality].shape[0], 1, 1),
                                  inputs_llm[modality].view(bs, num[modality], self.num_query_token, -1)[:, pos, :, :]])
 
