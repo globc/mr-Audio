@@ -175,7 +175,7 @@ class XInstructBLIP(Blip2Base):
                 model_path,
                 use_safetensors=True,
                 load_in_8bit=True,
-                torch_dtype=torch.float16
+                torch_dtype=torch.float32
             )
             self.llm_model.resize_token_embeddings(len(self.llm_tokenizer))
 

@@ -137,8 +137,7 @@ class RunnerBase:
 
         if amp:
             if self._scaler is None:
-                with torch.cuda.amp.autocast():
-                    self._scaler = torch.cuda.amp.GradScaler()
+                self._scaler = torch.cuda.amp.GradScaler()
 
         return self._scaler
 
