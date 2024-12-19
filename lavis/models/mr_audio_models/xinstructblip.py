@@ -1,23 +1,20 @@
 import logging
 import os
-import torch.nn as nn
-import torch
 import random
-import contextlib
 
+import torch
+import torch.nn as nn
+from peft import get_peft_model
 from torch.nn.modules.module import _IncompatibleKeys
-from lavis.common.registry import registry
-from transformers import LlamaTokenizer,LlamaForCausalLM
-from lavis.models.blip2_models.blip2 import Blip2Base, disabled_train
+from transformers import LlamaTokenizer, LlamaForCausalLM
 
+from lavis.common.dist_utils import download_cached_file
+from lavis.common.registry import registry
 from lavis.common.utils import is_url
 from lavis.models.blip2_models.Qformer import BertConfig, BertLMHeadModel
-from lavis.common.dist_utils import download_cached_file
-from lavis.models.eva_vit import create_eva_vit_g
-from transformers import BertTokenizer
+from lavis.models.blip2_models.blip2 import Blip2Base, disabled_train
 from lavis.models.blip2_mr_models.utils import post_process
-
-from peft import get_peft_model, PeftModel
+from lavis.models.eva_vit import create_eva_vit_g
 
 
 class CastOutputToFloat(nn.Sequential):
@@ -31,67 +28,20 @@ def concat_text_input_output(input_ids, input_atts, output_ids, output_atts):
         this_input_ones = input_atts[i].sum()
         input_part_targets_len.append(this_input_ones)
         llm_tokens['input_ids'].append(
-            torch.cat([
-                input_ids[i][:this_input_ones],
-                output_ids[i][1:],
-                input_ids[i][this_input_ones:]
-            ])
-        )
+            torch.cat([input_ids[i][:this_input_ones], output_ids[i][1:], input_ids[i][this_input_ones:]]))
         llm_tokens['attention_mask'].append(
-            torch.cat([
-                input_atts[i][:this_input_ones],
-                output_atts[i][1:],
-                input_atts[i][this_input_ones:]
-            ])
-        )
+            torch.cat([input_atts[i][:this_input_ones], output_atts[i][1:], input_atts[i][this_input_ones:]]))
     llm_tokens['input_ids'] = torch.stack(llm_tokens['input_ids'])
     llm_tokens['attention_mask'] = torch.stack(llm_tokens['attention_mask'])
     return llm_tokens, input_part_targets_len
 
 
-def validate_weights(model_path: str) -> bool:
-    """
-    Validate model weights before quantization
-    Returns True if weights are valid for 8-bit quantization
-    """
-    try:
-        # Load a small portion of weights to check validity
-        state_dict = torch.load(f"{model_path}/pytorch_model-00001-of-00002.bin", map_location="cpu",weights_only=True)
-
-        # Check for zero or near-zero weights
-        for name, tensor in state_dict.items():
-            if torch.any(torch.abs(tensor) < 1e-7):
-                print(f"Warning: Near-zero weights found in {name}")
-                return False
-
-            # Check for NaN or infinite values
-            if torch.any(torch.isnan(tensor)) or torch.any(torch.isinf(tensor)):
-                print(f"Error: Invalid values found in {name}")
-                return False
-
-        return True
-
-    except Exception as e:
-        print(f"Error validating weights: {str(e)}")
-        return False
-
-
 @registry.register_model("blip2_vicuna_xinstruct_mr")
 class XInstructBLIP(Blip2Base):
-    PRETRAINED_MODEL_CONFIG_DICT = {
-        "vicuna7b": "configs/empty.yaml",
-    }
+    PRETRAINED_MODEL_CONFIG_DICT = {"vicuna7b": "configs/empty.yaml", }
 
-    def __init__(
-            self,
-            model_path,
-            audio_path,
-            enumerate_inputs=False,
-            modalities=["video"],
-            lora=True,
-            interleave_seconds=True,
-            finetuned="",
-    ):
+    def __init__(self, model_path, audio_path, enumerate_inputs=False, modalities=["audio", "video"], lora=True,
+                 interleave_seconds=True, finetuned="", ):
         super().__init__()
 
         self.enumerate_inputs = enumerate_inputs
@@ -105,13 +55,8 @@ class XInstructBLIP(Blip2Base):
 
         # Init video encoder
         self.pretrained_video_qformer = "https://storage.googleapis.com/sfr-xinstructblip-data-research/model/xinstructblip_checkpoints/vicuna7b/video_qformer.pth"
-        video_encoder_kwargs = {
-            "image_size": 224,
-            "drop_path_rate": 0,
-            "use_grad_checkpoint": False,
-            "load_ln_path": self.pretrained_video_qformer,
-            "load_ln_type": "video"
-        }
+        video_encoder_kwargs = {"image_size": 224, "drop_path_rate": 0, "use_grad_checkpoint": False,
+                                "load_ln_path": self.pretrained_video_qformer, "load_ln_type": "video"}
         self.video_encoder, self.video_ln = self.init_video_encoder("eva_clip_g", precision="fp16",
                                                                     **video_encoder_kwargs)
 
@@ -129,8 +74,7 @@ class XInstructBLIP(Blip2Base):
             load_ln_path = self.pretrained_audio_qformer
             load_ln_type = "audio"
 
-            self.audio_encoder, self.audio_ln = self.init_audio_encoder("beats",
-                                                                        precision="fp16",
+            self.audio_encoder, self.audio_ln = self.init_audio_encoder("beats", precision="fp16",
                                                                         checkpoint_path=checkpoint_path,
                                                                         load_ln_path=load_ln_path,
                                                                         load_ln_type=load_ln_type)
@@ -149,13 +93,10 @@ class XInstructBLIP(Blip2Base):
             modality_num_features = getattr(self, f"{modality}_encoder").num_features
 
             logging.info(f"Initializing {modality} QFormer and query tokens of length {self.num_query_token}")
-            modality_qformer, modality_query_tokens = self.init_Qformer(
-                self.num_query_token,
-                modality_num_features,
-                pretrained_qformer=getattr(self, f"pretrained_{modality}_qformer"),
-                load_attention=True,
-                load_qformer_type=modality
-            )
+            modality_qformer, modality_query_tokens = self.init_Qformer(self.num_query_token, modality_num_features,
+                                                                        pretrained_qformer=getattr(self,
+                                                                                                   f"pretrained_{modality}_qformer"),
+                                                                        load_attention=True, load_qformer_type=modality)
 
             modality_qformer.resize_token_embeddings(len(self.tokenizer))
             modality_qformer.cls = None
@@ -170,12 +111,7 @@ class XInstructBLIP(Blip2Base):
 
         if self.lora:
             from lavis.models.mr_audio_models.utils import get_peft_config
-            self.llm_model = LlamaForCausalLM.from_pretrained(
-                model_path,
-                use_safetensors=True,
-                load_in_8bit=True,
-                torch_dtype=torch.float32
-            )
+            self.llm_model = LlamaForCausalLM.from_pretrained(model_path, load_in_8bit=True, torch_dtype=torch.float16)
             self.llm_model.resize_token_embeddings(len(self.llm_tokenizer))
 
             # reduce memory usage
@@ -185,20 +121,12 @@ class XInstructBLIP(Blip2Base):
             self.llm_model.config.use_cache = False  # silence the warnings. Please re-enable for inference!
             self.llm_hidden_size = self.llm_model.config.hidden_size
 
-            for param in self.llm_model.model.embed_tokens.parameters():
-                param.requires_grad = False
+            self.llm_model = get_peft_model(model=self.llm_model, peft_config=get_peft_config(self.llm_model))
 
-            for name, module in self.llm_model.model.layers.named_modules():
-                if isinstance(module, torch.nn.Linear):
-                    for param in module.parameters():
-                        param.requires_grad = False
-
-
+            # LLM frozen by peft by default
 
         else:
-            self.llm_model = LlamaForCausalLM.from_pretrained(
-                model_path, torch_dtype=torch.float16
-            )
+            self.llm_model = LlamaForCausalLM.from_pretrained(model_path, torch_dtype=torch.float16)
             self.llm_model.resize_token_embeddings(len(self.llm_tokenizer))
             self.llm_hidden_size = self.llm_model.config.hidden_size
             # Freeze LLM
@@ -210,12 +138,8 @@ class XInstructBLIP(Blip2Base):
             setattr(self, f"load_projection_{modality}", load_projection_path)
 
             qformer = getattr(self, f"{modality}_Qformer")
-            proj = self.init_vicuna_projection(
-                qformer.config.hidden_size,
-                self.llm_hidden_size,
-                load_projection_path=load_projection_path,
-                load_projection_type=modality
-            )
+            proj = self.init_vicuna_projection(qformer.config.hidden_size, self.llm_hidden_size,
+                                               load_projection_path=load_projection_path, load_projection_type=modality)
             setattr(self, f"{modality}_llm_proj", proj)
 
         if not self.finetuned:
@@ -234,9 +158,7 @@ class XInstructBLIP(Blip2Base):
             for name, param in getattr(self, f'{modality}_llm_proj').named_parameters():
                 param.requires_grad = False
 
-        self.MODALITY_TO_CUE = {
-            "video": " video: "
-        }
+        self.MODALITY_TO_CUE = {"video": " video: ", "audio": " audio: ", }
 
         self.tokenized_cue = {}
         self.emb_cue = {}
@@ -258,13 +180,8 @@ class XInstructBLIP(Blip2Base):
         for modality in curr_modalities:
             query_tokens[modality] = getattr(self, f"{modality}_query_tokens").expand(bs, -1, -1)
 
-        text_Qformer = self.tokenizer(
-            prompt,
-            padding='longest',
-            truncation=True,
-            max_length=self.max_txt_len,
-            return_tensors="pt",
-        ).to(self.device)
+        text_Qformer = self.tokenizer(prompt, padding='longest', truncation=True, max_length=self.max_txt_len,
+                                      return_tensors="pt", ).to(self.device)
 
         Qformer_atts = {}
         query_atts = {}
@@ -291,24 +208,32 @@ class XInstructBLIP(Blip2Base):
                         data_atts[modality].append(
                             torch.ones(embeds[modality][j].size()[:-1], dtype=torch.long).to(self.device))
 
+            elif modality == 'audio':
+                embeds[modality] = []
+                data_atts[modality] = []
+                for j in range(data.size(1)):
+                    this_frame = data[:, j, :, :]
+                    with self.maybe_autocast():
+                        embeds[modality].append(ln(encoder(this_frame)))
+                    data_atts[modality].append(
+                        torch.ones(embeds[modality][j].size()[:-1], dtype=torch.long).to(self.device))
 
         query_outputs = {}
         num = {}
         for modality in curr_modalities:
             num[modality] = len(embeds[modality])
             bs = embeds[modality][0].shape[0]
-            indices = torch.tensor([j_ + r for r, j in enumerate([[i * bs for i in range(num[modality])]] * bs) for j_ in j])
-            indices = torch.clamp(indices, min=0, max=self.llm_model.get_input_embeddings().num_embeddings-1)
+            indices = [j_ + r for r, j in enumerate([[i * bs for i in range(num[modality])]] * bs) for j_ in j]
             reordered_embeds = torch.cat(embeds[modality])[indices]
             reordered_atts = torch.cat(data_atts[modality])[indices]
-            query_output = getattr(self, f"{modality}_Qformer").bert(
-                text_Qformer.input_ids.repeat(num[modality], 1),
-                attention_mask=Qformer_atts[modality].repeat(num[modality], 1),
-                query_embeds=query_tokens[modality].repeat(num[modality], 1, 1),
-                encoder_hidden_states=reordered_embeds,
-                encoder_attention_mask=reordered_atts,
-                return_dict=True,
-            )
+            query_output = getattr(self, f"{modality}_Qformer").bert(text_Qformer.input_ids.repeat(num[modality], 1),
+                                                                     attention_mask=Qformer_atts[modality].repeat(
+                                                                         num[modality], 1),
+                                                                     query_embeds=query_tokens[modality].repeat(
+                                                                         num[modality], 1, 1),
+                                                                     encoder_hidden_states=reordered_embeds,
+                                                                     encoder_attention_mask=reordered_atts,
+                                                                     return_dict=True, )
             query_outputs[modality] = query_output
 
         inputs_llm = {}
@@ -319,36 +244,24 @@ class XInstructBLIP(Blip2Base):
             inputs_llm[modality] = getattr(self, f"{modality}_llm_proj")(
                 query_outputs[modality].last_hidden_state[:, :query_tokens[modality].size(1), :])
             # bs, num, num query tokens, llm emb size -> bs, num*num query tokens, llm emb size
-            inputs_llm[modality] = inputs_llm[modality].reshape(
-                bs, num[modality], self.num_query_token, -1).view(bs,
-                                                                  num[modality] * self.num_query_token, -1)
+            inputs_llm[modality] = inputs_llm[modality].reshape(bs, num[modality], self.num_query_token, -1).view(bs,
+                                                                                                                  num[
+                                                                                                                      modality] * self.num_query_token,
+                                                                                                                  -1)
             atts_llm[modality] = torch.ones(inputs_llm[modality].size()[:-1], dtype=torch.long).to(self.device)
 
         ## remove trailing whitespace
         prompt = [p.strip() for p in prompt]
 
-        llm_tokens = self.llm_tokenizer(
-            prompt,
-            padding="longest",
-            return_tensors="pt",
-            add_special_tokens=False
-        ).to(self.device)
+        llm_tokens = self.llm_tokenizer(prompt, padding="longest", return_tensors="pt", add_special_tokens=False).to(
+            self.device)
         bs = llm_tokens.input_ids.shape[0]
 
         # Get timestamp embeds
         if self.interleave_seconds:
-            flattened_timestamps = [
-                f" {t} "
-                for timestamps in samples["timestamps"]
-                for t in timestamps
-            ]
-            timestamp_tokens = self.llm_tokenizer(
-                flattened_timestamps,
-                padding="longest",
-                truncation=True,
-                return_tensors="pt",
-                add_special_tokens=False
-            ).to(self.device)
+            flattened_timestamps = [f" {t} " for timestamps in samples["timestamps"] for t in timestamps]
+            timestamp_tokens = self.llm_tokenizer(flattened_timestamps, padding="longest", truncation=True,
+                                                  return_tensors="pt", add_special_tokens=False).to(self.device)
             timestamp_inputs_llm = self.llm_model.get_input_embeddings()(timestamp_tokens.input_ids)
             timestamp_atts_llm = timestamp_tokens.attention_mask.to(self.device)
 
@@ -365,18 +278,16 @@ class XInstructBLIP(Blip2Base):
         # Joint video audio
         for pos in range(num['video']):
             if self.enumerate_inputs:
-                enumeration_pos = self.llm_tokenizer(
-                    [f"{'' if pos == 0 else ' '}({chr(97 + pos)}) " for _ in prompt],
-                    return_tensors="pt",
-                    add_special_tokens=False if (pos != 0) else True
-                ).to(self.device)
+                enumeration_pos = self.llm_tokenizer([f"{'' if pos == 0 else ' '}({chr(97 + pos)}) " for _ in prompt],
+                                                     return_tensors="pt",
+                                                     add_special_tokens=False if (pos != 0) else True).to(self.device)
                 enumeration_inputs_llm = self.llm_model.get_input_embeddings()(enumeration_pos.input_ids)
                 enumeration_atts_llm = enumeration_pos.attention_mask.to(self.device)
                 inp_list.extend([enumeration_inputs_llm])
                 att_list.extend([enumeration_atts_llm])
 
             # Cues
-            for modality in ['video']:
+            for modality in ['video', 'audio']:
                 att_list.extend([torch.tensor(self.tokenized_cue[modality].attention_mask).to(self.device).repeat(
                     atts_llm[modality].shape[0], 1),
                     atts_llm[modality].view(bs, num[modality], self.num_query_token)[:, pos, :]])
@@ -388,13 +299,9 @@ class XInstructBLIP(Blip2Base):
                 att_list.extend([timestamp_atts_llm[:, pos, :]])
 
         # Duration
-        duration_tokens = self.llm_tokenizer(
-            [f"{dur} " for dur in samples["duration"]],
-            padding="longest",
-            truncation=True,
-            return_tensors="pt",
-            add_special_tokens=False
-        ).to(self.device)
+        duration_tokens = self.llm_tokenizer([f"{dur} " for dur in samples["duration"]], padding="longest",
+                                             truncation=True, return_tensors="pt", add_special_tokens=False).to(
+            self.device)
         att_list.append(duration_tokens.attention_mask)
         duration_inputs_llm = self.llm_model.get_input_embeddings()(duration_tokens.input_ids)
         inp_list.append(duration_inputs_llm)
@@ -407,40 +314,17 @@ class XInstructBLIP(Blip2Base):
         inputs_embeds = torch.cat(inp_list, dim=1)
 
         with self.maybe_autocast():
-            outputs = self.llm_model.generate(
-                inputs_embeds=inputs_embeds,
-                attention_mask=attention_mask,
-                max_new_tokens=self.max_new_tokens,
-                eos_token_id=self.llm_tokenizer.eos_token_id,
-            )
-
-        if torch.isnan(outputs).any() or torch.isinf(outputs).any():
-            print("NaN or infinity values detected!")
-        outputs = torch.nan_to_num(outputs)
-        outputs[outputs == self.llm_tokenizer.pad_token_id] = self.llm_tokenizer.eos_token_id
-
+            outputs = self.llm_model.generate(inputs_embeds=inputs_embeds, attention_mask=attention_mask,
+                                              max_new_tokens=self.max_new_tokens, )
         outputs[outputs == 0] = 2  # convert output id 0 to 2 (eos_token_id)
-        outputs = outputs.clamp(0, self.llm_tokenizer.vocab_size - 1)
-
-        output_text = self.llm_tokenizer.batch_decode(outputs, skip_special_tokens=True,clean_up_tokenization_spaces=True)
+        output_text = self.llm_tokenizer.batch_decode(outputs, skip_special_tokens=True)
         output_text = [o.strip() for o in output_text]
         print(output_text)
 
-        return {
-            "qid": samples["query_id"],
-            "prediction": [post_process(out) for out in output_text],
-            "raw_prediction": output_text,
-            "answer": samples["relevant_windows"],
-            "duration": samples["duration"].tolist() if isinstance(samples["duration"], torch.Tensor) else samples[
-                "duration"],
-        }
-
-    def normalize_embedding(self, embedding):
-        # Min-Max Scaling
-        min_value = embedding.min()
-        max_value = embedding.max()
-        normalized_embedding = (embedding - min_value) / (max_value - min_value)
-        return normalized_embedding
+        return {"qid": samples["query_id"], "prediction": [post_process(out) for out in output_text],
+                "raw_prediction": output_text, "answer": samples["relevant_windows"],
+                "duration": samples["duration"].tolist() if isinstance(samples["duration"], torch.Tensor) else samples[
+                    "duration"], }
 
     def forward(self, samples):
 
@@ -464,24 +348,27 @@ class XInstructBLIP(Blip2Base):
                 for j in range(data.size(2)):
                     this_frame = data[:, :, j, :, :]
                     with self.maybe_autocast():
-                        embed = ln(encoder(this_frame))
-                        embed = self.normalize_embedding(embed)
-                        embeds[modality].append(embed)
+                        embeds[modality].append(ln(encoder(this_frame)))
                         data_atts[modality].append(
-                            torch.ones(embed.size()[:-1], dtype=torch.long).to(self.device)
-                        )
+                            torch.ones(embeds[modality][j].size()[:-1], dtype=torch.long).to(self.device))
                 # B, Token Size, LM EMB
                 query_tokens[modality] = getattr(self, f"{modality}_query_tokens").expand(data.size(0), -1, -1)
 
+            elif modality == 'audio':
+                embeds[modality] = []
+                data_atts[modality] = []
+                for j in range(data.size(1)):
+                    this_frame = data[:, j, :, :]
+                    with self.maybe_autocast():
+                        embeds[modality].append(ln(encoder(this_frame)))
+                    data_atts[modality].append(
+                        torch.ones(embeds[modality][j].size()[:-1], dtype=torch.long).to(self.device))
+                # B, Token Size, LM EMB
+                query_tokens[modality] = getattr(self, f"{modality}_query_tokens").expand(data.size(0), -1, -1)
 
         query_outputs = {}
-        text_Qformer = self.tokenizer(
-            samples["text_input"],
-            padding='longest',
-            truncation=True,
-            max_length=self.max_txt_len,
-            return_tensors="pt",
-        ).to(self.device)
+        text_Qformer = self.tokenizer(samples["text_input"], padding='longest', truncation=True,
+                                      max_length=self.max_txt_len, return_tensors="pt", ).to(self.device)
 
         Qformer_atts = {}
         query_atts = {}
@@ -493,18 +380,17 @@ class XInstructBLIP(Blip2Base):
             Qformer_atts[modality] = torch.cat([query_atts[modality], text_Qformer.attention_mask], dim=1)
             num[modality] = len(embeds[modality])
             bs = embeds[modality][0].shape[0]
-            indices = torch.tensor([j_ + r for r, j in enumerate([[i * bs for i in range(num[modality])]] * bs) for j_ in j])
-            indices = torch.clamp(indices, min=0, max=self.llm_model.get_input_embeddings().num_embeddings-1)
+            indices = [j_ + r for r, j in enumerate([[i * bs for i in range(num[modality])]] * bs) for j_ in j]
             reordered_embeds = torch.cat(embeds[modality])[indices]
             reordered_atts = torch.cat(data_atts[modality])[indices]
-            query_output = getattr(self, f"{modality}_Qformer").bert(
-                text_Qformer.input_ids.repeat(num[modality], 1),
-                attention_mask=Qformer_atts[modality].repeat(num[modality], 1),
-                query_embeds=query_tokens[modality].repeat(num[modality], 1, 1),
-                encoder_hidden_states=reordered_embeds,
-                encoder_attention_mask=reordered_atts,
-                return_dict=True,
-            )
+            query_output = getattr(self, f"{modality}_Qformer").bert(text_Qformer.input_ids.repeat(num[modality], 1),
+                                                                     attention_mask=Qformer_atts[modality].repeat(
+                                                                         num[modality], 1),
+                                                                     query_embeds=query_tokens[modality].repeat(
+                                                                         num[modality], 1, 1),
+                                                                     encoder_hidden_states=reordered_embeds,
+                                                                     encoder_attention_mask=reordered_atts,
+                                                                     return_dict=True, )
             query_outputs[modality] = query_output
 
         inputs_llm = {}
@@ -522,35 +408,22 @@ class XInstructBLIP(Blip2Base):
         self.llm_tokenizer.padding_side = "right"
         self.llm_tokenizer.truncation_side = 'left'
 
-        text_input_tokens = self.llm_tokenizer(
-            samples['text_input'],
-            return_tensors="pt",
-            padding="longest",
-            truncation=True,
-            max_length=self.max_txt_len,
-            add_special_tokens=True
-        ).to(self.device)
+        text_input_tokens = self.llm_tokenizer(samples['text_input'], return_tensors="pt", padding="longest",
+                                               truncation=True, max_length=self.max_txt_len,
+                                               add_special_tokens=True).to(self.device)
 
         self.llm_tokenizer.truncation_side = 'right'
-        text_output_tokens = self.llm_tokenizer(
-            [t + self.llm_tokenizer.eos_token for t in samples['relevant_windows']],
-            return_tensors="pt",
-            padding="longest",
-            truncation=True,
-            max_length=self.max_output_txt_len,
-        ).to(self.device)
+        text_output_tokens = self.llm_tokenizer([t + self.llm_tokenizer.eos_token for t in samples['relevant_windows']],
+                                                return_tensors="pt", padding="longest", truncation=True,
+                                                max_length=self.max_output_txt_len, ).to(self.device)
 
-        llm_tokens, input_part_targets_len = concat_text_input_output(
-            text_input_tokens.input_ids,
-            text_input_tokens.attention_mask,
-            text_output_tokens.input_ids,
-            text_output_tokens.attention_mask,
-        )
+        llm_tokens, input_part_targets_len = concat_text_input_output(text_input_tokens.input_ids,
+                                                                      text_input_tokens.attention_mask,
+                                                                      text_output_tokens.input_ids,
+                                                                      text_output_tokens.attention_mask, )
 
         # do not apply loss to the padding
-        targets = llm_tokens['input_ids'].masked_fill(
-            llm_tokens['input_ids'] == self.llm_tokenizer.pad_token_id, -100
-        )
+        targets = llm_tokens['input_ids'].masked_fill(llm_tokens['input_ids'] == self.llm_tokenizer.pad_token_id, -100)
 
         # do not apply loss to the text input (i.e., instruction)
         for i, l in enumerate(input_part_targets_len):
@@ -564,18 +437,9 @@ class XInstructBLIP(Blip2Base):
 
         # Get timestamp embeds
         if self.interleave_seconds:
-            flattened_timestamps = [
-                f" {t} "
-                for timestamps in samples["timestamps"]
-                for t in timestamps
-            ]
-            timestamp_tokens = self.llm_tokenizer(
-                flattened_timestamps,
-                padding="longest",
-                truncation=True,
-                return_tensors="pt",
-                add_special_tokens=False
-            ).to(self.device)
+            flattened_timestamps = [f" {t} " for timestamps in samples["timestamps"] for t in timestamps]
+            timestamp_tokens = self.llm_tokenizer(flattened_timestamps, padding="longest", truncation=True,
+                                                  return_tensors="pt", add_special_tokens=False).to(self.device)
             timestamp_inputs_llm = self.llm_model.get_input_embeddings()(timestamp_tokens.input_ids)
             timestamp_atts_llm = timestamp_tokens.attention_mask.to(self.device)
 
@@ -591,20 +455,18 @@ class XInstructBLIP(Blip2Base):
         # joint video audio TODO add seconds
         for pos in range(num['video']):
             if self.enumerate_inputs:
-                enumeration_pos = self.llm_tokenizer(
-                    [f"{'' if pos == 0 else ' '}({chr(97 + pos)}) " for _ in prompt],
-                    return_tensors="pt",
-                    add_special_tokens=False if (pos != 0) else True
-                ).to(self.device)
+                enumeration_pos = self.llm_tokenizer([f"{'' if pos == 0 else ' '}({chr(97 + pos)}) " for _ in prompt],
+                                                     return_tensors="pt",
+                                                     add_special_tokens=False if (pos != 0) else True).to(self.device)
                 enumeration_inputs_llm = self.llm_model.get_input_embeddings()(enumeration_pos.input_ids)
                 enumeration_atts_llm = enumeration_pos.attention_mask.to(self.device)
                 inp_list.extend([enumeration_inputs_llm])
                 att_list.extend([enumeration_atts_llm])
 
-            for modality in ['video']:
+            for modality in ['video', 'audio']:
                 att_list.extend([torch.tensor(self.tokenized_cue[modality].attention_mask).to(self.device).repeat(
                     atts_llm[modality].shape[0], 1),
-                                 atts_llm[modality].view(bs, num[modality], self.num_query_token)[:, pos, :]])
+                    atts_llm[modality].view(bs, num[modality], self.num_query_token)[:, pos, :]])
                 inp_list.extend([self.emb_cue[modality].to(self.device).repeat(inputs_llm[modality].shape[0], 1, 1),
                                  inputs_llm[modality].view(bs, num[modality], self.num_query_token, -1)[:, pos, :, :]])
 
@@ -613,21 +475,15 @@ class XInstructBLIP(Blip2Base):
                 att_list.extend([timestamp_atts_llm[:, pos, :]])
 
         # Duration
-        duration_tokens = self.llm_tokenizer(
-            [f"{dur} " for dur in samples["duration"]],
-            padding="longest",
-            truncation=True,
-            return_tensors="pt",
-            add_special_tokens=False
-        ).to(self.device)
+        duration_tokens = self.llm_tokenizer([f"{dur} " for dur in samples["duration"]], padding="longest",
+                                             truncation=True, return_tensors="pt", add_special_tokens=False).to(
+            self.device)
         att_list.append(duration_tokens.attention_mask)
         duration_inputs_llm = self.llm_model.get_input_embeddings()(duration_tokens.input_ids)
         inp_list.append(duration_inputs_llm)
 
         # do not apply loss to the query tokens
-        empty_targets = (
-            torch.ones(torch.cat(att_list, dim=1).size(), dtype=torch.long).to(self.device).fill_(-100)
-        )
+        empty_targets = (torch.ones(torch.cat(att_list, dim=1).size(), dtype=torch.long).to(self.device).fill_(-100))
 
         # append llm prompt + output to queries
         att_list.append(llm_tokens['attention_mask'])
@@ -638,12 +494,8 @@ class XInstructBLIP(Blip2Base):
         targets = torch.cat([empty_targets, targets], dim=1)
 
         with self.maybe_autocast():
-            outputs = self.llm_model(
-                inputs_embeds=inputs_embeds,
-                attention_mask=attention_mask,
-                return_dict=True,
-                labels=targets,
-            )
+            outputs = self.llm_model(inputs_embeds=inputs_embeds, attention_mask=attention_mask, return_dict=True,
+                                     labels=targets, )
 
         return {"loss": outputs.loss}
 
@@ -657,15 +509,8 @@ class XInstructBLIP(Blip2Base):
         interleave_seconds = cfg.get("interleave_seconds", True)
         finetuned = cfg.get("finetuned", "")
 
-        model = cls(
-            model_path=model_path,
-            audio_path=audio_path,
-            enumerate_inputs=enumerate_inputs,
-            modalities=modalities,
-            lora=lora,
-            interleave_seconds=interleave_seconds,
-            finetuned=finetuned,
-        )
+        model = cls(model_path=model_path, audio_path=audio_path, enumerate_inputs=enumerate_inputs,
+                    modalities=modalities, lora=lora, interleave_seconds=interleave_seconds, finetuned=finetuned, )
 
         return model
 
@@ -680,9 +525,7 @@ class XInstructBLIP(Blip2Base):
         encoder_config.query_length = num_query_token
         encoder_config.vocab_size += 1  # for special token [DEC]
         Qformer = BertLMHeadModel(config=encoder_config)
-        query_tokens = nn.Parameter(
-            torch.zeros(1, num_query_token, encoder_config.hidden_size)
-        )
+        query_tokens = nn.Parameter(torch.zeros(1, num_query_token, encoder_config.hidden_size))
         query_tokens.data.normal_(mean=0.0, std=encoder_config.initializer_range)
 
         if pretrained_qformer:
@@ -690,9 +533,7 @@ class XInstructBLIP(Blip2Base):
             logging.info(
                 f"Loading pretrained qformer weights and query tokens from {url_or_filename} of type {load_qformer_type}")
             if is_url(url_or_filename):
-                cached_file = download_cached_file(
-                    url_or_filename, check_hash=False, progress=True
-                )
+                cached_file = download_cached_file(url_or_filename, check_hash=False, progress=True)
                 checkpoint = torch.load(cached_file, map_location="cpu")
             elif os.path.isfile(url_or_filename):
                 checkpoint = torch.load(url_or_filename, map_location="cpu")
@@ -716,9 +557,8 @@ class XInstructBLIP(Blip2Base):
 
     def init_video_encoder(self, model_name, precision, **kwargs):
         assert model_name == "eva_clip_g"
-        video_encoder = create_eva_vit_g(
-            kwargs['image_size'], kwargs['drop_path_rate'], kwargs['use_grad_checkpoint'], precision
-        )
+        video_encoder = create_eva_vit_g(kwargs['image_size'], kwargs['drop_path_rate'], kwargs['use_grad_checkpoint'],
+                                         precision)
 
         ln_video = self.init_ln(video_encoder.num_features, load_ln_path=kwargs['load_ln_path'],
                                 load_ln_type=kwargs['load_ln_type'])
@@ -740,9 +580,7 @@ class XInstructBLIP(Blip2Base):
             url_or_filename = load_ln_path
             logging.info(f"Loading pretrained layer norm weights from {url_or_filename} of type {load_ln_type}")
             if is_url(url_or_filename):
-                cached_file = download_cached_file(
-                    url_or_filename, check_hash=False, progress=True
-                )
+                cached_file = download_cached_file(url_or_filename, check_hash=False, progress=True)
                 checkpoint = torch.load(cached_file, map_location="cpu")
             elif os.path.isfile(url_or_filename):
                 checkpoint = torch.load(url_or_filename, map_location="cpu")
@@ -770,9 +608,7 @@ class XInstructBLIP(Blip2Base):
             logging.info(
                 f"Loading pretrained projection weights from {url_or_filename} of type {load_projection_type} with key {projection_key if projection_key else load_projection_type + '_llm_proj.'}")
             if is_url(url_or_filename):
-                cached_file = download_cached_file(
-                    url_or_filename, check_hash=False, progress=True
-                )
+                cached_file = download_cached_file(url_or_filename, check_hash=False, progress=True)
                 checkpoint = torch.load(cached_file, map_location="cpu")
             elif os.path.isfile(url_or_filename):
                 checkpoint = torch.load(url_or_filename, map_location="cpu")
@@ -796,9 +632,7 @@ class XInstructBLIP(Blip2Base):
 
     def get_state_dict(self, url_or_filename, **kwargs):
         if is_url(url_or_filename):
-            cached_file = download_cached_file(
-                url_or_filename, check_hash=False, progress=True
-            )
+            cached_file = download_cached_file(url_or_filename, check_hash=False, progress=True)
             checkpoint = torch.load(cached_file, map_location="cpu")
         elif os.path.isfile(url_or_filename):
             checkpoint = torch.load(url_or_filename, map_location="cpu")
