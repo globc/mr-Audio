@@ -7,6 +7,7 @@ import torch.nn as nn
 from peft import (get_peft_model, )
 from torch.nn.modules.module import _IncompatibleKeys
 from transformers import LlamaConfig, GenerationConfig
+from transformers.generation import GreedySearchDecoderOnlyOutput
 
 from lavis.common.dist_utils import download_cached_file
 from lavis.common.registry import registry
@@ -354,15 +355,20 @@ class XInstructBLIP(Blip2Base):
                                               max_new_tokens=self.max_new_tokens,return_dict_in_generate=True,
                                               output_hidden_states=True,
                                               output_scores=True,
+
+
                                               output_attentions=False)
-        print("Outputs:")
-        print(outputs)
-        mask = torch.zeros_like(outputs)
-        mask[outputs == 0] = 2
-        outputs = torch.where(mask, outputs, 2)
-        output_text = self.llm_tokenizer.batch_decode(outputs, skip_special_tokens=True)
-        output_text = [o.strip() for o in output_text]
-        print(output_text)
+
+        if type(outputs) == GreedySearchDecoderOnlyOutput:
+            outputs = outputs.sequences
+            print("Output sequences:")
+            print(outputs)
+            output_text = self.llm_tokenizer.batch_decode(outputs, skip_special_tokens=True)
+            output_text = [o.strip() for o in output_text]
+            print(output_text)
+        else:
+            print("Output sequences: error")
+            output_text = "error"
 
         return {"qid": samples["query_id"], "prediction": [post_process(out) for out in output_text],
                 "raw_prediction": output_text, "answer": samples["relevant_windows"],
