@@ -342,15 +342,15 @@ class XInstructBLIP(Blip2Base):
         self.use_cues = use_cues
         logging.info(f"Using cues set to {self.use_cues}.")
         if self.use_cues:
-            logging.info(f"Modality to cue {Blip2VicunaXInstruct.MODALITY_TO_CUE}")
+            logging.info(f"Modality to cue {XInstructBLIP.MODALITY_TO_CUE}")
             self.tokenized_cue = {}
             self.emb_cue = {}
             self.att_cue = {}
             for modality in self.modalities:
                 if self.clean_tokenization:
-                    Blip2VicunaXInstruct.MODALITY_TO_CUE[modality] = Blip2VicunaXInstruct.MODALITY_TO_CUE[
+                    XInstructBLIP.MODALITY_TO_CUE[modality] = XInstructBLIP.MODALITY_TO_CUE[
                         modality].lstrip()
-                self.tokenized_cue[modality] = self.llm_tokenizer(Blip2VicunaXInstruct.MODALITY_TO_CUE[modality],
+                self.tokenized_cue[modality] = self.llm_tokenizer(XInstructBLIP.MODALITY_TO_CUE[modality],
                                                                   return_tensors="pt")
                 self.emb_cue[modality] = self.llm_model.get_input_embeddings()(
                     self.tokenized_cue[modality].input_ids.to(self.device))
@@ -419,7 +419,7 @@ class XInstructBLIP(Blip2Base):
             data = samples[modality]
             ln = getattr(self, f"{modality}_ln")
             encoder = getattr(self, f"{modality}_encoder")
-            if modality == "video" and self.video_enc_name in Blip2VicunaXInstruct.SEQUENCIAL_ENCODERS:
+            if modality == "video" and self.video_enc_name in XInstructBLIP.SEQUENCIAL_ENCODERS:
                 embeds[modality] = []
                 data_atts[modality] = []
                 for j in range(data.size(2)):
@@ -434,7 +434,7 @@ class XInstructBLIP(Blip2Base):
                 if not self.projection_only and not getattr(self, f"projection_only_{modality}"):
                     query_tokens[modality] = getattr(self, f"{modality}_query_tokens").expand(data.size(0), -1, -1)
 
-            elif modality == 'audio' and self.audio_enc_name in Blip2VicunaXInstruct.SEQUENCIAL_ENCODERS:
+            elif modality == 'audio' and self.audio_enc_name in XInstructBLIP.SEQUENCIAL_ENCODERS:
                 embeds[modality] = []
                 data_atts[modality] = []
                 for j in range(data.size(1)):
@@ -478,8 +478,8 @@ class XInstructBLIP(Blip2Base):
                 query_atts[modality] = torch.ones(query_tokens[modality].size()[:-1], dtype=torch.long).to(self.device)
                 # B, Token Size + Inp Size
                 Qformer_atts[modality] = torch.cat([query_atts[modality], text_Qformer.attention_mask], dim=1)
-                if modality in Blip2VicunaXInstruct.SEQUENCIAL_MODALITIES and getattr(self,
-                                                                                      f'{modality}_enc_name') in Blip2VicunaXInstruct.SEQUENCIAL_ENCODERS:
+                if modality in XInstructBLIP.SEQUENCIAL_MODALITIES and getattr(self,
+                                                                                      f'{modality}_enc_name') in XInstructBLIP.SEQUENCIAL_ENCODERS:
                     num = len(embeds[modality])
                     bs = embeds[modality][0].shape[0]
                     indices = [j_ + r for r, j in enumerate([[i * bs for i in range(num)]] * bs) for j_ in j]
@@ -513,8 +513,8 @@ class XInstructBLIP(Blip2Base):
                         encoder_attention_mask=data_atts[modality], return_dict=True, )
         else:
             for modality in curr_modalities:
-                if modality in Blip2VicunaXInstruct.SEQUENCIAL_MODALITIES and getattr(self,
-                                                                                      f'{modality}_enc_name') in Blip2VicunaXInstruct.SEQUENCIAL_ENCODERS:
+                if modality in XInstructBLIP.SEQUENCIAL_MODALITIES and getattr(self,
+                                                                                      f'{modality}_enc_name') in XInstructBLIP.SEQUENCIAL_ENCODERS:
                     num = len(embeds[modality])
                     bs = embeds[modality][0].shape[0]
                     indices = [j_ + r for r, j in enumerate([[i * bs for i in range(num)]] * bs) for j_ in j]
@@ -549,8 +549,8 @@ class XInstructBLIP(Blip2Base):
         inputs_llm = {}
         atts_llm = {}
         for modality in curr_modalities:
-            if modality in Blip2VicunaXInstruct.SEQUENCIAL_MODALITIES and getattr(self,
-                                                                                  f'{modality}_enc_name') in Blip2VicunaXInstruct.SEQUENCIAL_ENCODERS:
+            if modality in XInstructBLIP.SEQUENCIAL_MODALITIES and getattr(self,
+                                                                                  f'{modality}_enc_name') in XInstructBLIP.SEQUENCIAL_ENCODERS:
                 # num*bs, num query tokens, llm emb size
                 if self.projection_only or getattr(self, f"projection_only_{modality}"):
                     if self.proj_dim != 1:
@@ -732,7 +732,7 @@ class XInstructBLIP(Blip2Base):
             data = samples[modality]
             ln = getattr(self, f"{modality}_ln")
             encoder = getattr(self, f"{modality}_encoder")
-            if modality == "video" and self.video_enc_name in Blip2VicunaXInstruct.SEQUENCIAL_ENCODERS:
+            if modality == "video" and self.video_enc_name in XInstructBLIP.SEQUENCIAL_ENCODERS:
                 embeds[modality] = []
                 data_atts[modality] = []
                 for j in range(data.size(2)):
@@ -746,7 +746,7 @@ class XInstructBLIP(Blip2Base):
                 # B, Token Size, LM EMB
                 query_tokens[modality] = getattr(self, f"{modality}_query_tokens").expand(data.size(0), -1, -1)
 
-            elif modality == 'audio' and self.audio_enc_name in Blip2VicunaXInstruct.SEQUENCIAL_ENCODERS:
+            elif modality == 'audio' and self.audio_enc_name in XInstructBLIP.SEQUENCIAL_ENCODERS:
                 embeds[modality] = []
                 data_atts[modality] = []
                 for j in range(data.size(1)):
@@ -792,8 +792,8 @@ class XInstructBLIP(Blip2Base):
                         self.device)
                     # B, Token Size + Inp Size
                     Qformer_atts[modality] = torch.cat([query_atts[modality], text_Qformer.attention_mask], dim=1)
-                if modality in Blip2VicunaXInstruct.SEQUENCIAL_MODALITIES and getattr(self,
-                                                                                      f'{modality}_enc_name') in Blip2VicunaXInstruct.SEQUENCIAL_ENCODERS:
+                if modality in XInstructBLIP.SEQUENCIAL_MODALITIES and getattr(self,
+                                                                                      f'{modality}_enc_name') in XInstructBLIP.SEQUENCIAL_ENCODERS:
                     num[modality] = len(embeds[modality])
                     bs = embeds[modality][0].shape[0]
                     indices = [j_ + r for r, j in enumerate([[i * bs for i in range(num[modality])]] * bs) for j_ in j]
@@ -831,8 +831,8 @@ class XInstructBLIP(Blip2Base):
         else:
             num = {}
             for modality in curr_modalities:
-                if modality in Blip2VicunaXInstruct.SEQUENCIAL_MODALITIES and getattr(self,
-                                                                                      f'{modality}_enc_name') in Blip2VicunaXInstruct.SEQUENCIAL_ENCODERS:
+                if modality in XInstructBLIP.SEQUENCIAL_MODALITIES and getattr(self,
+                                                                                      f'{modality}_enc_name') in XInstructBLIP.SEQUENCIAL_ENCODERS:
                     num[modality] = len(embeds[modality])
                     bs = embeds[modality][0].shape[0]
                     indices = [j_ + r for r, j in enumerate([[i * bs for i in range(num[modality])]] * bs) for j_ in j]
@@ -865,8 +865,8 @@ class XInstructBLIP(Blip2Base):
                         encoder_attention_mask=data_atts[modality], return_dict=True, )
 
         for modality in curr_modalities:
-            if modality in Blip2VicunaXInstruct.SEQUENCIAL_MODALITIES and getattr(self,
-                                                                                  f'{modality}_enc_name') in Blip2VicunaXInstruct.SEQUENCIAL_ENCODERS:
+            if modality in XInstructBLIP.SEQUENCIAL_MODALITIES and getattr(self,
+                                                                                  f'{modality}_enc_name') in XInstructBLIP.SEQUENCIAL_ENCODERS:
                 if self.projection_only or getattr(self, f"projection_only_{modality}"):
                     if self.proj_dim != 1:
                         query_outputs[f'llm_proj_{modality}'] = getattr(self, f"{modality}_llm_proj")(
@@ -961,11 +961,11 @@ class XInstructBLIP(Blip2Base):
                 prompt = [f'{t}{self.postfix}' for t in prompt]
             if self.enumerate_inputs:
                 prompt = [
-                    f'{self.prefix}(a){Blip2VicunaXInstruct.MODALITY_TO_CUE[samples["modalities"][i][0]] if self.use_cues else " "}{samples["baseline_captions"][i][0]} (b){Blip2VicunaXInstruct.MODALITY_TO_CUE[samples["modalities"][i][1]] if self.use_cues else " "}{samples["baseline_captions"][i][1]} {prompt[i]}'
+                    f'{self.prefix}(a){XInstructBLIP.MODALITY_TO_CUE[samples["modalities"][i][0]] if self.use_cues else " "}{samples["baseline_captions"][i][0]} (b){XInstructBLIP.MODALITY_TO_CUE[samples["modalities"][i][1]] if self.use_cues else " "}{samples["baseline_captions"][i][1]} {prompt[i]}'
                     for i in range(bs)]
             else:
                 prompt = [
-                    f'{self.prefix}{Blip2VicunaXInstruct.MODALITY_TO_CUE[samples["modalities"][i][0]]}{samples["baseline_captions"][i][0] if self.use_cues else " "}{Blip2VicunaXInstruct.MODALITY_TO_CUE[samples["modalities"][i][1]] if self.use_cues else " "}{samples["baseline_captions"][i][1]} {prompt[i]}'
+                    f'{self.prefix}{XInstructBLIP.MODALITY_TO_CUE[samples["modalities"][i][0]]}{samples["baseline_captions"][i][0] if self.use_cues else " "}{XInstructBLIP.MODALITY_TO_CUE[samples["modalities"][i][1]] if self.use_cues else " "}{samples["baseline_captions"][i][1]} {prompt[i]}'
                     for i in range(bs)]
             llm_tokens = self.llm_tokenizer(prompt, padding="longest", return_tensors="pt").to(self.device)
             inputs_embeds = self.llm_model.get_input_embeddings()(llm_tokens.input_ids)
@@ -1064,8 +1064,8 @@ class XInstructBLIP(Blip2Base):
         num = {}
         if self.qformer_text_input:
             for modality in curr_modalities:
-                if modality in Blip2VicunaXInstruct.SEQUENCIAL_MODALITIES and getattr(self,
-                                                                                      f'{modality}_enc_name') in Blip2VicunaXInstruct.SEQUENCIAL_ENCODERS:
+                if modality in XInstructBLIP.SEQUENCIAL_MODALITIES and getattr(self,
+                                                                                      f'{modality}_enc_name') in XInstructBLIP.SEQUENCIAL_ENCODERS:
                     num[modality] = len(embeds[modality])
                     bs = embeds[modality][0].shape[0]
                     indices = [j_ + r for r, j in enumerate([[i * bs for i in range(num[modality])]] * bs) for j_ in j]
@@ -1103,8 +1103,8 @@ class XInstructBLIP(Blip2Base):
                         encoder_attention_mask=data_atts[modality], return_dict=True, )
         else:
             for modality in curr_modalities:
-                if modality in Blip2VicunaXInstruct.SEQUENCIAL_MODALITIES and getattr(self,
-                                                                                      f'{modality}_enc_name') in Blip2VicunaXInstruct.SEQUENCIAL_ENCODERS:
+                if modality in XInstructBLIP.SEQUENCIAL_MODALITIES and getattr(self,
+                                                                                      f'{modality}_enc_name') in XInstructBLIP.SEQUENCIAL_ENCODERS:
                     num[modality] = len(embeds[modality])
                     bs = embeds[modality][0].shape[0]
                     indices = [j_ + r for r, j in enumerate([[i * bs for i in range(num[modality])]] * bs) for j_ in j]
@@ -1144,8 +1144,8 @@ class XInstructBLIP(Blip2Base):
         enumeration = {}
 
         for i, modality in enumerate(curr_modalities):
-            if modality in Blip2VicunaXInstruct.SEQUENCIAL_MODALITIES and getattr(self,
-                                                                                  f'{modality}_enc_name') in Blip2VicunaXInstruct.SEQUENCIAL_ENCODERS:
+            if modality in XInstructBLIP.SEQUENCIAL_MODALITIES and getattr(self,
+                                                                                  f'{modality}_enc_name') in XInstructBLIP.SEQUENCIAL_ENCODERS:
                 if self.projection_only or getattr(self, f"projection_only_{modality}"):
                     if self.proj_dim != 1:
                         inputs_llm[modality] = getattr(self, f"{modality}_llm_proj")(
@@ -1344,11 +1344,11 @@ class XInstructBLIP(Blip2Base):
                 text_input = [f'{t}{self.postfix}' for t in text_input]
             if self.enumerate_inputs:
                 prompt = [
-                    f'{self.prefix}(a){Blip2VicunaXInstruct.MODALITY_TO_CUE[samples["modalities"][i][0]] if self.use_cues else " "}{samples["baseline_captions"][i][0]} (b){Blip2VicunaXInstruct.MODALITY_TO_CUE[samples["modalities"][i][1]] if self.use_cues else " "}{samples["baseline_captions"][i][1]} {text_input[i]}'
+                    f'{self.prefix}(a){XInstructBLIP.MODALITY_TO_CUE[samples["modalities"][i][0]] if self.use_cues else " "}{samples["baseline_captions"][i][0]} (b){XInstructBLIP.MODALITY_TO_CUE[samples["modalities"][i][1]] if self.use_cues else " "}{samples["baseline_captions"][i][1]} {text_input[i]}'
                     for i in range(bs)]
             else:
                 prompt = [
-                    f'{self.prefix}{Blip2VicunaXInstruct.MODALITY_TO_CUE[samples["modalities"][i][0]]}{samples["baseline_captions"][i][0] if self.use_cues else " "}{Blip2VicunaXInstruct.MODALITY_TO_CUE[samples["modalities"][i][1]] if self.use_cues else " "}{samples["baseline_captions"][i][1]} {text_input[i]}'
+                    f'{self.prefix}{XInstructBLIP.MODALITY_TO_CUE[samples["modalities"][i][0]]}{samples["baseline_captions"][i][0] if self.use_cues else " "}{XInstructBLIP.MODALITY_TO_CUE[samples["modalities"][i][1]] if self.use_cues else " "}{samples["baseline_captions"][i][1]} {text_input[i]}'
                     for i in range(bs)]
             llm_tokens = self.llm_tokenizer(prompt, padding="longest", return_tensors="pt").to(self.device)
 
