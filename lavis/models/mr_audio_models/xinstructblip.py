@@ -275,7 +275,7 @@ class XInstructBLIP(Blip2Base):
         att_list = []
         inp_list = []
 
-        # Joint video audio
+        # Joint video video
         for pos in range(num['video']):
             if self.enumerate_inputs:
                 enumeration_pos = self.llm_tokenizer([f"{'' if pos == 0 else ' '}({chr(97 + pos)}) " for _ in prompt],
@@ -287,12 +287,12 @@ class XInstructBLIP(Blip2Base):
                 att_list.extend([enumeration_atts_llm])
 
             # Cues
-            for modality in ['video', 'audio']:
-                att_list.extend([torch.tensor(self.tokenized_cue[modality].attention_mask).to(self.device).repeat(
-                    atts_llm[modality].shape[0], 1),
-                    atts_llm[modality].view(bs, num[modality], self.num_query_token)[:, pos, :]])
-                inp_list.extend([self.emb_cue[modality].to(self.device).repeat(inputs_llm[modality].shape[0], 1, 1),
-                                 inputs_llm[modality].view(bs, num[modality], self.num_query_token, -1)[:, pos, :, :]])
+            for i in range(2):
+                att_list.extend([torch.tensor(self.tokenized_cue['video'].attention_mask).to(self.device).repeat(
+                    atts_llm['video'].shape[0], 1),
+                    atts_llm['video'].view(bs, num['video'], self.num_query_token)[:, pos, :]])
+                inp_list.extend([self.emb_cue['video'].to(self.device).repeat(inputs_llm['video'].shape[0], 1, 1),
+                                 inputs_llm['video'].view(bs, num['video'], self.num_query_token, -1)[:, pos, :, :]])
 
             if self.interleave_seconds:
                 inp_list.extend([timestamp_inputs_llm[:, pos, :, :]])
