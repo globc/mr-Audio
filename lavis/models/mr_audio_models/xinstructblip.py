@@ -87,7 +87,7 @@ class XInstructBLIP(Blip2Base):
             model_path,
             audio_path,
             enumerate_inputs=False,
-            modalities=["audio", "video"],
+            modalities=["video"],
             lora=True,
             interleave_seconds=True,
             finetuned="",
@@ -235,8 +235,7 @@ class XInstructBLIP(Blip2Base):
                 param.requires_grad = False
 
         self.MODALITY_TO_CUE = {
-            "video": " video: ",
-            "audio": " audio: ",
+            "video": " video: "
         }
 
         self.tokenized_cue = {}
@@ -292,15 +291,6 @@ class XInstructBLIP(Blip2Base):
                         data_atts[modality].append(
                             torch.ones(embeds[modality][j].size()[:-1], dtype=torch.long).to(self.device))
 
-            elif modality == 'audio':
-                embeds[modality] = []
-                data_atts[modality] = []
-                for j in range(data.size(1)):
-                    this_frame = data[:, j, :, :]
-                    with self.maybe_autocast():
-                        embeds[modality].append(ln(encoder(this_frame)))
-                    data_atts[modality].append(
-                        torch.ones(embeds[modality][j].size()[:-1], dtype=torch.long).to(self.device))
 
         query_outputs = {}
         num = {}
@@ -386,7 +376,7 @@ class XInstructBLIP(Blip2Base):
                 att_list.extend([enumeration_atts_llm])
 
             # Cues
-            for modality in ['video', 'audio']:
+            for modality in ['video']:
                 att_list.extend([torch.tensor(self.tokenized_cue[modality].attention_mask).to(self.device).repeat(
                     atts_llm[modality].shape[0], 1),
                     atts_llm[modality].view(bs, num[modality], self.num_query_token)[:, pos, :]])
@@ -483,20 +473,6 @@ class XInstructBLIP(Blip2Base):
                 # B, Token Size, LM EMB
                 query_tokens[modality] = getattr(self, f"{modality}_query_tokens").expand(data.size(0), -1, -1)
 
-            elif modality == 'audio':
-                embeds[modality] = []
-                data_atts[modality] = []
-                for j in range(data.size(1)):
-                    this_frame = data[:, j, :, :]
-                    with self.maybe_autocast():
-                        embed = ln(encoder(this_frame))
-                        embed = self.normalize_embedding(embed)
-                        embeds[modality].append(embed)
-                    data_atts[modality].append(
-                        torch.ones(embed.size()[:-1], dtype=torch.long).to(self.device)
-                    )
-                # B, Token Size, LM EMB
-                query_tokens[modality] = getattr(self, f"{modality}_query_tokens").expand(data.size(0), -1, -1)
 
         query_outputs = {}
         text_Qformer = self.tokenizer(
@@ -625,7 +601,7 @@ class XInstructBLIP(Blip2Base):
                 inp_list.extend([enumeration_inputs_llm])
                 att_list.extend([enumeration_atts_llm])
 
-            for modality in ['video', 'audio']:
+            for modality in ['video']:
                 att_list.extend([torch.tensor(self.tokenized_cue[modality].attention_mask).to(self.device).repeat(
                     atts_llm[modality].shape[0], 1),
                                  atts_llm[modality].view(bs, num[modality], self.num_query_token)[:, pos, :]])
