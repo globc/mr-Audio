@@ -4,15 +4,15 @@ import random
 
 import torch
 import torch.nn as nn
-from peft import get_peft_model
+from peft import (get_peft_model, )
 from torch.nn.modules.module import _IncompatibleKeys
-from transformers import LlamaTokenizer, LlamaForCausalLM
+from transformers import LlamaConfig, GenerationConfig
 
 from lavis.common.dist_utils import download_cached_file
 from lavis.common.registry import registry
 from lavis.common.utils import is_url
 from lavis.models.blip2_models.Qformer import BertConfig, BertLMHeadModel
-from lavis.models.blip2_models.blip2 import Blip2Base, disabled_train
+from lavis.models.blip2_models.blip2 import Blip2Base, disabled_train, LayerNorm
 from lavis.models.blip2_mr_models.utils import post_process
 from lavis.models.eva_vit import create_eva_vit_g
 
@@ -103,14 +103,24 @@ class XInstructBLIP(Blip2Base):
             setattr(self, f"{modality}_Qformer", modality_qformer)
             setattr(self, f"{modality}_query_tokens", modality_query_tokens)
 
+        from transformers import LlamaTokenizer ,LlamaForCausalLM
+
+        ### Set up LLM ###
         self.llm_tokenizer = LlamaTokenizer.from_pretrained(model_path, use_fast=False, truncation_side="left")
         self.llm_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
         self.llm_tokenizer.add_special_tokens({'bos_token': '</s>'})
         self.llm_tokenizer.add_special_tokens({'eos_token': '</s>'})
         self.llm_tokenizer.add_special_tokens({'unk_token': '</s>'})
 
+
+
         if self.lora:
             from lavis.models.mr_audio_models.utils import get_peft_config
+
+            self.generation_config = GenerationConfig(
+                bad_words_ids=[[ord(c) for c in 'abcdefghijklmnopqrstuvwxyz']],
+                force_words_ids=[[ord('[')], [ord(']')], [ord(',')]],
+            )
             self.llm_model = LlamaForCausalLM.from_pretrained(model_path, load_in_8bit=True, torch_dtype=torch.float16)
             self.llm_model.resize_token_embeddings(len(self.llm_tokenizer))
 
@@ -171,28 +181,18 @@ class XInstructBLIP(Blip2Base):
 
     @torch.no_grad()
     def generate(self, samples):
-        self.llm_tokenizer.padding_side = "left"
-        curr_modalities = self.modalities
-        bs = samples["video"].size(0)
-        prompt = samples["text_input"]
 
-        query_tokens = {}
-        for modality in curr_modalities:
-            query_tokens[modality] = getattr(self, f"{modality}_query_tokens").expand(bs, -1, -1)
+        print(f"samples len {len(samples)}")
 
-        text_Qformer = self.tokenizer(prompt, padding='longest', truncation=True, max_length=self.max_txt_len,
-                                      return_tensors="pt", ).to(self.device)
+        if samples is None or samples == {} or not any([modality in samples for modality in self.modalities]):
+            return {"loss": torch.tensor(0.0)}
 
-        Qformer_atts = {}
-        query_atts = {}
+        random.shuffle(self.modalities)
 
-        for modality in curr_modalities:
-            # B, Token Size
-            query_atts[modality] = torch.ones(query_tokens[modality].size()[:-1], dtype=torch.long).to(self.device)
-            # B, Token Size + Inp Size
-            Qformer_atts[modality] = torch.cat([query_atts[modality], text_Qformer.attention_mask], dim=1)
+        curr_modalities = [modality for modality in self.modalities if modality in samples]
 
         embeds = {}
+        query_tokens = {}
         data_atts = {}
         for modality in curr_modalities:
             data = samples[modality]
@@ -207,6 +207,8 @@ class XInstructBLIP(Blip2Base):
                         embeds[modality].append(ln(encoder(this_frame)))
                         data_atts[modality].append(
                             torch.ones(embeds[modality][j].size()[:-1], dtype=torch.long).to(self.device))
+                # B, Token Size, LM EMB
+                query_tokens[modality] = getattr(self, f"{modality}_query_tokens").expand(data.size(0), -1, -1)
 
             elif modality == 'audio':
                 embeds[modality] = []
@@ -217,10 +219,21 @@ class XInstructBLIP(Blip2Base):
                         embeds[modality].append(ln(encoder(this_frame)))
                     data_atts[modality].append(
                         torch.ones(embeds[modality][j].size()[:-1], dtype=torch.long).to(self.device))
+                # B, Token Size, LM EMB
+                query_tokens[modality] = getattr(self, f"{modality}_query_tokens").expand(data.size(0), -1, -1)
 
         query_outputs = {}
+        text_Qformer = self.tokenizer(samples["text_input"], padding='longest', truncation=True,
+                                      max_length=self.max_txt_len, return_tensors="pt", ).to(self.device)
+
+        Qformer_atts = {}
+        query_atts = {}
         num = {}
         for modality in curr_modalities:
+            # B, Token Size
+            query_atts[modality] = torch.ones(query_tokens[modality].size()[:-1], dtype=torch.long).to(self.device)
+            # B, Token Size + Inp Size
+            Qformer_atts[modality] = torch.cat([query_atts[modality], text_Qformer.attention_mask], dim=1)
             num[modality] = len(embeds[modality])
             bs = embeds[modality][0].shape[0]
             indices = [j_ + r for r, j in enumerate([[i * bs for i in range(num[modality])]] * bs) for j_ in j]
@@ -238,9 +251,7 @@ class XInstructBLIP(Blip2Base):
 
         inputs_llm = {}
         atts_llm = {}
-
-        for i, modality in enumerate(curr_modalities):
-            # num*bs, num query tokens, llm emb size
+        for modality in curr_modalities:
             inputs_llm[modality] = getattr(self, f"{modality}_llm_proj")(
                 query_outputs[modality].last_hidden_state[:, :query_tokens[modality].size(1), :])
             # bs, num, num query tokens, llm emb size -> bs, num*num query tokens, llm emb size
@@ -250,12 +261,35 @@ class XInstructBLIP(Blip2Base):
                                                                                                                   -1)
             atts_llm[modality] = torch.ones(inputs_llm[modality].size()[:-1], dtype=torch.long).to(self.device)
 
-        ## remove trailing whitespace
-        prompt = [p.strip() for p in prompt]
+        self.llm_tokenizer.padding_side = "right"
+        self.llm_tokenizer.truncation_side = 'left'
 
-        llm_tokens = self.llm_tokenizer(prompt, padding="longest", return_tensors="pt", add_special_tokens=False).to(
-            self.device)
-        bs = llm_tokens.input_ids.shape[0]
+        text_input_tokens = self.llm_tokenizer(samples['text_input'], return_tensors="pt", padding="longest",
+                                               truncation=True, max_length=self.max_txt_len,
+                                               add_special_tokens=True).to(self.device)
+
+        self.llm_tokenizer.truncation_side = 'right'
+        text_output_tokens = self.llm_tokenizer([t + self.llm_tokenizer.eos_token for t in samples['relevant_windows']],
+                                                return_tensors="pt", padding="longest", truncation=True,
+                                                max_length=self.max_output_txt_len, ).to(self.device)
+
+        llm_tokens, input_part_targets_len = concat_text_input_output(text_input_tokens.input_ids,
+                                                                      text_input_tokens.attention_mask,
+                                                                      text_output_tokens.input_ids,
+                                                                      text_output_tokens.attention_mask, )
+
+        # do not apply loss to the padding
+        targets = llm_tokens['input_ids'].masked_fill(llm_tokens['input_ids'] == self.llm_tokenizer.pad_token_id, -100)
+
+        # do not apply loss to the text input (i.e., instruction)
+        for i, l in enumerate(input_part_targets_len):
+            targets[i][:l] = -100
+
+        inputs_embeds = self.llm_model.get_input_embeddings()(llm_tokens['input_ids'])
+
+        bs = inputs_embeds.shape[0]
+
+        prompt = samples["text_input"]
 
         # Get timestamp embeds
         if self.interleave_seconds:
@@ -306,8 +340,7 @@ class XInstructBLIP(Blip2Base):
         duration_inputs_llm = self.llm_model.get_input_embeddings()(duration_tokens.input_ids)
         inp_list.append(duration_inputs_llm)
 
-        att_list.append(llm_tokens.attention_mask)
-        inputs_embeds = self.llm_model.get_input_embeddings()(llm_tokens.input_ids)
+        att_list.append(llm_tokens['attention_mask'])
         inp_list.append(inputs_embeds)
 
         attention_mask = torch.cat(att_list, dim=1)
@@ -315,7 +348,7 @@ class XInstructBLIP(Blip2Base):
 
         with self.maybe_autocast():
             outputs = self.llm_model.generate(inputs_embeds=inputs_embeds, attention_mask=attention_mask,
-                                              max_new_tokens=self.max_new_tokens, )
+                                              max_new_tokens=self.max_new_tokens,generation_config=self.generation_config )
         outputs[outputs == 0] = 2  # convert output id 0 to 2 (eos_token_id)
         output_text = self.llm_tokenizer.batch_decode(outputs, skip_special_tokens=True)
         output_text = [o.strip() for o in output_text]
@@ -513,6 +546,14 @@ class XInstructBLIP(Blip2Base):
                     modalities=modalities, lora=lora, interleave_seconds=interleave_seconds, finetuned=finetuned, )
 
         return model
+
+    @classmethod
+    def init_tokenizer(cls, truncation_side="right", model_path=None):
+        from transformers import BertTokenizer
+        tokenizer = BertTokenizer.from_pretrained("bert-base-uncased", truncation_side=truncation_side)
+        special_tokens = {'additional_special_tokens': ['[[', ']]', ',', '.']}
+        tokenizer.add_special_tokens(special_tokens)
+        return tokenizer
 
     @classmethod
     def init_Qformer(cls, num_query_token, modality_width, cross_attention_freq=2, pretrained_qformer=None,
