@@ -181,11 +181,9 @@ class XInstructBLIP(Blip2Base):
 
     @torch.no_grad()
     def generate(self, samples):
-
-        print(f"samples len {len(samples)}")
-
         if samples is None or samples == {} or not any([modality in samples for modality in self.modalities]):
-            return {"loss": torch.tensor(0.0)}
+            print("invalid modality")
+            return [[-1,-1]]
 
         random.shuffle(self.modalities)
 
