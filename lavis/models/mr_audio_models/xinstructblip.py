@@ -315,9 +315,14 @@ class XInstructBLIP(Blip2Base):
 
         with self.maybe_autocast():
             outputs = self.llm_model.generate(inputs_embeds=inputs_embeds, attention_mask=attention_mask,
-                                              max_new_tokens=self.max_new_tokens, )
-        outputs[outputs == 0] = 2  # convert output id 0 to 2 (eos_token_id)
-        output_text = self.llm_tokenizer.batch_decode(outputs, skip_special_tokens=True)
+                                              max_new_tokens=self.max_new_tokens,
+                                              eos_token_id=self.llm_tokenizer.eos_token_id)
+        valid_token_ids = set(self.llm_tokenizer.vocab.values())
+        outputs = torch.tensor(
+            [token_id if token_id in valid_token_ids else self.llm_tokenizer.eos_token_id for token_id in
+             outputs.flatten()]).view(outputs.shape)
+
+        output_text = self.llm_tokenizer.batch_decode(outputs, skip_special_tokens=True,clean_up_tokenization_spaces=True)
         output_text = [o.strip() for o in output_text]
         print(output_text)
 
