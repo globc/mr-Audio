@@ -370,13 +370,13 @@ class XInstructBLIP(Blip2Base):
 
             print("Clean Output sequences:")
             print(sequences)
-            print("Output score:")
-            print(outputs.score)
-            print("Output encoder_attentions:")
-            print(outputs.encoder_attentions)
-            print("Output decoder_attentions:")
-            print(outputs.decoder_attentions)
-            output_text = self.llm_tokenizer.batch_decode(sequences, skip_special_tokens=True)
+            print("Output scores:")
+            print(outputs.scores)
+            print("Output attentions:")
+            print(outputs.attentions)
+            print("Output hidden_states:")
+            print(outputs.hidden_states)
+            output_text = self.llm_tokenizer.batch_decode(sequences=sequences, skip_special_tokens=True)
             output_text = [o.strip() for o in output_text]
             print("Output Text:")
             print(output_text)
@@ -576,14 +576,6 @@ class XInstructBLIP(Blip2Base):
                     modalities=modalities, lora=lora, interleave_seconds=interleave_seconds, finetuned=finetuned, )
 
         return model
-
-    @classmethod
-    def init_tokenizer(cls, truncation_side="right", model_path=None):
-        from transformers import BertTokenizer
-        tokenizer = BertTokenizer.from_pretrained("bert-base-uncased", truncation_side=truncation_side)
-        special_tokens = {'additional_special_tokens': ['[[', ']]', ',', '.']}
-        tokenizer.add_special_tokens(special_tokens)
-        return tokenizer
 
     @classmethod
     def init_Qformer(cls, num_query_token, modality_width, cross_attention_freq=2, pretrained_qformer=None,
