@@ -118,11 +118,15 @@ class XInstructBLIP(Blip2Base):
             from lavis.models.mr_audio_models.utils import get_peft_config
 
             self.generation_config = GenerationConfig(
+                use_cache=True,
                 bad_words_ids=[[ord(c) for c in 'abcdefghijklmnopqrstuvwxyz']],
                 force_words_ids=[[ord('[')], [ord(']')], [ord(',')]],
             )
             self.llm_model = LlamaForCausalLM.from_pretrained(model_path, load_in_8bit=True, torch_dtype=torch.float16)
             self.llm_model.resize_token_embeddings(len(self.llm_tokenizer))
+
+            self.llm_model.config.bad_words_ids = [[ord(c) for c in 'abcdefghijklmnopqrstuvwxyz']]
+            print(self.llm_model.config)
 
             # reduce memory usage
             self.llm_model.gradient_checkpointing_enable()  # does not work with find_unused_parameters = True
@@ -346,7 +350,7 @@ class XInstructBLIP(Blip2Base):
 
         with self.maybe_autocast():
             outputs = self.llm_model.generate(inputs_embeds=inputs_embeds, attention_mask=attention_mask,
-                                              max_new_tokens=self.max_new_tokens,generation_config=self.generation_config )
+                                              max_new_tokens=self.max_new_tokens)
         outputs[outputs == 0] = 2  # convert output id 0 to 2 (eos_token_id)
         output_text = self.llm_tokenizer.batch_decode(outputs, skip_special_tokens=True)
         output_text = [o.strip() for o in output_text]
