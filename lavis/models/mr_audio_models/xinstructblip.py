@@ -205,10 +205,10 @@ class XInstructBLIP(Blip2Base):
                 data_atts[modality] = []
                 for j in range(data.size(2)):
                     this_frame = data[:, :, j, :, :]
-                    with self.maybe_autocast():
+                    with self.maybe_autocast(dtype=torch.bfloat16):
                         embeds[modality].append(ln(encoder(this_frame)))
                         data_atts[modality].append(
-                            torch.ones(embeds[modality][j].size()[:-1], dtype=torch.long).to(self.device))
+                            torch.ones(embeds[modality][j].size()[:-1], dtype=torch.int16).to(self.device))
                 # B, Token Size, LM EMB
                 query_tokens[modality] = getattr(self, f"{modality}_query_tokens").expand(data.size(0), -1, -1)
 
@@ -217,10 +217,10 @@ class XInstructBLIP(Blip2Base):
                 data_atts[modality] = []
                 for j in range(data.size(1)):
                     this_frame = data[:, j, :, :]
-                    with self.maybe_autocast():
+                    with self.maybe_autocast(dtype=torch.bfloat16):
                         embeds[modality].append(ln(encoder(this_frame)))
                     data_atts[modality].append(
-                        torch.ones(embeds[modality][j].size()[:-1], dtype=torch.long).to(self.device))
+                        torch.ones(embeds[modality][j].size()[:-1], dtype=torch.int16).to(self.device))
                 # B, Token Size, LM EMB
                 query_tokens[modality] = getattr(self, f"{modality}_query_tokens").expand(data.size(0), -1, -1)
 
@@ -233,7 +233,7 @@ class XInstructBLIP(Blip2Base):
         num = {}
         for modality in curr_modalities:
             # B, Token Size
-            query_atts[modality] = torch.ones(query_tokens[modality].size()[:-1], dtype=torch.long).to(self.device)
+            query_atts[modality] = torch.ones(query_tokens[modality].size()[:-1], dtype=torch.int16).to(self.device)
             # B, Token Size + Inp Size
             Qformer_atts[modality] = torch.cat([query_atts[modality], text_Qformer.attention_mask], dim=1)
             num[modality] = len(embeds[modality])
@@ -261,7 +261,7 @@ class XInstructBLIP(Blip2Base):
                                                                                                                   num[
                                                                                                                       modality] * self.num_query_token,
                                                                                                                   -1)
-            atts_llm[modality] = torch.ones(inputs_llm[modality].size()[:-1], dtype=torch.long).to(self.device)
+            atts_llm[modality] = torch.ones(inputs_llm[modality].size()[:-1], dtype=torch.int16).to(self.device)
 
         self.llm_tokenizer.padding_side = "right"
         self.llm_tokenizer.truncation_side = 'left'
@@ -348,9 +348,13 @@ class XInstructBLIP(Blip2Base):
         attention_mask = torch.cat(att_list, dim=1)
         inputs_embeds = torch.cat(inp_list, dim=1)
 
-        with self.maybe_autocast():
+        device_type = "cuda" if "cuda" in str(self.device) else "cpu"
+        with torch.amp.autocast(device_type=device_type, dtype=torch.bfloat16):
             outputs = self.llm_model.generate(inputs_embeds=inputs_embeds, attention_mask=attention_mask,
-                                              max_new_tokens=self.max_new_tokens)
+                                              max_new_tokens=self.max_new_tokens,return_dict_in_generate=True,
+                                              output_hidden_states=True,
+                                              output_scores=True,
+                                              output_attentions=False)
         outputs[outputs == 0] = 2  # convert output id 0 to 2 (eos_token_id)
         output_text = self.llm_tokenizer.batch_decode(outputs, skip_special_tokens=True)
         output_text = [o.strip() for o in output_text]
@@ -382,10 +386,10 @@ class XInstructBLIP(Blip2Base):
                 data_atts[modality] = []
                 for j in range(data.size(2)):
                     this_frame = data[:, :, j, :, :]
-                    with self.maybe_autocast():
+                    with self.maybe_autocast(dtype=torch.bfloat16):
                         embeds[modality].append(ln(encoder(this_frame)))
                         data_atts[modality].append(
-                            torch.ones(embeds[modality][j].size()[:-1], dtype=torch.long).to(self.device))
+                            torch.ones(embeds[modality][j].size()[:-1], dtype=torch.int16).to(self.device))
                 # B, Token Size, LM EMB
                 query_tokens[modality] = getattr(self, f"{modality}_query_tokens").expand(data.size(0), -1, -1)
 
@@ -394,10 +398,10 @@ class XInstructBLIP(Blip2Base):
                 data_atts[modality] = []
                 for j in range(data.size(1)):
                     this_frame = data[:, j, :, :]
-                    with self.maybe_autocast():
+                    with self.maybe_autocast(dtype=torch.bfloat16):
                         embeds[modality].append(ln(encoder(this_frame)))
                     data_atts[modality].append(
-                        torch.ones(embeds[modality][j].size()[:-1], dtype=torch.long).to(self.device))
+                        torch.ones(embeds[modality][j].size()[:-1], dtype=torch.int16).to(self.device))
                 # B, Token Size, LM EMB
                 query_tokens[modality] = getattr(self, f"{modality}_query_tokens").expand(data.size(0), -1, -1)
 
@@ -410,7 +414,7 @@ class XInstructBLIP(Blip2Base):
         num = {}
         for modality in curr_modalities:
             # B, Token Size
-            query_atts[modality] = torch.ones(query_tokens[modality].size()[:-1], dtype=torch.long).to(self.device)
+            query_atts[modality] = torch.ones(query_tokens[modality].size()[:-1], dtype=torch.int16).to(self.device)
             # B, Token Size + Inp Size
             Qformer_atts[modality] = torch.cat([query_atts[modality], text_Qformer.attention_mask], dim=1)
             num[modality] = len(embeds[modality])
@@ -438,7 +442,7 @@ class XInstructBLIP(Blip2Base):
                                                                                                                   num[
                                                                                                                       modality] * self.num_query_token,
                                                                                                                   -1)
-            atts_llm[modality] = torch.ones(inputs_llm[modality].size()[:-1], dtype=torch.long).to(self.device)
+            atts_llm[modality] = torch.ones(inputs_llm[modality].size()[:-1], dtype=torch.int16).to(self.device)
 
         self.llm_tokenizer.padding_side = "right"
         self.llm_tokenizer.truncation_side = 'left'
@@ -518,7 +522,7 @@ class XInstructBLIP(Blip2Base):
         inp_list.append(duration_inputs_llm)
 
         # do not apply loss to the query tokens
-        empty_targets = (torch.ones(torch.cat(att_list, dim=1).size(), dtype=torch.long).to(self.device).fill_(-100))
+        empty_targets = (torch.ones(torch.cat(att_list, dim=1).size(), dtype=torch.int16).to(self.device).fill_(-100))
 
         # append llm prompt + output to queries
         att_list.append(llm_tokens['attention_mask'])
@@ -528,7 +532,7 @@ class XInstructBLIP(Blip2Base):
         attention_mask = torch.cat(att_list, dim=1)
         targets = torch.cat([empty_targets, targets], dim=1)
 
-        with self.maybe_autocast():
+        with self.maybe_autocast(dtype=torch.bfloat16):
             outputs = self.llm_model(inputs_embeds=inputs_embeds, attention_mask=attention_mask, return_dict=True,
                                      labels=targets, )
 
