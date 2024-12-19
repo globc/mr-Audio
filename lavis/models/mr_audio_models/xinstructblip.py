@@ -363,6 +363,8 @@ class XInstructBLIP(Blip2Base):
             print("inputs_embeds shape:", inputs_embeds.shape)
             print("attention_mask shape:", attention_mask.shape)
 
+            print("llm_tokenizer.get_vocab:", self.llm_tokenizer.get_vocab())
+            print("llm_tokenizer.get_special_tokens_mask:", self.llm_tokenizer.get_special_tokens_mask())
 
             print("Output sequences:")
             print(outputs.sequences)
