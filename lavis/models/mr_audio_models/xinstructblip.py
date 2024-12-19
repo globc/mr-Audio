@@ -8,12 +8,14 @@ from peft import (get_peft_model, )
 from torch.nn.modules.module import _IncompatibleKeys
 from transformers import LlamaConfig, GenerationConfig
 from transformers.generation import GreedySearchDecoderOnlyOutput
+from transformers.models.llama.tokenization_llama_fast import LlamaTokenizer
 
 from lavis.common.dist_utils import download_cached_file
 from lavis.common.registry import registry
 from lavis.common.utils import is_url
 from lavis.models.blip2_models.Qformer import BertConfig, BertLMHeadModel
 from lavis.models.blip2_models.blip2 import Blip2Base, disabled_train, LayerNorm
+from lavis.models.blip2_models.modeling_llama import LlamaForCausalLM
 from lavis.models.blip2_mr_models.utils import post_process
 from lavis.models.eva_vit import create_eva_vit_g
 
@@ -104,7 +106,6 @@ class XInstructBLIP(Blip2Base):
             setattr(self, f"{modality}_Qformer", modality_qformer)
             setattr(self, f"{modality}_query_tokens", modality_query_tokens)
 
-        from transformers import LlamaTokenizer ,LlamaForCausalLM
 
         ### Set up LLM ###
         self.llm_tokenizer = LlamaTokenizer.from_pretrained(model_path, use_fast=False, truncation_side="left")
@@ -351,23 +352,21 @@ class XInstructBLIP(Blip2Base):
         inputs_embeds = torch.cat(inp_list, dim=1)
 
         device_type = "cuda" if "cuda" in str(self.device) else "cpu"
-        with torch.amp.autocast(device_type=device_type, dtype=torch.bfloat16):
+        with torch.amp.autocast(device_type=device_type):
             outputs = self.llm_model.generate(inputs_embeds=inputs_embeds, attention_mask=attention_mask,
                                               max_new_tokens=self.max_new_tokens,return_dict_in_generate=True,
                                               output_hidden_states=True,
                                               output_scores=True,
-
-
                                               output_attentions=False)
 
         if type(outputs) == GreedySearchDecoderOnlyOutput:
+            print("inputs_embeds shape:", inputs_embeds.shape)
+            print("attention_mask shape:", attention_mask.shape)
+
 
             print("Output sequences:")
             print(outputs.sequences)
-            sequences = outputs.sequences
-            for sequence in sequences:
-                sequence[sequence < 0] = 0
-
+            sequences = torch.clamp(outputs.sequences, min=0)
             print("Clean Output sequences:")
             print(sequences)
             print("Output scores:")
