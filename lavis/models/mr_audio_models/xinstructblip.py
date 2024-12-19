@@ -355,9 +355,11 @@ class XInstructBLIP(Blip2Base):
                                               output_hidden_states=True,
                                               output_scores=True,
                                               output_attentions=False)
-        outputs[outputs == 0] = 2  # convert output id 0 to 2 (eos_token_id)
         print("Outputs:")
         print(outputs)
+        mask = torch.zeros_like(outputs)
+        mask[outputs == 0] = 2
+        outputs = torch.where(mask, outputs, 2)
         output_text = self.llm_tokenizer.batch_decode(outputs, skip_special_tokens=True)
         output_text = [o.strip() for o in output_text]
         print(output_text)
