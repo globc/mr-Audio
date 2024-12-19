@@ -115,6 +115,7 @@ class XInstructBLIP(Blip2Base):
 
 
 
+
         if self.lora:
             from lavis.models.mr_audio_models.utils import get_peft_config
 
@@ -360,11 +361,24 @@ class XInstructBLIP(Blip2Base):
                                               output_attentions=False)
 
         if type(outputs) == GreedySearchDecoderOnlyOutput:
-            outputs = outputs.sequences
+
             print("Output sequences:")
-            print(outputs)
-            output_text = self.llm_tokenizer.batch_decode(outputs, skip_special_tokens=True)
+            print(outputs.sequences)
+            sequences = outputs.sequences
+            for sequence in sequences:
+                sequence[sequence < 0] = 0
+
+            print("Clean Output sequences:")
+            print(sequences)
+            print("Output score:")
+            print(outputs.score)
+            print("Output encoder_attentions:")
+            print(outputs.encoder_attentions)
+            print("Output decoder_attentions:")
+            print(outputs.decoder_attentions)
+            output_text = self.llm_tokenizer.batch_decode(sequences, skip_special_tokens=True)
             output_text = [o.strip() for o in output_text]
+            print("Output Text:")
             print(output_text)
         else:
             print("Output sequences: error")
