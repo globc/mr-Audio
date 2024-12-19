@@ -36,12 +36,11 @@ class CastOutputToFloat(nn.Sequential):
 
 
 @registry.register_model("blip2_vicuna_xinstruct_mr")
-class Blip2VicunaXInstruct(Blip2Base):
+class XInstructBLIP(Blip2Base):
     """
     BLIP2 Vicuna model.
     Supported model types:
         - vicuna7b
-        - vicuna13b
     Usage:
         >>> from lavis.models import load_model
         >>> model = load_model("blip2_vicuna_xinstruct", "vicuna7b")
