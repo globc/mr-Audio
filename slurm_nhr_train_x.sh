@@ -20,9 +20,9 @@ export HPC_SCRATCH=$WORK
 
 ml gcc/11 cuda/11.8
 source ~/miniconda3/bin/activate
-conda activate mraudio
-# pip install git+https://github.com/salesforce/LAVIS --no-deps
-# pip install -r requirements_xinstructblip.txt
+conda activate mraudio2
+pip install -r requirements_xinstructblip.txt
+export CFG_PATH=lavis/projects/mr_Audio/train/xinstructblip/qvh_nhr.yaml
 
 ./run_scripts/mr_Audio/train/X-InstructBLIP/qvh.sh
 conda deactivate
