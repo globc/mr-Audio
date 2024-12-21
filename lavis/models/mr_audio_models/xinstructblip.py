@@ -442,6 +442,17 @@ class Blip2VicunaXInstruct(Blip2Base):
                         )
                 setattr(self, f"{modality}_llm_proj", proj)
 
+        # Freeze QFormers
+        for modality in self.modalities:
+            for name, param in getattr(self, f"{modality}_ln").named_parameters():
+                param.requires_grad = False
+            getattr(self, f"{modality}_query_tokens").requires_grad = False
+            for name, param in getattr(self, f'{modality}_Qformer').named_parameters():
+                param.requires_grad = False
+            for name, param in getattr(self, f'{modality}_llm_proj').named_parameters():
+                param.requires_grad = False
+
+
         self.clean_tokenization = clean_tokenization
         logging.info(f"Clean tokenization is set to {self.clean_tokenization}")
 
@@ -521,23 +532,6 @@ class Blip2VicunaXInstruct(Blip2Base):
 
         curr_modalities = [modality for modality in self.modalities if modality in samples]
         excess_modalities = [modality for modality in self.modalities if modality not in curr_modalities]
-        # disable gradient in excess modalities
-        dummy_loss = 0.
-        for modality in excess_modalities:
-            if self.shared_qformer:
-                for name, param in getattr(self, f"{modality}_encoder_projection").named_parameters():
-                    # param.requires_grad = False
-                    dummy_loss += param.sum()*0.
-            for name, param in getattr(self,f"{modality}_ln").named_parameters():
-                # param.requires_grad = False
-                dummy_loss += param.sum()*0.
-            dummy_loss += getattr(self, f"{modality}_query_tokens").sum()*0.
-            for name, param in getattr(self, f'{modality}_Qformer').named_parameters():
-                    # param.requires_grad = False
-                    dummy_loss += param.sum()*0.
-            for name, param in getattr(self, f'{modality}_llm_proj').named_parameters():
-                    # param.requires_grad = False
-                    dummy_loss += param.sum()*0.
         
         embeds = {}
         query_tokens = {}
@@ -863,7 +857,7 @@ class Blip2VicunaXInstruct(Blip2Base):
                 labels=targets,
             )
 
-        loss = dummy_loss+outputs.loss
+        loss = outputs.loss
 
 
 
@@ -1166,7 +1160,7 @@ class Blip2VicunaXInstruct(Blip2Base):
         samples,
         use_nucleus_sampling=False,
         num_beams=5,
-        max_length=256,
+        max_length=64,
         min_length=1,
         top_p=0.9,
         repetition_penalty=1.5,
