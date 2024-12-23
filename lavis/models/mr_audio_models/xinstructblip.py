@@ -26,6 +26,7 @@ from peft import (
 )
 
 import transformers
+from transformers import BitsAndBytesConfig
 import random
 from lavis.common.registry import registry
 from lavis.models.base_model import BaseModel
@@ -373,11 +374,17 @@ class Blip2VicunaXInstruct(Blip2Base):
         self.llm_tokenizer.add_special_tokens({'unk_token': '</s>'})
         if self.lora:
             from lavis.models.mr_audio_models.utils import get_peft_config
-            # https://github.com/lxe/llama-peft-tuner/blob/main/finetune_peft.py
+            # reduce memory usage by loading model in 4 bit quantization, allowed as model is frozen using LoRA
+            quantization_config = BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_use_double_quant=True,
+                bnb_4bit_quant_type="nf4",
+                bnb_4bit_compute_dtype=torch.bfloat16,
+            )
             self.llm_model = LlamaForCausalLM.from_pretrained(
-            llm_model, 
-            load_in_8bit=True,
-            torch_dtype=torch.float16
+                llm_model,
+                torch_dtype=torch.float16,
+                quantization_config=quantization_config
             )
             self.llm_model.resize_token_embeddings(len(self.llm_tokenizer))
             self.peft_config = get_peft_config(self.llm_model)
@@ -751,7 +758,7 @@ class Blip2VicunaXInstruct(Blip2Base):
 
         # Get timestamp embeds
         flattened_timestamps = [
-            f" {t} "
+            str(t)
             for timestamps in samples["timestamps"]
             for t in timestamps
         ]
@@ -824,7 +831,7 @@ class Blip2VicunaXInstruct(Blip2Base):
        
         # Duration
         duration_tokens = self.llm_tokenizer(
-            [f"{dur} " for dur in samples["duration"]],
+            [str(dur) for dur in samples["duration"]],
             padding="longest",
             truncation=True,
             return_tensors="pt",
@@ -1479,7 +1486,7 @@ class Blip2VicunaXInstruct(Blip2Base):
 
         # Get timestamp embeds
         flattened_timestamps = [
-            f" {t} "
+            str(t)
             for timestamps in samples["timestamps"]
             for t in timestamps
         ]
@@ -1567,7 +1574,7 @@ class Blip2VicunaXInstruct(Blip2Base):
                     att_list.extend([space_atts_llm])
 
         duration_tokens = self.llm_tokenizer(
-            [f"{dur} " for dur in samples["duration"]],
+            [str(dur) for dur in samples["duration"]],
             padding="longest",
             truncation=True,
             return_tensors="pt",
