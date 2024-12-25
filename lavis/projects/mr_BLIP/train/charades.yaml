@@ -21,10 +21,14 @@ datasets:
           name: "blip2_video_train"
           n_frms: 20
           image_size: 224
+          audio_clip_len: 0.5
+          target_sr: 48000
         eval:
           name: "blip_video_eval"
           n_frms: 20
           image_size: 224
+          audio_clip_len: 0.5
+          target_sr: 48000
     text_processor:
         train:
           name: "blip_question"
