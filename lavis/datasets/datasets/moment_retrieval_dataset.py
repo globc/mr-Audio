@@ -76,5 +76,4 @@ class MomentRetrievalDataset(BaseDataset):
             "video_filename": vname,
             "index": index,
             "audio": audio,
-            "sr": sr,
         }
