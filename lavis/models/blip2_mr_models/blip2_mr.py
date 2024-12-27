@@ -282,7 +282,7 @@ class BLIP2_MR(Blip2Base):
 
 
         #Sample
-        image = samples["video"].to(self.eigendevice)
+        image = samples["video"]
         video_prompt_end = samples["video_prompt_end"]
         query_prompt, task_prompt = samples["query_prompt"], samples["task_prompt"]
         answer = samples["relevant_windows"]

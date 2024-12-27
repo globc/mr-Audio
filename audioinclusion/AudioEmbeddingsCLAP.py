@@ -37,7 +37,7 @@ class CLAPAudioEmbeddings:
         #print(f"audio shape: {audio_clips.shape}")
         embeddings_lst = []
         for batch in audio_clips:
-            audio_inputs = self.processor(audios=batch.numpy(), sampling_rate=sr, return_tensors="pt", padding=True)
+            audio_inputs = self.processor(audios=batch.cpu().numpy(), sampling_rate=sr, return_tensors="pt", padding=True)
             audio_inputs = audio_inputs.to(self.eigendevice)
             with torch.no_grad():
                 audio_embeddings = self.clap_model.get_audio_features(**audio_inputs)
