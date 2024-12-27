@@ -37,8 +37,7 @@ from lavis.models.blip2_mr_models.utils import (
 
 from lavis.models.blip2_mr_models.model_helpers import *
 
-from audioinclusion.FrameAudio import FrameAudio
-#from audioinclusion.AudioEmbeddings import AudioEmbeddings
+
 from audioinclusion.AudioEmbeddingsCLAP import CLAPAudioEmbeddings
 
 
@@ -84,7 +83,8 @@ class BLIP2_MR(Blip2Base):
         interleave_data=False,
         frame_token_aggregation=None,
         task="lora",
-        device= None #torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        device= None, #torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        sampling_rate=48000
     ):
         """
         apply_lemmatizer: when set to True, postprocess predict_answers() result with lemmas.
@@ -111,7 +111,7 @@ class BLIP2_MR(Blip2Base):
 
         self.audio_embeddings_model = CLAPAudioEmbeddings()
         self.audio_feature_dim = 512
-
+        self.sampling_rate = sampling_rate
 
 
         if self.use_wandb and is_main_process():
@@ -239,7 +239,7 @@ class BLIP2_MR(Blip2Base):
             self.Qformer.config.hidden_size, self.audio_feature_dim
         ).to(self.eigendevice)
 
-        #TODO: Bild 2: torch.cat ist das Plus (fusion), dann fusion layer vor self.t5_proj
+
         self.fusion_layer = nn.Linear(
            self.audio_feature_dim * 2,self.Qformer.config.hidden_size
         )
@@ -282,32 +282,17 @@ class BLIP2_MR(Blip2Base):
 
 
         #Sample
-        image = samples["video"].to(self.device)
+        image = samples["video"].to(self.eigendevice)
         video_prompt_end = samples["video_prompt_end"]
         query_prompt, task_prompt = samples["query_prompt"], samples["task_prompt"]
         answer = samples["relevant_windows"]
         timestamps, durations = (samples["timestamps"],samples["duration"])
 
-        #Paths for Audio and Video
-        #path = os.getcwd() + "/mr_BLIP_data/data/QVH/videos/./"
-        #audiopath = os.getcwd() + "/mr_BLIP_data/audio_files"
-
-
         #Audio
-        #audio_segment, audio_name = FrameAudio(
-        #        video_path=path + samples['video_filename'] + ".mp4",
-        #        vname=samples['video_filename'],
-        #        frame_index=samples['timestamps']
-        #    ).get_audio_segment()
 
-        #audio_clips, sr = self.audio_embeddings_model.read_audio(path_to_file= audiopath + "/" + audio_name + ".wav")
+        audio_clips = samples["audio"]
 
-        audio_clips = samples["audio"]#.to(self.eigendevice)
-        #print(f"audio_clip shape: {audio_clips.shape}")
-        #sr = samples["sr"].to(self.eigendevice)
-        audio_embeddings = self.audio_embeddings_model.get_audio_embeddings(audio_clips=audio_clips, sr=48000).to(self.eigendevice)
-        #audio_embeddings = samples["audio"]
-        #print(f"emb shaoe: {audio_embeddings.shape}")
+        audio_embeddings = self.audio_embeddings_model.get_audio_embeddings(audio_clips=audio_clips, sr=self.sampling_rate).to(self.eigendevice)
 
         #Image
         b, t, c, w, h = image.shape
@@ -713,7 +698,7 @@ class BLIP2_MR(Blip2Base):
         use_nucleus_sampling=False,
         num_beams=5,
         max_length=50,
-        min_length=8,
+        min_length=1,
         top_p=0.9,
         repetition_penalty=1.0,
         length_penalty=1.0,
@@ -748,12 +733,12 @@ class BLIP2_MR(Blip2Base):
 
         audio_clips = samples["audio"]
         audio_embeddings = self.audio_embeddings_model.get_audio_embeddings(audio_clips=audio_clips, sr=48000).to(
-            self.device)
+            self.eigendevice)
 
         # uniform sampling
         b, t, c, w, h = image.shape
         image = image.reshape(-1, c, w, h)
-        with torch.cuda.amp.autocast(enabled=(self.device != torch.device("cpu"))):
+        with torch.cuda.amp.autocast(enabled=(self.eigendevice != torch.device("cpu"))):
             image_embeds = self.ln_vision(self.visual_encoder(image))  # bt, n, c
         _, n, _ = image_embeds.shape
         image_atts = torch.ones(image_embeds.size()[:-1], dtype=torch.long).to(
@@ -771,17 +756,17 @@ class BLIP2_MR(Blip2Base):
 
 
         ## Add audio
-        frame_down_proj = self.frame_down_proj(frames_after_qformer.last_hidden_state).to(self.device)
+        frame_down_proj = self.frame_down_proj(frames_after_qformer.last_hidden_state).to(self.eigendevice)
 
         audio_embeddings = audio_embeddings.reshape(-1, audio_embeddings.shape[2])
-        audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frame_down_proj.shape[1], -1).to(self.device)
+        audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frame_down_proj.shape[1], -1).to(self.eigendevice)
         # print(f"emb shaoe: {audio_embeddings.shape}")
 
-        combined_video_audio_frame = torch.cat([frame_down_proj, audio_embeddings], dim=-1).to(self.device)
+        combined_video_audio_frame = torch.cat([frame_down_proj, audio_embeddings], dim=-1).to(self.eigendevice)
         # print(f"combined_video_audio_frame: {combined_video_audio_frame.shape}")
-        fused_data = self.fusion_layer(combined_video_audio_frame).to(self.device)
+        fused_data = self.fusion_layer(combined_video_audio_frame).to(self.eigendevice)
         # print(f"fused_data: {fused_data.shape}")
-        frames_for_t5 = self.t5_proj(fused_data).to(self.device)
+        frames_for_t5 = self.t5_proj(fused_data).to(self.eigendevice)
 
         #frames_for_t5 = self.t5_proj(frames_after_qformer.last_hidden_state)
 
@@ -894,7 +879,7 @@ class BLIP2_MR(Blip2Base):
         **kwargs,
     ):
         image = samples["image"]
-        with torch.cuda.amp.autocast(enabled=(self.device != torch.device("cpu"))):
+        with torch.cuda.amp.autocast(enabled=(self.eigendevice != torch.device("cpu"))):
             image_embeds = self.ln_vision(self.visual_encoder(image))
         image_atts = torch.ones(image_embeds.size()[:-1], dtype=torch.long).to(
             image.device
@@ -924,7 +909,7 @@ class BLIP2_MR(Blip2Base):
 
         encoder_atts = torch.cat([atts_t5, input_tokens.attention_mask], dim=1)
 
-        device_type = "cuda" if "cuda" in str(self.device) else "cpu"
+        device_type = "cuda" if "cuda" in str(self.eigendevice) else "cpu"
         with torch.amp.autocast(device_type=device_type, dtype=torch.bfloat16):
             inputs_embeds = self.t5_model.encoder.embed_tokens(input_tokens.input_ids)
             inputs_embeds = torch.cat([inputs_t5, inputs_embeds], dim=1)
@@ -1008,6 +993,8 @@ class BLIP2_MR(Blip2Base):
         apply_lemmatizer = cfg.get("apply_lemmatizer", False)
         task = cfg.get("task", "qformer_freeze_lora")
 
+        sampling_rate = cfg.get("target_sr", 48000)
+
         model = cls(
             img_size=img_size,
             drop_path_rate=drop_path_rate,
@@ -1024,7 +1011,8 @@ class BLIP2_MR(Blip2Base):
             interleave_data=interleave_data,
             frame_token_aggregation=frame_token_aggregation,
             task=task,
-            device=device
+            device=device,
+            sampling_rate=sampling_rate
         )
         model.load_checkpoint_from_config(cfg)
 
@@ -1157,7 +1145,7 @@ class BLIP2_MR(Blip2Base):
         token_embs = []
 
         token_embs_tmp = self.t5_model.encoder.embed_tokens(
-            torch.tensor(concatenated_tokens).to(self.device)
+            torch.tensor(concatenated_tokens).to(self.eigendevice)
         )
 
         # group the token embeddings by timestamp
@@ -1200,14 +1188,14 @@ class BLIP2_MR(Blip2Base):
             image_atts,
             t
     ):
-        query_atts = torch.ones(query_tokens.size()[:-1], dtype=torch.long).to(self.device)
+        query_atts = torch.ones(query_tokens.size()[:-1], dtype=torch.long).to(self.eigendevice)
         text = self.Qformer_tokenizer(
             [
                 q for q in query_prompt for _ in range(t)
             ],  # apply query to each frame
             return_tensors="pt",
             padding=True,
-        ).to(self.device)
+        ).to(self.eigendevice)
 
         attention_mask = torch.cat([query_atts, text.attention_mask], dim=1)
 

@@ -72,7 +72,7 @@ def load_video_frames_with_audio(video_path,
     if height > 0 and width > 0:
         frms = torch.nn.functional.interpolate(frms, size=(height, width), mode='bilinear', align_corners=False)
 
-    return frms, indices.tolist(), fps, torch.stack(audio_segments, dim=1).squeeze(0), sample_rate
+    return frms, indices.tolist(), fps, torch.stack(audio_segments, dim=1).squeeze(0)
 
 def thwc_to_cthw(data: torch.Tensor) -> torch.Tensor:
     """

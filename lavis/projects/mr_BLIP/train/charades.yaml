@@ -50,8 +50,8 @@ run:
   # warmup_steps: 965 # 10% * 50 epochs * 193 steps/epoch = 965
   weight_decay: 0.05
   max_epoch: 50
-  batch_size_train: 4
-  batch_size_eval: 4
+  batch_size_train: 8
+  batch_size_eval: 8
   num_workers: 8
   accum_grad_iters: 1
 

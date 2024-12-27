@@ -322,7 +322,7 @@ class Blip2VideoTrainProcessor(BlipVideoBaseProcessor):
 
     def __call__(self, vpath, clip_proposal=None):
 
-        clip, indices, fps, audio, sr = load_video_frames_with_audio(
+        clip, indices, fps, audio = load_video_frames_with_audio(
             video_path=vpath,
             n_frms=self.n_frms,
             height=self.image_size,
@@ -334,7 +334,7 @@ class Blip2VideoTrainProcessor(BlipVideoBaseProcessor):
             audio_clip_len=self.audio_clip_length
         )
 
-        return self.transform(clip), indices, fps, audio, sr
+        return self.transform(clip), indices, fps, audio
 
     @classmethod
     def from_config(cls, cfg=None):
@@ -383,7 +383,7 @@ class BlipVideoEvalProcessor(BlipVideoBaseProcessor):
         self.target_sr = target_sr
 
     def __call__(self, vpath, clip_proposal=None):
-        clip, indices, fps, audio, sr = load_video_frames_with_audio(
+        clip, indices, fps, audio = load_video_frames_with_audio(
             video_path=vpath,
             n_frms=self.n_frms,
             height=self.image_size,
@@ -394,7 +394,7 @@ class BlipVideoEvalProcessor(BlipVideoBaseProcessor):
             audio_clip_len=self.audio_clip_length
         )
 
-        return self.transform(clip), indices, fps, audio, sr
+        return self.transform(clip), indices, fps, audio
 
     @classmethod
     def from_config(cls, cfg=None):
