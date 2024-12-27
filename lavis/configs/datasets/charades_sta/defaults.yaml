@@ -11,15 +11,17 @@ datasets:
       # Be careful not to append minus sign (-) before split to avoid itemizing
       annotations:
         train:
-          url: /home/atuin/g102ea/shared/charades_sta_annotations/train.json
-          storage: /home/atuin/g102ea/shared/charades_sta_annotations/train.json
+          #url: /home/atuin/g102ea/shared/charades_sta_annotations/train.json
+          #storage: /home/atuin/g102ea/shared/charades_sta_annotations/train.json
+          url: /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/Charades_STA_annotations/ablations_split/new_train.json
+          storage: /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/Charades_STA_annotations/ablations_split/new_train.json
         val:
-          url: /home/atuin/g102ea/shared/charades_sta_annotations/test.json
-          storage: /home/atuin/g102ea/shared/charades_sta_annotations/test.json
-          # url: Your/path/to/new_val_float.json
-          # storage: Your/path/to/new_val_float.json
+          #url: /home/atuin/g102ea/shared/charades_sta_annotations/test.json
+          #storage: /home/atuin/g102ea/shared/charades_sta_annotations/test.json
+          url: /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/Charades_STA_annotations/ablations_split/new_val.json
+          storage: /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/Charades_STA_annotations/ablations_split/new_val.json
         test:
-          url: /home/atuin/g102ea/shared/charades_sta_annotations/test.json
-          storage: /home/atuin/g102ea/shared/charades_sta_annotations/test.json
+          url: /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/Charades_STA_annotations/ablations_split/test.json
+          storage: /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/Charades_STA_annotations/ablations_split/test.json
       videos:
         storage: /home/atuin/g102ea/shared/videos/Charades_v1
