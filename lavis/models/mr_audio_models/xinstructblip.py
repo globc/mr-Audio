@@ -758,7 +758,7 @@ class Blip2VicunaXInstruct(Blip2Base):
 
         # Get timestamp embeds
         flattened_timestamps = [
-            str(t)
+            f"time: {str(t)}" if self.use_cues else str(t)
             for timestamps in samples["timestamps"]
             for t in timestamps
         ]
@@ -831,7 +831,7 @@ class Blip2VicunaXInstruct(Blip2Base):
        
         # Duration
         duration_tokens = self.llm_tokenizer(
-            [str(dur) for dur in samples["duration"]],
+            [f"duration: {str(dur)}" if self.use_cues else str(dur) for dur in samples["duration"]],
             padding="longest",
             truncation=True,
             return_tensors="pt",
@@ -1168,7 +1168,7 @@ class Blip2VicunaXInstruct(Blip2Base):
         use_nucleus_sampling=False,
         num_beams=5,
         max_length=64,
-        min_length=1,
+        min_length=4,
         top_p=0.9,
         repetition_penalty=1.5,
         length_penalty=1,
@@ -1486,7 +1486,7 @@ class Blip2VicunaXInstruct(Blip2Base):
 
         # Get timestamp embeds
         flattened_timestamps = [
-            str(t)
+            f"time: {str(t)}" if self.use_cues else str(t)
             for timestamps in samples["timestamps"]
             for t in timestamps
         ]
@@ -1574,7 +1574,7 @@ class Blip2VicunaXInstruct(Blip2Base):
                     att_list.extend([space_atts_llm])
 
         duration_tokens = self.llm_tokenizer(
-            [str(dur) for dur in samples["duration"]],
+            [f"duration: {str(dur)}" if self.use_cues else str(dur) for dur in samples["duration"]],
             padding="longest",
             truncation=True,
             return_tensors="pt",
