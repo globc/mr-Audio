@@ -450,14 +450,14 @@ class Blip2VicunaXInstruct(Blip2Base):
                 setattr(self, f"{modality}_llm_proj", proj)
 
         # Freeze QFormers
-        for modality in self.modalities:
-            for name, param in getattr(self, f"{modality}_ln").named_parameters():
-                param.requires_grad = False
-            getattr(self, f"{modality}_query_tokens").requires_grad = False
-            for name, param in getattr(self, f'{modality}_Qformer').named_parameters():
-                param.requires_grad = False
-            for name, param in getattr(self, f'{modality}_llm_proj').named_parameters():
-                param.requires_grad = False
+        # for modality in self.modalities:
+        #     for name, param in getattr(self, f"{modality}_ln").named_parameters():
+        #         param.requires_grad = False
+        #     getattr(self, f"{modality}_query_tokens").requires_grad = False
+        #     for name, param in getattr(self, f'{modality}_Qformer').named_parameters():
+        #         param.requires_grad = False
+        #     for name, param in getattr(self, f'{modality}_llm_proj').named_parameters():
+        #         param.requires_grad = False
 
 
         self.clean_tokenization = clean_tokenization
@@ -757,11 +757,18 @@ class Blip2VicunaXInstruct(Blip2Base):
 
 
         # Get timestamp embeds
-        flattened_timestamps = [
-            f"time: {str(t)}" if self.use_cues else str(t)
-            for timestamps in samples["timestamps"]
-            for t in timestamps
-        ]
+        if self.use_cues and self.joint_video_audio:
+            flattened_timestamps = [
+                f"time: {str(t)}"
+                for timestamps in samples["timestamps"]
+                for t in timestamps
+            ]
+        else:
+            flattened_timestamps = [
+                str(t)
+                for timestamps in samples["timestamps"]
+                for t in timestamps
+            ]
         timestamp_tokens = self.llm_tokenizer(
             flattened_timestamps,
             padding="longest",
@@ -827,7 +834,24 @@ class Blip2VicunaXInstruct(Blip2Base):
                 else:
                     att_list.extend([atts_llm[modality]])
                     inp_list.extend([inputs_llm[modality]])
-                # timestamps unimplemented
+            
+            # add timestamps
+            timestamp_atts_llm = timestamp_atts_llm.view(bs, -1)
+            timestamp_inputs_llm = timestamp_inputs_llm.view(bs, timestamp_inputs_llm.shape[1]*timestamp_inputs_llm.shape[2], -1)
+            if self.use_cues:
+                # get time cue embed
+                time_cue = " time: "
+                if self.clean_tokenization:
+                    time_cue = time_cue.lstrip()
+                tokenized_time_cue = self.llm_tokenizer(time_cue, return_tensors="pt")
+                emb_time_cue = self.llm_model.get_input_embeddings()(tokenized_time_cue.input_ids.to(self.device))
+                att_time_cue = tokenized_time_cue.attention_mask.to(self.device)
+
+                att_list.extend([att_time_cue.repeat(bs, 1).to(self.device), timestamp_atts_llm])
+                inp_list.extend([emb_time_cue.repeat(bs, 1, 1).to(self.device), timestamp_inputs_llm])
+            else:
+                inp_list.extend([timestamp_inputs_llm])
+                att_list.extend([timestamp_atts_llm])
        
         # Duration
         duration_tokens = self.llm_tokenizer(
@@ -1485,11 +1509,18 @@ class Blip2VicunaXInstruct(Blip2Base):
 
 
         # Get timestamp embeds
-        flattened_timestamps = [
-            f"time: {str(t)}" if self.use_cues else str(t)
-            for timestamps in samples["timestamps"]
-            for t in timestamps
-        ]
+        if self.use_cues and self.joint_video_audio:
+            flattened_timestamps = [
+                f"time: {str(t)}"
+                for timestamps in samples["timestamps"]
+                for t in timestamps
+            ]
+        else:
+            flattened_timestamps = [
+                str(t)
+                for timestamps in samples["timestamps"]
+                for t in timestamps
+            ]
         timestamp_tokens = self.llm_tokenizer(
             flattened_timestamps,
             padding="longest",
@@ -1572,6 +1603,24 @@ class Blip2VicunaXInstruct(Blip2Base):
                     space_atts_llm = space_tok.attention_mask.to(self.device)
                     inp_list.extend([space_inputs_llm])
                     att_list.extend([space_atts_llm])
+
+            # add timestamps
+            timestamp_atts_llm = timestamp_atts_llm.view(timestamp_atts_llm.shape[0], -1)
+            timestamp_inputs_llm = timestamp_inputs_llm.view(timestamp_atts_llm.shape[0], timestamp_inputs_llm.shape[1]*timestamp_inputs_llm.shape[2], -1)
+            if self.use_cues:
+                # get time cue embed
+                time_cue = " time: "
+                if self.clean_tokenization:
+                    time_cue = time_cue.lstrip()
+                tokenized_time_cue = self.llm_tokenizer(time_cue, return_tensors="pt")
+                emb_time_cue = self.llm_model.get_input_embeddings()(tokenized_time_cue.input_ids.to(self.device))
+                att_time_cue = tokenized_time_cue.attention_mask.to(self.device)
+
+                att_list.extend([att_time_cue.repeat(timestamp_atts_llm.shape[0], 1).to(self.device), timestamp_atts_llm])
+                inp_list.extend([emb_time_cue.repeat(timestamp_inputs_llm.shape[0], 1, 1).to(self.device), timestamp_inputs_llm])
+            else:
+                inp_list.extend([timestamp_inputs_llm])
+                att_list.extend([timestamp_atts_llm])
 
         duration_tokens = self.llm_tokenizer(
             [f"duration: {str(dur)}" if self.use_cues else str(dur) for dur in samples["duration"]],

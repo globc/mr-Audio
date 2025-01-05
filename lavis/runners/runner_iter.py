@@ -95,6 +95,8 @@ class RunnerIter(RunnerBase):
                 train_stats = self.train_iters(self.cur_epoch, start_iters)
                 self.log_stats(split_name="train", stats=train_stats)
 
+            self._save_checkpoint(end_iters, is_best=False)
+
             # evaluation phase
             if len(self.valid_splits) > 0:
                 for split_name in self.valid_splits:
@@ -153,9 +155,20 @@ class RunnerIter(RunnerBase):
         )
 
     @main_process
-    def _save_checkpoint(self, cur_iters, is_best=False):
+    def _save_checkpoint(self, cur_iters, is_best=False, is_last=False):
+        model_no_ddp = self.unwrap_dist_model(self.model)
+        param_grad_dic = {
+            k: v.requires_grad for (k, v) in model_no_ddp.named_parameters()
+        }
+
+        state_dict = model_no_ddp.state_dict()
+        for k in list(state_dict.keys()):
+            if k in param_grad_dic.keys() and not param_grad_dic[k]:
+                # delete parameters that do not require gradient
+                del state_dict[k]
+
         save_obj = {
-            "model": self.unwrap_dist_model(self.model).state_dict(),
+            "model": state_dict,
             "optimizer": self.optimizer.state_dict(),
             "config": self.config.to_dict(),
             "scaler": self.scaler.state_dict() if self.scaler else None,
@@ -247,7 +260,7 @@ class RunnerIter(RunnerBase):
                 self.datasets = reorg_datasets_by_split(self.datasets)
                 # to keep the same structure as return value of concat_datasets
                 self.datasets = {
-                    k: v[0] if len(v) == 1 else v for k, v in datasets.items()
+                    k: v[0] if len(v) == 1 else v for k, v in self.datasets.items()
                 }
 
             # print dataset statistics after concatenation/chaining

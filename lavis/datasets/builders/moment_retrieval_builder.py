@@ -21,6 +21,20 @@ class MomentRetrievalBuilder(BaseDatasetBuilder):
         return datasets
 
 
+
+@registry.register_builder("qvh_ambiguous")
+class QVHAmbiguousBuilder(MultiModalDatasetBuilder):
+    train_dataset_cls = MomentRetrievalDataset_Audio
+    eval_dataset_cls = MomentRetrievalDataset_Audio
+    DATASET_CONFIG_DICT = {
+        "default": "configs/empty.yaml",
+    }
+
+    def build(self):
+        datasets = super().build()
+
+        return datasets
+
 @registry.register_builder("qvh_audio")
 class QVHAudioBuilder(MultiModalDatasetBuilder):
     train_dataset_cls = MomentRetrievalDataset_Audio

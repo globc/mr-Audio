@@ -44,7 +44,7 @@ model:
   image_encoder_kwargs :  {"image_size": 224, "drop_path_rate": 0, "use_grad_checkpoint": False}
   pc_encoder_kwargs :  {}
   video_encoder_kwargs :   {"image_size": 224, "drop_path_rate": 0, "use_grad_checkpoint": False}
-  audio_encoder_kwargs :  {"checkpoint_path": "/home/atuin/g102ea/shared/group_2/checkpoints/X-InstructBLIP/BEATs_iter3_plus_AS2M.pt"}
+  audio_encoder_kwargs :  {"checkpoint_path": "/home/atuin/g102ea/g102ea15/mr-Audio/checkpoints/X-InstructBLIP/BEATs_iter3_plus_AS2M.pt"}
   image_precision: "fp16"
   pc_precision: "fp16"
   video_precision: "fp16"
@@ -54,7 +54,7 @@ model:
   freeze_video: True
   freeze_audio: True
   num_query_token: 32
-  llm_model: "/home/atuin/g102ea/shared/group_2/checkpoints/X-InstructBLIP/vicuna-7b-v1.1"
+  llm_model: "/home/atuin/g102ea/g102ea15/mr-Audio/checkpoints/X-InstructBLIP/vicuna-7b-v1.1"
   prompt:  ""
   max_txt_len: 128
   max_output_txt_len: 256
@@ -82,22 +82,22 @@ datasets:
     video_processor:
         train:
           name: "alpro_video_train_stamps"
-          n_frms: 60
+          n_frms: 20
           image_size: 224
         eval:
           name: "alpro_video_eval_stamps"
-          n_frms: 60
+          n_frms: 20
           image_size: 224
 
     audio_processor:
         train:
           name: beats_audio
           sampling_rate: 16000
-          n_frames: 60
+          n_frames: 20
         eval:
           name: beats_audio
           sampling_rate: 16000
-          n_frames: 60
+          n_frames: 20
           is_eval: False
 
     text_processor:
@@ -111,43 +111,95 @@ datasets:
       annotations:
         train:
           url:
-            - /home/atuin/g102ea/shared/qvh/lavis/train.json
+            - /home/atuin/g102ea/g102ea15/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/new_train.json
           storage:
-            - /home/atuin/g102ea/shared/qvh/lavis/train.json
+            - /home/atuin/g102ea/g102ea15/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/new_train.json
         val:
           url:
-            - /home/atuin/g102ea/shared/qvh/lavis/val.json
+            - /home/atuin/g102ea/g102ea15/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/new_val.json
           storage:
-            - /home/atuin/g102ea/shared/qvh/lavis/val.json
+            - /home/atuin/g102ea/g102ea15/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/new_val.json
         test:
           # url: Your/path/to/test_dummy.json
           # storage: Your/path/to/test_dummy.json
           url:
-            - /home/atuin/g102ea/shared/qvh/lavis/val.json
+            - /home/atuin/g102ea/g102ea15/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/test.json
           storage:
-            - /home/atuin/g102ea/shared/qvh/lavis/val.json
+            - /home/atuin/g102ea/g102ea15/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/test.json
       video:
-        storage: /home/atuin/g102ea/shared/qvh/qvh/videos
+        storage: /home/atuin/g102ea/shared/videos/Charades_v1
       audio:
-        storage: /home/atuin/g102ea/shared/qvh/qvh/videos
+        storage: /home/atuin/g102ea/shared/videos/Charades_v1
+    
+
+  qvh_ambiguous: # name of the dataset builder
+    data_type: [video, audio]
+
+    video_processor:
+        train:
+          name: "alpro_video_train_stamps"
+          n_frms: 20
+          image_size: 224
+        eval:
+          name: "alpro_video_eval_stamps"
+          n_frms: 20
+          image_size: 224
+
+    audio_processor:
+        train:
+          name: beats_audio
+          sampling_rate: 16000
+          n_frames: 20
+        eval:
+          name: beats_audio
+          sampling_rate: 16000
+          n_frames: 20
+          is_eval: False
+
+    text_processor:
+          train:
+            name: "blip_question"
+          eval:
+            name: "blip_question"
+
+    build_info:
+      # Be careful not to append minus sign (-) before split to avoid itemizing
+      annotations:
+        train:
+          url:
+            - /home/atuin/g102ea/g102ea15/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/ambiguous_train.json
+          storage:
+            - /home/atuin/g102ea/g102ea15/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/ambiguous_train.json
+      video:
+        storage: /home/atuin/g102ea/shared/videos/Charades_v1
+      audio:
+        storage: /home/atuin/g102ea/shared/videos/Charades_v1
 
 run:
+  runner: runner_iter
   task: moment_retrieval
   # optimizer
   lr_sched: "linear_warmup_cosine_lr"
   init_lr: 3e-4
   min_lr: 0
   warmup_lr: 1e-8
-  warmup_steps: 2255 # 1805 iters/ epoch * 50 epochs * 0.1 = 9025
+  warmup_steps: 1745 # 10% * 50 epochs * 349 steps/epoch = 1745
   weight_decay: 0.05
   max_epoch: 50
-  batch_size_train: 4
-  batch_size_eval: 1
+  batch_size_train: 8
+  batch_size_eval: 4
   num_workers: 2
-  accum_grad_iters: 2
+  accum_grad_iters: 1
+  max_iters: 17450 # 50 epochs * 349 = 17450
+  iters_per_inner_epoch: 349 # 11166 / 4 / 8 = 349
+  train_dataset_ratios: {'qvh_audio': 0.7, 'qvh_ambiguous': 0.3}
+
+  max_len: 64
+  min_len: 4
+  num_beams: 5
 
   seed: 42
-  output_dir: "result/xinstructblip/QVH/"
+  output_dir: "result/xinstructblip/Charades/"
 
   amp: True
   resume_ckpt_path: null
@@ -165,4 +217,4 @@ run:
 
   wandb: True
   wandb_project: "mr_BLIP"
-  wandb_name: "QVH_150"
+  wandb_name: "Charades_20"
