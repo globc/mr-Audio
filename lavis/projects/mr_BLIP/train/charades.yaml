@@ -79,3 +79,5 @@ run:
   wandb: True
   wandb_project: "mr_BLIP"
   wandb_name: "Charades_20"
+
+  fusion_method: "concat"
