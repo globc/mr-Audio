@@ -94,6 +94,7 @@ class BLIP2_MR(Blip2Base):
 
         #self.eigendevice = torch.device('cpu' if (os.environ.get('USE_CPU_ONLY', '0') == '1')
         #                                else 'cuda' if torch.cuda.is_available() else 'cpu')
+        self.device = device
         self.to(self.device)
 
         self.task = task
