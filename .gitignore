@@ -153,13 +153,14 @@ python_stuff/
 #SLURM
 train_qvh.sh
 train_charades_sta.sh
-
+logs/
 #urls of mr blip
 lavis/configs/datasets/
 
 # configs
 lavis/projects/mr_BLIP/train/
 lavis/projects/mr_BLIP/eval/
+
 
 
 # Spyder project settings
