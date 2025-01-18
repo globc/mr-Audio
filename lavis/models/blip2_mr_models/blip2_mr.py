@@ -15,7 +15,6 @@ import torch
 import torch.nn as nn
 from accelerate.commands.config.config_args import cache_dir
 from torch.cuda.amp import autocast as autocast
-from torch.cuda.amp import GradScaler as GradScaler
 from transformers import T5TokenizerFast
 from peft import LoraConfig, get_peft_model
 import wandb
