@@ -6,7 +6,6 @@ import ast
 import re
 from collections import OrderedDict, defaultdict
 import multiprocessing as mp
-from torch.cuda.amp import GradScaler, autocast
 
 import torch
 import torch.distributed as dist
@@ -223,7 +222,7 @@ class TALTask(BaseTask):
         data_loader,
         optimizer,
         lr_scheduler,
-        scaler=None,  # GradScaler is passed here
+        scaler=None,
         start_iters=None,
         log_freq=50,
         cuda_enabled=False,
@@ -231,32 +230,42 @@ class TALTask(BaseTask):
     ):
         """
         An inner training loop compatible with both epoch-based and iter-based training.
+
+        When using epoch-based, training stops after one epoch; when using iter-based,
+        training stops after #iters_per_epoch iterations.
         """
-        use_amp = scaler is not None  # If scaler is provided, use mixed precision
+        use_amp = scaler is not None
 
         if not hasattr(data_loader, "__next__"):
-            # Convert to iterator if not already
+            # convert to iterator if not already
             data_loader = iter(data_loader)
 
         metric_logger = MetricLogger(delimiter="  ")
         metric_logger.add_meter("lr", SmoothedValue(window_size=1, fmt="{value:.6f}"))
         metric_logger.add_meter("loss", SmoothedValue(window_size=1, fmt="{value:.4f}"))
 
+        # if iter-based runner, schedule lr based on inner epoch.
         logging.info(
-            "Start training epoch {}, {} iters per inner epoch.".format(epoch, iters_per_epoch)
+            "Start training epoch {}, {} iters per inner epoch.".format(
+                epoch, iters_per_epoch
+            )
         )
         header = "Train: data epoch: [{}]".format(epoch)
         if start_iters is None:
+            # epoch-based runner
             inner_epoch = epoch
         else:
+            # In iter-based runner, we schedule the learning rate based on iterations.
             inner_epoch = start_iters // iters_per_epoch
             header = header + "; inner epoch [{}]".format(inner_epoch)
 
         for i in metric_logger.log_every(range(iters_per_epoch), log_freq, header):
+            # if using iter-based runner, we stop after iters_per_epoch iterations.
             if i >= iters_per_epoch:
                 break
 
             samples = next(data_loader)
+
             samples = prepare_sample(samples, cuda_enabled=cuda_enabled)
             samples.update(
                 {
@@ -266,46 +275,45 @@ class TALTask(BaseTask):
                 }
             )
 
-            # Update the learning rate scheduler
             lr_scheduler.step(cur_epoch=inner_epoch, cur_step=i)
 
-            # Forward pass with autocast for mixed precision (FP16)
-            with autocast(enabled=use_amp):
+            with torch.cuda.amp.autocast(enabled=use_amp):
                 loss = self.train_step(model=model, samples=samples)
 
-            # Backward pass with gradient scaling
+            # after_train_step()
             if use_amp:
-                # Scale the loss and perform backward pass (to prevent underflow in FP16)
                 scaler.scale(loss).backward()
             else:
-                loss.backward()  # Standard backward pass if not using mixed precision
+                loss.backward()
 
-            # Update gradients every accum_grad_iters iterations
+            # update gradients every accum_grad_iters iterations
             if (i + 1) % accum_grad_iters == 0:
                 if use_amp:
-                    # Step the optimizer after unscaling gradients
                     scaler.step(optimizer)
-                    # Update the scaler to adjust the scale factor
                     scaler.update()
                 else:
-                    optimizer.step()  # Standard optimizer step if not using mixed precision
-
-                # Zero out the gradients for the next iteration
+                    optimizer.step()
                 optimizer.zero_grad()
 
-            # Update metrics
             metric_logger.update(loss=loss.item())
             metric_logger.update(lr=optimizer.param_groups[0]["lr"])
 
-            # Log to wandb
+            # log to wandb
             if is_main_process() and wandb.run is not None:
-                wandb.log({"train/lr": optimizer.param_groups[0]["lr"]})
+                wandb.log(
+                    {
+                        "train/lr": optimizer.param_groups[0]["lr"],
+                    }
+                )
 
-        # Synchronize metrics across all processes
+            # print("breaking in train_inner_loop in moment_retrieval.py")
+            # break
+
+        # after train_epoch()
+        # gather the stats from all processes
         metric_logger.synchronize_between_processes()
         logging.info("Averaged stats: " + str(metric_logger.global_avg()))
 
-        # Return the averaged stats for logging
         return {
             k: "{:.3f}".format(meter.global_avg)
             for k, meter in metric_logger.meters.items()

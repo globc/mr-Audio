@@ -6,6 +6,7 @@ import ast
 import re
 from collections import OrderedDict, defaultdict
 import multiprocessing as mp
+from torch.cuda.amp import GradScaler, autocast
 
 import torch
 import torch.distributed as dist
@@ -195,38 +196,31 @@ class MomentRetrievalTask(BaseTask):
         When using epoch-based, training stops after one epoch; when using iter-based,
         training stops after #iters_per_epoch iterations.
         """
-        use_amp = scaler is not None
+        use_amp = scaler is not None  # Check if mixed precision is enabled (i.e., scaler is provided)
 
         if not hasattr(data_loader, "__next__"):
-            # convert to iterator if not already
+            # Convert to iterator if not already
             data_loader = iter(data_loader)
 
         metric_logger = MetricLogger(delimiter="  ")
         metric_logger.add_meter("lr", SmoothedValue(window_size=1, fmt="{value:.6f}"))
         metric_logger.add_meter("loss", SmoothedValue(window_size=1, fmt="{value:.4f}"))
 
-        # if iter-based runner, schedule lr based on inner epoch.
         logging.info(
-            "Start training epoch {}, {} iters per inner epoch.".format(
-                epoch, iters_per_epoch
-            )
+            "Start training epoch {}, {} iters per inner epoch.".format(epoch, iters_per_epoch)
         )
         header = "Train: data epoch: [{}]".format(epoch)
         if start_iters is None:
-            # epoch-based runner
             inner_epoch = epoch
         else:
-            # In iter-based runner, we schedule the learning rate based on iterations.
             inner_epoch = start_iters // iters_per_epoch
             header = header + "; inner epoch [{}]".format(inner_epoch)
 
         for i in metric_logger.log_every(range(iters_per_epoch), log_freq, header):
-            # if using iter-based runner, we stop after iters_per_epoch iterations.
             if i >= iters_per_epoch:
                 break
 
             samples = next(data_loader)
-
             samples = prepare_sample(samples, cuda_enabled=cuda_enabled)
             samples.update(
                 {
@@ -236,45 +230,48 @@ class MomentRetrievalTask(BaseTask):
                 }
             )
 
+            # Update learning rate scheduler
             lr_scheduler.step(cur_epoch=inner_epoch, cur_step=i)
 
-            with torch.cuda.amp.autocast(enabled=use_amp):
+            # Forward pass with mixed precision using autocast
+            with autocast(enabled=use_amp):
                 loss = self.train_step(model=model, samples=samples)
 
-            # after_train_step()
+            # Backward pass with gradient scaling
             if use_amp:
+                # Scale the loss to avoid underflows and backpropagate
                 scaler.scale(loss).backward()
             else:
+                # Standard backward pass without mixed precision
                 loss.backward()
 
-            # update gradients every accum_grad_iters iterations
+            # Update gradients after accum_grad_iters iterations
             if (i + 1) % accum_grad_iters == 0:
                 if use_amp:
+                    # Unscale gradients and apply optimizer step
                     scaler.step(optimizer)
+                    # Update the scaler to adjust the scale factor
                     scaler.update()
                 else:
+                    # Standard optimizer step without mixed precision
                     optimizer.step()
+
+                # Zero the gradients for the next iteration
                 optimizer.zero_grad()
 
+            # Update metrics for logging
             metric_logger.update(loss=loss.item())
             metric_logger.update(lr=optimizer.param_groups[0]["lr"])
 
-            # log to wandb
+            # Log to wandb
             if is_main_process() and wandb.run is not None:
-                wandb.log(
-                    {
-                        "train/lr": optimizer.param_groups[0]["lr"],
-                    }
-                )
+                wandb.log({"train/lr": optimizer.param_groups[0]["lr"]})
 
-            # print("breaking in train_inner_loop in moment_retrieval.py")
-            # break
-
-        # after train_epoch()
-        # gather the stats from all processes
+        # Synchronize metrics across all processes (for distributed training)
         metric_logger.synchronize_between_processes()
         logging.info("Averaged stats: " + str(metric_logger.global_avg()))
 
+        # Return the averaged stats for logging
         return {
             k: "{:.3f}".format(meter.global_avg)
             for k, meter in metric_logger.meters.items()
