@@ -15,6 +15,7 @@ import torch
 import torch.nn as nn
 from accelerate.commands.config.config_args import cache_dir
 from torch.cuda.amp import autocast as autocast
+from torch.cuda.amp import GradScaler as GradScaler
 from transformers import T5TokenizerFast
 from peft import LoraConfig, get_peft_model
 import wandb
@@ -312,14 +313,8 @@ class BLIP2_MR(Blip2Base):
 
 
 
-        if self.multimodal_Qformer:
-            query_atts, attention_mask, text, output = self.setup_multimodalQformer(query_tokens=query_tokens, query_prompt=query_prompt, image_embeds=image_embeds, image_atts=image_atts, t=t)
-        else:
-            frames_after_qformer, frames_for_projection = self.setup_unimodalQfomer(query_tokens=query_tokens, image_embeds=image_embeds, image_atts=image_atts)
-
-
-
-
+        if not self.multimodal_Qformer:
+            frames_for_projection = self.setup_unimodalQfomer(query_tokens=query_tokens, image_embeds=image_embeds, image_atts=image_atts)
 
         #alternative to downsampling layers
         #audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frames_for_projection.size(1), -1)
@@ -340,10 +335,6 @@ class BLIP2_MR(Blip2Base):
 
         # TODO: Use average pooling to aggregate the 32 embeddings of one frame
         if self.frame_token_aggregation:
-            assert self.frame_token_aggregation in [
-                "mean",
-                False,
-            ], "Invalid aggregation method, please choose from ['mean']"
             frames_for_t5 = frames_for_t5.mean(dim=1, keepdim=True)
 
         #if self.fusion_method == "interleave":
@@ -354,8 +345,7 @@ class BLIP2_MR(Blip2Base):
         #print(f"frames_for_t5 after reshaping: {frames_for_t5.shape}")
 
 
-        with (torch.cuda.amp.autocast(dtype=torch.float32)):
-            #print(f"Starting Prompt Concat")
+        with autocast(dtype=torch.float16):  # Use FP16 precision where possible
             inputs_embs_mr, inputs_atts_mr, video_prompt = self.prompt_concatenation(
                 timestamps=timestamps,
                 durations=durations,
@@ -390,6 +380,18 @@ class BLIP2_MR(Blip2Base):
                 return_dict=True,
                 labels=targets_mr,
             )
+            output_tokens_mask_mr = output_tokens_mr.attention_mask
+
+            # Apply moment retrieval prompt (T5 forward pass)
+            outputs_loc = self.t5_model(
+                inputs_embeds=inputs_embs_mr,
+                attention_mask=inputs_atts_mr,
+                decoder_attention_mask=output_tokens_mask_mr,
+                return_dict=True,
+                labels=targets_mr,
+            )
+
+            # Compute loss
             loss = outputs_loc.loss
 
             # write the following to a wandb table
@@ -1237,7 +1239,7 @@ class BLIP2_MR(Blip2Base):
         )
         frames_for_projection = frames_after_qformer.last_hidden_state
 
-        return frames_after_qformer, frames_for_projection
+        return frames_for_projection
 
     def reshape_frames_for_t5(
             self,
