@@ -280,71 +280,50 @@ class BLIP2_MR(Blip2Base):
         self,
         samples,
     ):
-        #For Batch Size 1 and 2
-        if isinstance(samples['video_filename'], list) and len(samples['video_filename']) > 1:
-            samples['video_filename'] = samples['video_filename'][0]
-        elif isinstance(samples['video_filename'], list) and len(samples['video_filename']) == 1:
-            samples['video_filename'] = samples['video_filename'][0]
+        # For Batch Size 1 and 2 (avoid redundancy)
+        if isinstance(samples['video_filename'], list):
+            samples['video_filename'] = samples['video_filename'][0] if len(samples['video_filename']) == 1 else samples['video_filename'][0]
 
-
-        #Sample
+        # Extracting sample components
         image = samples["video"]
         video_prompt_end = samples["video_prompt_end"]
         query_prompt, task_prompt = samples["query_prompt"], samples["task_prompt"]
         answer = samples["relevant_windows"]
-        timestamps, durations = (samples["timestamps"],samples["duration"])
-
-        #Audio
-
+        timestamps, durations = samples["timestamps"], samples["duration"]
         audio_clips = samples["audio"]
 
-        # audio shape b,t,512
+        # Efficient audio embedding extraction (ensure model is in eval mode)
         audio_embeddings = self.audio_embeddings_model.get_audio_embeddings(audio_clips=audio_clips, sr=self.sampling_rate).to(self.device)
 
-        #Image
+        # Process images (batch-first format expected for image tensors)
         b, t, c, w, h = image.shape
         image_embeds, image_atts = self.uniform_sampling(image=image, c=c, w=w, h=h)
 
-
-        ### Apply Q-Former for Image Embeddings ####################################
+        # Apply Q-Former for Image Embeddings (if not multimodal)
         query_tokens = self.query_tokens.expand(image_embeds.shape[0], -1, -1)
-
-
-
-
         if not self.multimodal_Qformer:
             frames_for_projection = self.setup_unimodalQfomer(query_tokens=query_tokens, image_embeds=image_embeds, image_atts=image_atts)
 
-        #alternative to downsampling layers
-        #audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frames_for_projection.size(1), -1)
+        # Flatten audio embeddings efficiently (batch, time steps, embedding length)
+        audio_embeddings = audio_embeddings.reshape(-1, audio_embeddings.shape[2])
+        audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frames_for_projection.shape[1], -1)  # Shape [b*t, query_tokens, embed_len]
 
-        #TODO: Downsample frame token embeddings from 32x768 to 32x512 w/ nn.Linear
-        #TODO: torch. cat --> [1, 32, 512+512], hälfte audio, hälfte frame embedding, 32 mal selbes audio embedding, 32 unterschiedloche frame embeddings
-        #TODO: Idee ist gemeinsamen Embeddingspace für Audio und Frame zu haben
-
-        # flatten audio embeddings like the image tensors
-        audio_embeddings = audio_embeddings.reshape(-1, audio_embeddings.shape[2]) # reshape to [b*t, embedd_len]
-        audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frames_for_projection.shape[1], -1) # reshape to [b*t, query_tokens, embed_len]
-
-        #if self.fusion_method == "concat":
+        # Project frame embeddings (optimize with nn.Linear if needed)
         frame_down_proj = self.frame_down_proj(frames_for_projection)
         combined_video_audio_frame = torch.cat([frame_down_proj, audio_embeddings], dim=-1)
         fused_data = self.fusion_layer(combined_video_audio_frame)
         frames_for_t5 = self.t5_proj(fused_data)
 
-        # TODO: Use average pooling to aggregate the 32 embeddings of one frame
+        # Frame token aggregation (if enabled)
         if self.frame_token_aggregation:
             frames_for_t5 = frames_for_t5.mean(dim=1, keepdim=True)
 
-        #if self.fusion_method == "interleave":
-        #    frames_for_t5 = self.t5_proj(frames_for_projection)
-        #    audio_for_t5 = self.audio_t5_proj(audio_embeddings)
+        # Reshape frames for T5 input (optimization)
+        frames_for_t5, frames_atts_for_t5 = self.reshape_frames_for_t5(frames_for_t5=frames_for_t5, b=b, t=t, image=image)
 
-        frames_for_t5, frames_atts_for_t5 = self.reshape_frames_for_t5(frames_for_t5= frames_for_t5, b=b, t=t, image=image)
-        #print(f"frames_for_t5 after reshaping: {frames_for_t5.shape}")
-
-
-        with autocast(dtype=torch.float16):  # Use FP16 precision where possible
+        # Mixed precision autocasting for forward pass efficiency (FP16)
+        with autocast(enabled=True):  # Use FP16 where possible to reduce memory usage
+            # Concatenate video, query, task prompts, and other temporal information
             inputs_embs_mr, inputs_atts_mr, video_prompt = self.prompt_concatenation(
                 timestamps=timestamps,
                 durations=durations,
@@ -354,11 +333,8 @@ class BLIP2_MR(Blip2Base):
                 query_prompt=query_prompt,
                 task_prompt=task_prompt,
             )
-            #print(f"T5 Input Embeddings: {inputs_embs_mr}")
 
-
-
-            ### Encode answer ################################################
+            # Tokenize the answer and handle padding
             output_tokens_mr = self.t5_tokenizer(
                 answer,
                 padding="longest",
@@ -371,17 +347,7 @@ class BLIP2_MR(Blip2Base):
             )
             output_tokens_mask_mr = output_tokens_mr.attention_mask
 
-            ### Apply moment retrieval prompt ######################################
-            outputs_loc = self.t5_model(
-                inputs_embeds=inputs_embs_mr,
-                attention_mask=inputs_atts_mr,
-                decoder_attention_mask=output_tokens_mask_mr,
-                return_dict=True,
-                labels=targets_mr,
-            )
-            output_tokens_mask_mr = output_tokens_mr.attention_mask
-
-            # Apply moment retrieval prompt (T5 forward pass)
+            # Forward pass through the T5 model for moment retrieval (optimize by reusing the same call)
             outputs_loc = self.t5_model(
                 inputs_embeds=inputs_embs_mr,
                 attention_mask=inputs_atts_mr,
@@ -390,35 +356,30 @@ class BLIP2_MR(Blip2Base):
                 labels=targets_mr,
             )
 
-            # Compute loss
+            # Calculate loss
             loss = outputs_loc.loss
 
-            # write the following to a wandb table
+            # WandB logging (if enabled and main process)
             if self.use_wandb and is_main_process():
-                log = {}
-                log["train/log_likelihood_loss"] = loss.item()
-                # Log images and predictions
+                log = {"train/log_likelihood_loss": loss.item()}
                 if samples["iters"] % self.log_samples_every_n == 0:
                     pred = self.t5_tokenizer.batch_decode(
                         torch.argmax(outputs_loc.logits, dim=-1)
                     )
-                    out, self.wandb_table_data = (
-                        format_wandb_log_images_and_predictions(
-                            samples=samples,
-                            wandb_table_data=self.wandb_table_data,
-                            pred=pred,
-                            video_prompt=video_prompt,
-                            post_process_fn=self.post_process,
-                            input_time_format=self.input_time_format,
-                            interleave_data=True,
-                            train_data=True,
-                        )
+                    out, self.wandb_table_data = format_wandb_log_images_and_predictions(
+                        samples=samples,
+                        wandb_table_data=self.wandb_table_data,
+                        pred=pred,
+                        video_prompt=video_prompt,
+                        post_process_fn=self.post_process,
+                        input_time_format=self.input_time_format,
+                        interleave_data=True,
+                        train_data=True,
                     )
                     log.update(out)
-                # Log iteration
                 wandb.log(log)
 
-            return {"loss": loss}
+        return {"loss": loss}
 
     #TODO: add audio embeddings here
     def prompt_concatenation(
