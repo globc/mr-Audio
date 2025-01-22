@@ -1,507 +1,0 @@
-WARNING:__main__:
-*****************************************
-Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
-*****************************************
-/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/fairscale/experimental/nn/offload.py:19: FutureWarning: `torch.cuda.amp.custom_fwd(args...)` is deprecated. Please use `torch.amp.custom_fwd(args..., device_type='cuda')` instead.
-  return torch.cuda.amp.custom_fwd(orig_func)  # type: ignore
-/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/fairscale/experimental/nn/offload.py:19: FutureWarning: `torch.cuda.amp.custom_fwd(args...)` is deprecated. Please use `torch.amp.custom_fwd(args..., device_type='cuda')` instead.
-  return torch.cuda.amp.custom_fwd(orig_func)  # type: ignore
-/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/fairscale/experimental/nn/offload.py:30: FutureWarning: `torch.cuda.amp.custom_bwd(args...)` is deprecated. Please use `torch.amp.custom_bwd(args..., device_type='cuda')` instead.
-  return torch.cuda.amp.custom_bwd(orig_func)  # type: ignore
-/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/fairscale/experimental/nn/offload.py:30: FutureWarning: `torch.cuda.amp.custom_bwd(args...)` is deprecated. Please use `torch.amp.custom_bwd(args..., device_type='cuda')` instead.
-  return torch.cuda.amp.custom_bwd(orig_func)  # type: ignore
-/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/fairscale/experimental/nn/offload.py:19: FutureWarning: `torch.cuda.amp.custom_fwd(args...)` is deprecated. Please use `torch.amp.custom_fwd(args..., device_type='cuda')` instead.
-  return torch.cuda.amp.custom_fwd(orig_func)  # type: ignore
-/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/fairscale/experimental/nn/offload.py:30: FutureWarning: `torch.cuda.amp.custom_bwd(args...)` is deprecated. Please use `torch.amp.custom_bwd(args..., device_type='cuda')` instead.
-  return torch.cuda.amp.custom_bwd(orig_func)  # type: ignore
-/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/fairscale/experimental/nn/offload.py:19: FutureWarning: `torch.cuda.amp.custom_fwd(args...)` is deprecated. Please use `torch.amp.custom_fwd(args..., device_type='cuda')` instead.
-  return torch.cuda.amp.custom_fwd(orig_func)  # type: ignore
-/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/fairscale/experimental/nn/offload.py:30: FutureWarning: `torch.cuda.amp.custom_bwd(args...)` is deprecated. Please use `torch.amp.custom_bwd(args..., device_type='cuda')` instead.
-  return torch.cuda.amp.custom_bwd(orig_func)  # type: ignore
-[rank1]:[W1215 19:58:38.204471973 ProcessGroupNCCL.cpp:4115] [PG ID 0 PG GUID 0 Rank 1]  using GPU 1 to perform barrier as devices used by this process are currently unknown. This can potentially cause a hang if this rank to GPU mapping is incorrect.Specify device_ids in barrier() to force use of a particular device,or call init_process_group() with a device_id.
-[rank0]:[W1215 19:58:38.212149082 ProcessGroupNCCL.cpp:4115] [PG ID 0 PG GUID 0 Rank 0]  using GPU 0 to perform barrier as devices used by this process are currently unknown. This can potentially cause a hang if this rank to GPU mapping is incorrect.Specify device_ids in barrier() to force use of a particular device,or call init_process_group() with a device_id.
-[rank2]:[W1215 19:58:38.237983159 ProcessGroupNCCL.cpp:4115] [PG ID 0 PG GUID 0 Rank 2]  using GPU 2 to perform barrier as devices used by this process are currently unknown. This can potentially cause a hang if this rank to GPU mapping is incorrect.Specify device_ids in barrier() to force use of a particular device,or call init_process_group() with a device_id.
-[rank3]:[W1215 19:58:38.252525243 ProcessGroupNCCL.cpp:4115] [PG ID 0 PG GUID 0 Rank 3]  using GPU 3 to perform barrier as devices used by this process are currently unknown. This can potentially cause a hang if this rank to GPU mapping is incorrect.Specify device_ids in barrier() to force use of a particular device,or call init_process_group() with a device_id.
-wandb: Using wandb-core as the SDK backend.  Please refer to https://wandb.me/wandb-core for more information.
-wandb: Currently logged in as: joeltschesche (joeltschesche-tu-darmstadt). Use `wandb login --relogin` to force relogin
-wandb: Tracking run with wandb version 0.19.1
-wandb: Run data is saved locally in /home/atuin/g102ea/g102ea22/mr-Audio/wandb/run-20241215_195841-6habflo5
-wandb: Run `wandb offline` to turn off syncing.
-wandb: Syncing run Charades_20
-wandb: ⭐️ View project at https://wandb.ai/joeltschesche-tu-darmstadt/mr_BLIP
-wandb: 🚀 View run at https://wandb.ai/joeltschesche-tu-darmstadt/mr_BLIP/runs/6habflo5
-2024-12-15 19:58:42,351 [INFO] 
-=====  Running Parameters    =====
-2024-12-15 19:58:42,352 [INFO] {
-    "accum_grad_iters": 1,
-    "amp": true,
-    "batch_size_eval": 4,
-    "batch_size_train": 4,
-    "device": "cuda",
-    "dist_backend": "nccl",
-    "dist_url": "env://",
-    "distributed": true,
-    "evaluate": false,
-    "find_unused_parameters": true,
-    "gpu": 0,
-    "init_lr": 0.0003,
-    "lr_sched": "linear_warmup_cosine_lr",
-    "max_epoch": 50,
-    "max_len": 200,
-    "min_len": 8,
-    "min_lr": 0,
-    "num_beams": 5,
-    "num_workers": 8,
-    "output_dir": "result/mr_BLIP/Charades/Charades_20-1",
-    "rank": 0,
-    "resume_ckpt_path": null,
-    "seed": 42,
-    "task": "moment_retrieval",
-    "test_splits": [
-        "test"
-    ],
-    "train_splits": [
-        "train"
-    ],
-    "valid_splits": [
-        "val"
-    ],
-    "wandb": true,
-    "wandb_name": "Charades_20",
-    "wandb_project": "mr_BLIP",
-    "warmup_lr": 1e-08,
-    "warmup_steps": 1745,
-    "weight_decay": 0.05,
-    "world_size": 4
-}
-2024-12-15 19:58:42,352 [INFO] 
-======  Dataset Attributes  ======
-2024-12-15 19:58:42,352 [INFO] 
-======== charades_sta =======
-2024-12-15 19:58:42,353 [INFO] {
-    "build_info": {
-        "annotations": {
-            "test": {
-                "storage": "/home/atuin/g102ea/shared/charades_sta_annotations/test.json",
-                "url": "/home/atuin/g102ea/shared/charades_sta_annotations/test.json"
-            },
-            "train": {
-                "storage": "/home/atuin/g102ea/shared/charades_sta_annotations/train.json",
-                "url": "/home/atuin/g102ea/shared/charades_sta_annotations/train.json"
-            },
-            "val": {
-                "storage": "/home/atuin/g102ea/shared/charades_sta_annotations/test.json",
-                "url": "/home/atuin/g102ea/shared/charades_sta_annotations/test.json"
-            }
-        },
-        "videos": {
-            "storage": "/home/atuin/g102ea/shared/videos/Charades_v1"
-        }
-    },
-    "data_type": "videos",
-    "text_processor": {
-        "eval": {
-            "max_words": 50,
-            "name": "blip_question"
-        },
-        "train": {
-            "max_words": 50,
-            "name": "blip_question"
-        }
-    },
-    "vis_processor": {
-        "eval": {
-            "image_size": 224,
-            "n_frms": 20,
-            "name": "blip_video_eval"
-        },
-        "train": {
-            "image_size": 224,
-            "n_frms": 20,
-            "name": "blip2_video_train"
-        }
-    }
-}
-2024-12-15 19:58:42,353 [INFO] 
-======  Model Attributes  ======
-2024-12-15 19:58:42,353 [INFO] {
-    "arch": "blip2_mr",
-    "drop_path_rate": 0,
-    "finetuned": "",
-    "frame_token_aggregation": false,
-    "freeze_vit": true,
-    "image_size": 224,
-    "input_time_format": "seconds_integers",
-    "interleave_data": true,
-    "load_finetuned": false,
-    "model_type": "pretrain_flant5xl",
-    "num_query_token": 32,
-    "pretrained": "https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP2/blip2_pretrained_flant5xl.pth",
-    "prompt": "",
-    "t5_model": "google/flan-t5-xl",
-    "task": "qformer_freeze_lora",
-    "use_grad_checkpoint": false,
-    "vit_precision": "fp16"
-}
-2024-12-15 19:58:42,359 [INFO] Using existing file /home/atuin/g102ea/shared/charades_sta_annotations/train.json.
-2024-12-15 19:58:42,360 [INFO] Using existing file /home/atuin/g102ea/shared/charades_sta_annotations/test.json.
-2024-12-15 19:58:42,360 [INFO] Using existing file /home/atuin/g102ea/shared/charades_sta_annotations/test.json.
-2024-12-15 19:58:42,375 [INFO] Building datasets...
-2024-12-15 19:59:10,411 [INFO] Downloading: "https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP2/eva_vit_g.pth" to /home/hpc/g102ea/g102ea22/.cache/torch/hub/checkpoints/eva_vit_g.pth
-
-  0%|          | 0.00/1.89G [00:00<?, ?B/s]  0%|          | 128k/1.89G [00:00<43:56, 768kB/s]  0%|          | 1.50M/1.89G [00:00<04:50, 6.96MB/s]  0%|          | 3.75M/1.89G [00:00<02:33, 13.2MB/s]  0%|          | 8.12M/1.89G [00:00<01:23, 24.3MB/s]  1%|          | 12.4M/1.89G [00:00<01:05, 30.6MB/s]  1%|          | 16.8M/1.89G [00:00<00:56, 35.5MB/s]  1%|          | 20.4M/1.89G [00:00<00:57, 34.9MB/s]  1%|▏         | 24.6M/1.89G [00:00<00:54, 36.8MB/s]  1%|▏         | 28.8M/1.89G [00:01<00:54, 36.9MB/s]  2%|▏         | 33.2M/1.89G [00:01<00:50, 39.8MB/s]  2%|▏         | 38.2M/1.89G [00:01<00:46, 43.1MB/s]  2%|▏         | 42.6M/1.89G [00:01<00:45, 43.8MB/s]  2%|▏         | 46.9M/1.89G [00:01<01:01, 32.1MB/s]  3%|▎         | 52.0M/1.89G [00:01<00:53, 37.1MB/s]  3%|▎         | 56.6M/1.89G [00:01<00:49, 40.0MB/s]  3%|▎         | 61.6M/1.89G [00:01<00:51, 38.1MB/s]  3%|▎         | 66.2M/1.89G [00:02<00:49, 39.6MB/s]  4%|▎         | 70.4M/1.89G [00:02<00:49, 39.5MB/s]  4%|▍         | 74.4M/1.89G [00:02<00:50, 38.6MB/s]  4%|▍         | 79.2M/1.89G [00:02<00:46, 41.4MB/s]  4%|▍         | 84.1M/1.89G [00:02<00:44, 43.9MB/s]  5%|▍         | 88.5M/1.89G [00:02<00:49, 38.8MB/s]  5%|▍         | 93.1M/1.89G [00:02<00:46, 41.2MB/s]  5%|▌         | 97.9M/1.89G [00:02<00:44, 43.5MB/s]  5%|▌         | 102M/1.89G [00:02<00:50, 37.9MB/s]   5%|▌         | 106M/1.89G [00:03<00:50, 37.9MB/s]  6%|▌         | 111M/1.89G [00:03<00:45, 42.0MB/s]  6%|▌         | 116M/1.89G [00:03<00:43, 43.7MB/s]  6%|▌         | 120M/1.89G [00:03<00:48, 39.1MB/s]  6%|▋         | 125M/1.89G [00:03<00:44, 42.9MB/s]  7%|▋         | 130M/1.89G [00:03<00:41, 45.1MB/s]  7%|▋         | 135M/1.89G [00:03<00:46, 40.4MB/s]  7%|▋         | 140M/1.89G [00:03<00:43, 42.8MB/s]  7%|▋         | 144M/1.89G [00:03<00:43, 43.2MB/s]  8%|▊         | 149M/1.89G [00:04<00:43, 42.9MB/s]  8%|▊         | 153M/1.89G [00:04<00:44, 42.3MB/s]  8%|▊         | 158M/1.89G [00:04<00:41, 44.4MB/s]  8%|▊         | 163M/1.89G [00:04<00:41, 44.4MB/s]  9%|▊         | 167M/1.89G [00:04<00:42, 43.1MB/s]  9%|▉         | 171M/1.89G [00:04<00:42, 43.0MB/s]  9%|▉         | 176M/1.89G [00:04<00:42, 43.4MB/s]  9%|▉         | 180M/1.89G [00:04<00:44, 40.8MB/s] 10%|▉         | 185M/1.89G [00:04<00:41, 44.4MB/s] 10%|▉         | 189M/1.89G [00:05<00:41, 43.7MB/s] 10%|█         | 194M/1.89G [00:05<00:41, 44.3MB/s] 10%|█         | 198M/1.89G [00:05<00:43, 41.6MB/s] 10%|█         | 202M/1.89G [00:05<00:42, 42.3MB/s] 11%|█         | 207M/1.89G [00:05<00:41, 44.0MB/s] 11%|█         | 212M/1.89G [00:05<00:40, 44.9MB/s] 11%|█         | 216M/1.89G [00:05<00:40, 44.8MB/s] 11%|█▏        | 220M/1.89G [00:05<00:43, 41.3MB/s] 12%|█▏        | 225M/1.89G [00:05<00:42, 42.2MB/s] 12%|█▏        | 230M/1.89G [00:06<00:38, 45.8MB/s] 12%|█▏        | 235M/1.89G [00:06<00:42, 42.1MB/s] 12%|█▏        | 240M/1.89G [00:06<00:39, 44.4MB/s] 13%|█▎        | 244M/1.89G [00:06<00:40, 43.4MB/s] 13%|█▎        | 248M/1.89G [00:06<00:41, 42.3MB/s] 13%|█▎        | 253M/1.89G [00:06<00:41, 42.0MB/s] 13%|█▎        | 258M/1.89G [00:06<00:39, 44.4MB/s] 14%|█▎        | 262M/1.89G [00:06<00:39, 44.5MB/s] 14%|█▍        | 267M/1.89G [00:06<00:40, 43.1MB/s] 14%|█▍        | 271M/1.89G [00:07<00:40, 43.2MB/s] 14%|█▍        | 275M/1.89G [00:07<00:42, 41.3MB/s] 14%|█▍        | 280M/1.89G [00:07<00:40, 42.8MB/s] 15%|█▍        | 285M/1.89G [00:07<00:38, 45.1MB/s] 15%|█▍        | 289M/1.89G [00:07<00:42, 40.3MB/s] 15%|█▌        | 294M/1.89G [00:07<00:39, 43.1MB/s] 15%|█▌        | 299M/1.89G [00:07<00:43, 39.8MB/s] 16%|█▌        | 304M/1.89G [00:07<00:40, 42.6MB/s] 16%|█▌        | 308M/1.89G [00:07<00:41, 40.8MB/s] 16%|█▌        | 312M/1.89G [00:08<00:41, 40.7MB/s] 16%|█▋        | 317M/1.89G [00:08<00:41, 41.1MB/s] 17%|█▋        | 321M/1.89G [00:08<00:40, 41.6MB/s] 17%|█▋        | 326M/1.89G [00:08<00:39, 42.2MB/s] 17%|█▋        | 330M/1.89G [00:08<00:42, 39.2MB/s] 17%|█▋        | 335M/1.89G [00:08<00:39, 41.9MB/s] 18%|█▊        | 339M/1.89G [00:08<00:41, 40.1MB/s] 18%|█▊        | 344M/1.89G [00:08<00:40, 40.8MB/s] 18%|█▊        | 348M/1.89G [00:09<00:40, 40.7MB/s] 18%|█▊        | 353M/1.89G [00:09<00:37, 44.0MB/s] 19%|█▊        | 358M/1.89G [00:09<00:38, 43.4MB/s] 19%|█▊        | 362M/1.89G [00:09<00:38, 43.0MB/s] 19%|█▉        | 366M/1.89G [00:09<00:38, 42.2MB/s] 19%|█▉        | 371M/1.89G [00:09<00:37, 44.2MB/s] 19%|█▉        | 376M/1.89G [00:09<00:37, 44.0MB/s] 20%|█▉        | 380M/1.89G [00:09<00:41, 39.4MB/s] 20%|█▉        | 384M/1.89G [00:09<00:45, 35.4MB/s] 20%|██        | 388M/1.89G [00:10<00:44, 36.7MB/s] 20%|██        | 393M/1.89G [00:10<00:38, 41.4MB/s] 21%|██        | 398M/1.89G [00:10<00:36, 43.7MB/s] 21%|██        | 402M/1.89G [00:10<00:39, 40.9MB/s] 21%|██        | 406M/1.89G [00:10<00:39, 40.0MB/s] 21%|██        | 410M/1.89G [00:10<00:39, 40.2MB/s] 21%|██▏       | 415M/1.89G [00:10<00:37, 42.6MB/s] 22%|██▏       | 420M/1.89G [00:10<00:41, 38.0MB/s] 22%|██▏       | 424M/1.89G [00:10<00:38, 41.0MB/s] 22%|██▏       | 430M/1.89G [00:11<00:35, 44.2MB/s] 22%|██▏       | 434M/1.89G [00:11<00:34, 45.4MB/s] 23%|██▎       | 439M/1.89G [00:11<00:38, 40.5MB/s] 23%|██▎       | 443M/1.89G [00:11<00:43, 36.0MB/s] 23%|██▎       | 448M/1.89G [00:11<00:44, 34.9MB/s] 23%|██▎       | 452M/1.89G [00:11<00:40, 38.6MB/s] 24%|██▎       | 457M/1.89G [00:11<00:36, 41.8MB/s] 24%|██▍       | 462M/1.89G [00:11<00:39, 39.2MB/s] 24%|██▍       | 467M/1.89G [00:12<00:36, 42.1MB/s] 24%|██▍       | 472M/1.89G [00:12<00:38, 39.4MB/s] 25%|██▍       | 476M/1.89G [00:12<00:38, 39.8MB/s] 25%|██▍       | 480M/1.89G [00:12<00:38, 39.6MB/s] 25%|██▌       | 485M/1.89G [00:12<00:36, 42.0MB/s] 25%|██▌       | 489M/1.89G [00:12<00:37, 39.9MB/s] 26%|██▌       | 493M/1.89G [00:12<00:45, 33.1MB/s] 26%|██▌       | 497M/1.89G [00:12<00:43, 34.4MB/s] 26%|██▌       | 501M/1.89G [00:13<00:40, 37.0MB/s] 26%|██▌       | 505M/1.89G [00:13<00:40, 36.5MB/s] 26%|██▋       | 510M/1.89G [00:13<00:37, 40.2MB/s] 27%|██▋       | 514M/1.89G [00:13<00:41, 35.9MB/s] 27%|██▋       | 519M/1.89G [00:13<00:37, 39.8MB/s] 27%|██▋       | 523M/1.89G [00:13<00:39, 37.2MB/s] 27%|██▋       | 528M/1.89G [00:13<00:35, 41.1MB/s] 28%|██▊       | 532M/1.89G [00:13<00:43, 34.0MB/s] 28%|██▊       | 536M/1.89G [00:14<00:43, 33.4MB/s] 28%|██▊       | 540M/1.89G [00:14<00:40, 36.0MB/s] 28%|██▊       | 545M/1.89G [00:14<00:36, 39.3MB/s] 28%|██▊       | 550M/1.89G [00:14<00:37, 38.6MB/s] 29%|██▊       | 554M/1.89G [00:14<00:35, 40.7MB/s] 29%|██▉       | 559M/1.89G [00:14<00:33, 42.4MB/s] 29%|██▉       | 563M/1.89G [00:14<00:35, 40.3MB/s] 29%|██▉       | 567M/1.89G [00:14<00:34, 41.5MB/s] 30%|██▉       | 571M/1.89G [00:14<00:37, 38.0MB/s] 30%|██▉       | 575M/1.89G [00:15<00:36, 38.8MB/s] 30%|███       | 581M/1.89G [00:15<00:32, 43.2MB/s] 30%|███       | 586M/1.89G [00:15<00:30, 46.1MB/s] 31%|███       | 590M/1.89G [00:15<00:34, 40.4MB/s] 31%|███       | 595M/1.89G [00:15<00:32, 43.2MB/s] 31%|███       | 600M/1.89G [00:15<00:33, 41.3MB/s] 31%|███▏      | 604M/1.89G [00:15<00:37, 37.3MB/s] 32%|███▏      | 609M/1.89G [00:15<00:33, 41.4MB/s] 32%|███▏      | 614M/1.89G [00:15<00:30, 44.9MB/s] 32%|███▏      | 619M/1.89G [00:16<00:34, 40.1MB/s] 32%|███▏      | 623M/1.89G [00:16<00:32, 42.1MB/s] 33%|███▎      | 628M/1.89G [00:16<00:30, 45.2MB/s] 33%|███▎      | 633M/1.89G [00:16<00:32, 41.3MB/s] 33%|███▎      | 637M/1.89G [00:16<00:33, 40.6MB/s] 33%|███▎      | 642M/1.89G [00:16<00:30, 44.0MB/s] 33%|███▎      | 647M/1.89G [00:16<00:32, 41.8MB/s] 34%|███▎      | 651M/1.89G [00:16<00:31, 42.6MB/s] 34%|███▍      | 656M/1.89G [00:17<00:31, 42.5MB/s] 34%|███▍      | 661M/1.89G [00:17<00:29, 45.4MB/s] 34%|███▍      | 665M/1.89G [00:17<00:30, 43.3MB/s] 35%|███▍      | 670M/1.89G [00:17<00:30, 43.3MB/s] 35%|███▍      | 674M/1.89G [00:17<00:30, 42.6MB/s] 35%|███▌      | 679M/1.89G [00:17<00:31, 42.0MB/s] 35%|███▌      | 683M/1.89G [00:17<00:31, 41.2MB/s] 36%|███▌      | 688M/1.89G [00:17<00:34, 38.0MB/s] 36%|███▌      | 692M/1.89G [00:17<00:31, 41.3MB/s] 36%|███▌      | 697M/1.89G [00:18<00:30, 42.8MB/s] 36%|███▋      | 702M/1.89G [00:18<00:28, 45.4MB/s] 37%|███▋      | 706M/1.89G [00:18<00:31, 40.4MB/s] 37%|███▋      | 711M/1.89G [00:18<00:30, 42.1MB/s] 37%|███▋      | 715M/1.89G [00:18<00:29, 43.1MB/s] 37%|███▋      | 720M/1.89G [00:18<00:32, 39.2MB/s] 37%|███▋      | 724M/1.89G [00:18<00:31, 40.1MB/s] 38%|███▊      | 729M/1.89G [00:18<00:28, 43.8MB/s] 38%|███▊      | 734M/1.89G [00:18<00:27, 46.4MB/s] 38%|███▊      | 739M/1.89G [00:19<00:30, 41.0MB/s] 39%|███▊      | 744M/1.89G [00:19<00:28, 43.4MB/s] 39%|███▊      | 748M/1.89G [00:19<00:28, 43.6MB/s] 39%|███▉      | 752M/1.89G [00:19<00:33, 36.9MB/s] 39%|███▉      | 758M/1.89G [00:19<00:30, 40.8MB/s] 39%|███▉      | 762M/1.89G [00:19<00:29, 40.9MB/s] 40%|███▉      | 766M/1.89G [00:19<00:29, 41.5MB/s] 40%|███▉      | 770M/1.89G [00:19<00:28, 42.6MB/s] 40%|████      | 774M/1.89G [00:20<00:29, 41.2MB/s] 40%|████      | 778M/1.89G [00:20<00:30, 39.2MB/s] 41%|████      | 782M/1.89G [00:20<00:29, 40.2MB/s] 41%|████      | 786M/1.89G [00:20<00:30, 39.8MB/s] 41%|████      | 791M/1.89G [00:20<00:31, 37.8MB/s] 41%|████      | 795M/1.89G [00:20<00:30, 38.7MB/s] 41%|████▏     | 800M/1.89G [00:20<00:29, 40.2MB/s] 42%|████▏     | 804M/1.89G [00:20<00:27, 43.2MB/s] 42%|████▏     | 809M/1.89G [00:20<00:28, 41.7MB/s] 42%|████▏     | 813M/1.89G [00:21<00:26, 43.9MB/s] 42%|████▏     | 818M/1.89G [00:21<00:28, 40.4MB/s] 43%|████▎     | 822M/1.89G [00:21<00:27, 42.9MB/s] 43%|████▎     | 827M/1.89G [00:21<00:27, 42.5MB/s] 43%|████▎     | 831M/1.89G [00:21<00:29, 39.3MB/s] 43%|████▎     | 836M/1.89G [00:21<00:27, 42.5MB/s] 44%|████▎     | 841M/1.89G [00:21<00:25, 44.6MB/s] 44%|████▍     | 846M/1.89G [00:21<00:30, 36.9MB/s] 44%|████▍     | 850M/1.89G [00:21<00:30, 37.6MB/s] 44%|████▍     | 854M/1.89G [00:22<00:31, 35.6MB/s] 44%|████▍     | 858M/1.89G [00:22<00:29, 37.6MB/s] 45%|████▍     | 863M/1.89G [00:22<00:27, 41.0MB/s] 45%|████▍     | 868M/1.89G [00:22<00:25, 44.3MB/s] 45%|████▌     | 872M/1.89G [00:22<00:27, 40.9MB/s] 45%|████▌     | 877M/1.89G [00:22<00:26, 41.3MB/s] 46%|████▌     | 881M/1.89G [00:22<00:25, 43.2MB/s] 46%|████▌     | 886M/1.89G [00:22<00:24, 44.9MB/s] 46%|████▌     | 890M/1.89G [00:23<00:26, 41.9MB/s] 46%|████▋     | 895M/1.89G [00:23<00:25, 42.2MB/s] 47%|████▋     | 900M/1.89G [00:23<00:24, 44.5MB/s] 47%|████▋     | 904M/1.89G [00:23<00:24, 44.3MB/s] 47%|████▋     | 909M/1.89G [00:23<00:24, 43.0MB/s] 47%|████▋     | 913M/1.89G [00:23<00:26, 39.8MB/s] 48%|████▊     | 918M/1.89G [00:23<00:24, 42.8MB/s] 48%|████▊     | 923M/1.89G [00:23<00:23, 45.3MB/s] 48%|████▊     | 928M/1.89G [00:23<00:27, 37.7MB/s] 48%|████▊     | 932M/1.89G [00:24<00:26, 40.3MB/s] 48%|████▊     | 936M/1.89G [00:24<00:26, 39.6MB/s] 49%|████▊     | 941M/1.89G [00:24<00:24, 42.2MB/s] 49%|████▉     | 945M/1.89G [00:24<00:25, 40.6MB/s] 49%|████▉     | 949M/1.89G [00:24<00:26, 39.4MB/s] 49%|████▉     | 954M/1.89G [00:24<00:24, 41.7MB/s] 50%|████▉     | 959M/1.89G [00:24<00:24, 41.1MB/s] 50%|████▉     | 963M/1.89G [00:24<00:26, 38.6MB/s] 50%|█████     | 968M/1.89G [00:24<00:23, 42.9MB/s] 50%|█████     | 972M/1.89G [00:25<00:23, 42.3MB/s] 51%|█████     | 978M/1.89G [00:25<00:22, 44.9MB/s] 51%|█████     | 982M/1.89G [00:25<00:24, 41.1MB/s] 51%|█████     | 986M/1.89G [00:25<00:26, 37.7MB/s] 51%|█████▏    | 991M/1.89G [00:25<00:23, 41.1MB/s] 52%|█████▏    | 995M/1.89G [00:25<00:26, 36.9MB/s] 52%|█████▏    | 0.98G/1.89G [00:25<00:23, 41.0MB/s] 52%|█████▏    | 0.98G/1.89G [00:25<00:23, 41.1MB/s] 52%|█████▏    | 0.99G/1.89G [00:26<00:22, 42.7MB/s] 52%|█████▏    | 0.99G/1.89G [00:26<00:23, 40.5MB/s] 53%|█████▎    | 0.99G/1.89G [00:26<00:21, 43.7MB/s] 53%|█████▎    | 1.00G/1.89G [00:26<00:22, 43.0MB/s] 53%|█████▎    | 1.00G/1.89G [00:26<00:23, 40.3MB/s] 53%|█████▎    | 1.01G/1.89G [00:26<00:25, 36.9MB/s] 54%|█████▎    | 1.01G/1.89G [00:26<00:22, 41.2MB/s] 54%|█████▍    | 1.02G/1.89G [00:26<00:20, 44.5MB/s] 54%|█████▍    | 1.02G/1.89G [00:27<00:23, 39.7MB/s] 54%|█████▍    | 1.03G/1.89G [00:27<00:21, 43.4MB/s] 55%|█████▍    | 1.03G/1.89G [00:27<00:19, 46.7MB/s] 55%|█████▌    | 1.04G/1.89G [00:27<00:22, 40.3MB/s] 55%|█████▌    | 1.04G/1.89G [00:27<00:20, 43.6MB/s] 56%|█████▌    | 1.05G/1.89G [00:27<00:22, 39.4MB/s] 56%|█████▌    | 1.05G/1.89G [00:27<00:21, 42.0MB/s] 56%|█████▌    | 1.06G/1.89G [00:27<00:19, 45.5MB/s] 56%|█████▋    | 1.06G/1.89G [00:27<00:21, 40.9MB/s] 57%|█████▋    | 1.07G/1.89G [00:28<00:20, 43.0MB/s] 57%|█████▋    | 1.07G/1.89G [00:28<00:22, 39.2MB/s] 57%|█████▋    | 1.08G/1.89G [00:28<00:20, 43.1MB/s] 57%|█████▋    | 1.08G/1.89G [00:28<00:19, 43.7MB/s] 58%|█████▊    | 1.08G/1.89G [00:28<00:19, 44.8MB/s] 58%|█████▊    | 1.09G/1.89G [00:28<00:27, 31.4MB/s] 58%|█████▊    | 1.09G/1.89G [00:28<00:24, 34.5MB/s] 58%|█████▊    | 1.10G/1.89G [00:28<00:23, 36.7MB/s] 58%|█████▊    | 1.10G/1.89G [00:29<00:24, 35.1MB/s] 59%|█████▊    | 1.11G/1.89G [00:29<00:22, 38.0MB/s] 59%|█████▉    | 1.11G/1.89G [00:29<00:20, 40.9MB/s] 59%|█████▉    | 1.11G/1.89G [00:29<00:21, 38.1MB/s] 59%|█████▉    | 1.12G/1.89G [00:29<00:21, 38.8MB/s] 60%|█████▉    | 1.12G/1.89G [00:29<00:19, 41.9MB/s] 60%|█████▉    | 1.13G/1.89G [00:29<00:18, 45.1MB/s] 60%|██████    | 1.13G/1.89G [00:29<00:19, 41.8MB/s] 60%|██████    | 1.14G/1.89G [00:30<00:20, 39.6MB/s] 61%|██████    | 1.14G/1.89G [00:30<00:18, 43.6MB/s] 61%|██████    | 1.15G/1.89G [00:30<00:20, 39.3MB/s] 61%|██████    | 1.15G/1.89G [00:30<00:20, 39.0MB/s] 61%|██████    | 1.16G/1.89G [00:30<00:18, 42.9MB/s] 61%|██████▏   | 1.16G/1.89G [00:30<00:20, 38.7MB/s] 62%|██████▏   | 1.16G/1.89G [00:30<00:18, 42.8MB/s] 62%|██████▏   | 1.17G/1.89G [00:30<00:17, 45.3MB/s] 62%|██████▏   | 1.17G/1.89G [00:30<00:19, 40.2MB/s] 62%|██████▏   | 1.18G/1.89G [00:31<00:18, 41.6MB/s] 63%|██████▎   | 1.18G/1.89G [00:31<00:16, 45.2MB/s] 63%|██████▎   | 1.19G/1.89G [00:31<00:18, 41.5MB/s] 63%|██████▎   | 1.19G/1.89G [00:31<00:17, 42.2MB/s] 63%|██████▎   | 1.20G/1.89G [00:31<00:18, 41.0MB/s] 64%|██████▎   | 1.20G/1.89G [00:31<00:16, 44.8MB/s] 64%|██████▍   | 1.21G/1.89G [00:31<00:18, 39.2MB/s] 64%|██████▍   | 1.21G/1.89G [00:31<00:17, 40.9MB/s] 64%|██████▍   | 1.21G/1.89G [00:32<00:19, 37.8MB/s] 65%|██████▍   | 1.22G/1.89G [00:32<00:17, 40.3MB/s] 65%|██████▍   | 1.22G/1.89G [00:32<00:16, 43.5MB/s] 65%|██████▌   | 1.23G/1.89G [00:32<00:16, 43.7MB/s] 65%|██████▌   | 1.23G/1.89G [00:32<00:17, 40.7MB/s] 66%|██████▌   | 1.24G/1.89G [00:32<00:16, 43.4MB/s] 66%|██████▌   | 1.24G/1.89G [00:32<00:15, 43.9MB/s] 66%|██████▌   | 1.25G/1.89G [00:32<00:15, 43.8MB/s] 66%|██████▋   | 1.25G/1.89G [00:32<00:15, 43.4MB/s] 66%|██████▋   | 1.25G/1.89G [00:33<00:16, 41.2MB/s] 67%|██████▋   | 1.26G/1.89G [00:33<00:15, 42.8MB/s] 67%|██████▋   | 1.26G/1.89G [00:33<00:14, 46.1MB/s] 67%|██████▋   | 1.27G/1.89G [00:33<00:14, 44.5MB/s] 67%|██████▋   | 1.27G/1.89G [00:33<00:15, 41.8MB/s] 68%|██████▊   | 1.28G/1.89G [00:33<00:15, 43.2MB/s] 68%|██████▊   | 1.28G/1.89G [00:33<00:17, 37.7MB/s] 68%|██████▊   | 1.29G/1.89G [00:33<00:15, 42.0MB/s] 68%|██████▊   | 1.29G/1.89G [00:33<00:14, 44.0MB/s] 69%|██████▊   | 1.30G/1.89G [00:34<00:15, 40.2MB/s] 69%|██████▉   | 1.30G/1.89G [00:34<00:14, 44.0MB/s] 69%|██████▉   | 1.31G/1.89G [00:34<00:13, 44.9MB/s] 69%|██████▉   | 1.31G/1.89G [00:34<00:15, 41.1MB/s] 70%|██████▉   | 1.31G/1.89G [00:34<00:14, 43.3MB/s] 70%|██████▉   | 1.32G/1.89G [00:34<00:13, 43.6MB/s] 70%|███████   | 1.32G/1.89G [00:34<00:15, 39.5MB/s] 70%|███████   | 1.33G/1.89G [00:34<00:14, 40.6MB/s] 71%|███████   | 1.33G/1.89G [00:35<00:13, 44.7MB/s] 71%|███████   | 1.34G/1.89G [00:35<00:14, 40.9MB/s] 71%|███████   | 1.34G/1.89G [00:35<00:13, 42.5MB/s] 71%|███████▏  | 1.35G/1.89G [00:35<00:13, 42.8MB/s] 72%|███████▏  | 1.35G/1.89G [00:35<00:12, 44.7MB/s] 72%|███████▏  | 1.36G/1.89G [00:35<00:13, 41.4MB/s] 72%|███████▏  | 1.36G/1.89G [00:35<00:13, 42.4MB/s] 72%|███████▏  | 1.37G/1.89G [00:35<00:12, 45.8MB/s] 73%|███████▎  | 1.37G/1.89G [00:35<00:12, 42.7MB/s] 73%|███████▎  | 1.37G/1.89G [00:36<00:12, 42.6MB/s] 73%|███████▎  | 1.38G/1.89G [00:36<00:12, 43.0MB/s] 73%|███████▎  | 1.38G/1.89G [00:36<00:12, 44.4MB/s] 74%|███████▎  | 1.39G/1.89G [00:36<00:11, 46.7MB/s] 74%|███████▍  | 1.39G/1.89G [00:36<00:12, 42.4MB/s] 74%|███████▍  | 1.40G/1.89G [00:36<00:12, 43.1MB/s] 74%|███████▍  | 1.40G/1.89G [00:36<00:11, 43.9MB/s] 75%|███████▍  | 1.41G/1.89G [00:36<00:11, 45.6MB/s] 75%|███████▍  | 1.41G/1.89G [00:36<00:12, 39.9MB/s] 75%|███████▌  | 1.42G/1.89G [00:37<00:11, 43.4MB/s] 75%|███████▌  | 1.42G/1.89G [00:37<00:11, 45.1MB/s] 76%|███████▌  | 1.42G/1.89G [00:37<00:11, 44.7MB/s] 76%|███████▌  | 1.43G/1.89G [00:37<00:12, 38.3MB/s] 76%|███████▌  | 1.43G/1.89G [00:37<00:12, 40.1MB/s] 76%|███████▌  | 1.44G/1.89G [00:37<00:12, 38.4MB/s] 76%|███████▋  | 1.44G/1.89G [00:37<00:11, 40.6MB/s] 77%|███████▋  | 1.45G/1.89G [00:37<00:11, 40.3MB/s] 77%|███████▋  | 1.45G/1.89G [00:37<00:11, 41.5MB/s] 77%|███████▋  | 1.45G/1.89G [00:38<00:11, 40.4MB/s] 77%|███████▋  | 1.46G/1.89G [00:38<00:10, 42.6MB/s] 78%|███████▊  | 1.46G/1.89G [00:38<00:12, 35.4MB/s] 78%|███████▊  | 1.47G/1.89G [00:38<00:11, 37.9MB/s] 78%|███████▊  | 1.47G/1.89G [00:38<00:12, 36.0MB/s] 78%|███████▊  | 1.47G/1.89G [00:38<00:11, 38.1MB/s] 78%|███████▊  | 1.48G/1.89G [00:38<00:10, 41.1MB/s] 79%|███████▊  | 1.48G/1.89G [00:38<00:09, 44.9MB/s] 79%|███████▉  | 1.49G/1.89G [00:39<00:10, 40.9MB/s] 79%|███████▉  | 1.49G/1.89G [00:39<00:10, 41.6MB/s] 79%|███████▉  | 1.50G/1.89G [00:39<00:09, 42.8MB/s] 80%|███████▉  | 1.50G/1.89G [00:39<00:09, 45.0MB/s] 80%|███████▉  | 1.51G/1.89G [00:39<00:09, 42.2MB/s] 80%|████████  | 1.51G/1.89G [00:39<00:09, 42.8MB/s] 80%|████████  | 1.52G/1.89G [00:39<00:09, 43.1MB/s] 81%|████████  | 1.52G/1.89G [00:39<00:08, 44.2MB/s] 81%|████████  | 1.52G/1.89G [00:39<00:10, 37.8MB/s] 81%|████████  | 1.53G/1.89G [00:40<00:09, 41.2MB/s] 81%|████████▏ | 1.53G/1.89G [00:40<00:09, 40.3MB/s] 81%|████████▏ | 1.54G/1.89G [00:40<00:09, 40.7MB/s] 82%|████████▏ | 1.54G/1.89G [00:40<00:08, 42.8MB/s] 82%|████████▏ | 1.55G/1.89G [00:40<00:08, 41.1MB/s] 82%|████████▏ | 1.55G/1.89G [00:40<00:09, 37.2MB/s] 82%|████████▏ | 1.55G/1.89G [00:40<00:11, 31.7MB/s] 82%|████████▏ | 1.56G/1.89G [00:40<00:11, 31.5MB/s] 83%|████████▎ | 1.56G/1.89G [00:41<00:11, 30.5MB/s] 83%|████████▎ | 1.56G/1.89G [00:41<00:11, 31.3MB/s] 83%|████████▎ | 1.57G/1.89G [00:41<00:09, 37.9MB/s] 83%|████████▎ | 1.57G/1.89G [00:41<00:12, 26.8MB/s] 84%|████████▎ | 1.58G/1.89G [00:41<00:10, 32.0MB/s] 84%|████████▍ | 1.58G/1.89G [00:41<00:09, 34.5MB/s] 84%|████████▍ | 1.58G/1.89G [00:41<00:09, 35.7MB/s] 84%|████████▍ | 1.59G/1.89G [00:41<00:08, 38.9MB/s] 84%|████████▍ | 1.59G/1.89G [00:42<00:08, 37.5MB/s] 85%|████████▍ | 1.60G/1.89G [00:42<00:08, 38.2MB/s] 85%|████████▍ | 1.60G/1.89G [00:42<00:07, 40.4MB/s] 85%|████████▌ | 1.61G/1.89G [00:42<00:07, 42.5MB/s] 85%|████████▌ | 1.61G/1.89G [00:42<00:06, 42.3MB/s] 86%|████████▌ | 1.62G/1.89G [00:42<00:06, 41.8MB/s] 86%|████████▌ | 1.62G/1.89G [00:42<00:06, 43.6MB/s] 86%|████████▌ | 1.62G/1.89G [00:42<00:06, 45.1MB/s] 86%|████████▋ | 1.63G/1.89G [00:42<00:06, 41.7MB/s] 87%|████████▋ | 1.63G/1.89G [00:43<00:06, 43.0MB/s] 87%|████████▋ | 1.64G/1.89G [00:43<00:06, 42.6MB/s] 87%|████████▋ | 1.64G/1.89G [00:43<00:06, 42.2MB/s] 87%|████████▋ | 1.65G/1.89G [00:43<00:06, 42.7MB/s] 88%|████████▊ | 1.65G/1.89G [00:43<00:05, 43.3MB/s] 88%|████████▊ | 1.66G/1.89G [00:43<00:05, 45.0MB/s] 88%|████████▊ | 1.66G/1.89G [00:43<00:05, 40.7MB/s] 88%|████████▊ | 1.66G/1.89G [00:43<00:05, 40.1MB/s] 88%|████████▊ | 1.67G/1.89G [00:43<00:07, 33.6MB/s] 89%|████████▊ | 1.67G/1.89G [00:44<00:06, 35.0MB/s] 89%|████████▉ | 1.68G/1.89G [00:44<00:05, 38.9MB/s] 89%|████████▉ | 1.68G/1.89G [00:44<00:05, 40.7MB/s] 89%|████████▉ | 1.69G/1.89G [00:44<00:05, 40.8MB/s] 90%|████████▉ | 1.69G/1.89G [00:44<00:05, 36.7MB/s] 90%|████████▉ | 1.69G/1.89G [00:44<00:05, 40.7MB/s] 90%|█████████ | 1.70G/1.89G [00:44<00:04, 41.0MB/s] 90%|█████████ | 1.70G/1.89G [00:44<00:05, 37.6MB/s] 91%|█████████ | 1.71G/1.89G [00:45<00:04, 41.7MB/s] 91%|█████████ | 1.71G/1.89G [00:45<00:04, 44.0MB/s] 91%|█████████ | 1.72G/1.89G [00:45<00:04, 39.9MB/s] 91%|█████████▏| 1.72G/1.89G [00:45<00:04, 43.5MB/s] 92%|█████████▏| 1.73G/1.89G [00:45<00:04, 42.8MB/s] 92%|█████████▏| 1.73G/1.89G [00:45<00:03, 42.4MB/s] 92%|█████████▏| 1.73G/1.89G [00:45<00:04, 40.5MB/s] 92%|█████████▏| 1.74G/1.89G [00:45<00:03, 41.9MB/s] 92%|█████████▏| 1.74G/1.89G [00:45<00:03, 41.7MB/s] 93%|█████████▎| 1.75G/1.89G [00:46<00:03, 44.1MB/s] 93%|█████████▎| 1.75G/1.89G [00:46<00:03, 42.4MB/s] 93%|█████████▎| 1.76G/1.89G [00:46<00:03, 42.3MB/s] 93%|█████████▎| 1.76G/1.89G [00:46<00:03, 44.3MB/s] 94%|█████████▎| 1.77G/1.89G [00:46<00:02, 43.3MB/s] 94%|█████████▍| 1.77G/1.89G [00:46<00:02, 45.1MB/s] 94%|█████████▍| 1.78G/1.89G [00:46<00:02, 43.0MB/s] 94%|█████████▍| 1.78G/1.89G [00:46<00:02, 44.8MB/s] 95%|█████████▍| 1.78G/1.89G [00:46<00:02, 42.5MB/s] 95%|█████████▍| 1.79G/1.89G [00:47<00:02, 42.4MB/s] 95%|█████████▌| 1.79G/1.89G [00:47<00:02, 44.7MB/s] 95%|█████████▌| 1.80G/1.89G [00:47<00:02, 45.4MB/s] 96%|█████████▌| 1.80G/1.89G [00:47<00:02, 43.2MB/s] 96%|█████████▌| 1.81G/1.89G [00:47<00:02, 36.7MB/s] 96%|█████████▌| 1.81G/1.89G [00:47<00:01, 40.6MB/s] 96%|█████████▋| 1.82G/1.89G [00:47<00:02, 36.7MB/s] 97%|█████████▋| 1.82G/1.89G [00:47<00:01, 39.7MB/s] 97%|█████████▋| 1.83G/1.89G [00:48<00:01, 43.7MB/s] 97%|█████████▋| 1.83G/1.89G [00:48<00:01, 36.5MB/s] 97%|█████████▋| 1.83G/1.89G [00:48<00:01, 32.0MB/s] 97%|█████████▋| 1.84G/1.89G [00:48<00:01, 30.8MB/s] 98%|█████████▊| 1.84G/1.89G [00:48<00:01, 35.8MB/s] 98%|█████████▊| 1.85G/1.89G [00:48<00:01, 32.9MB/s] 98%|█████████▊| 1.85G/1.89G [00:48<00:01, 37.0MB/s] 98%|█████████▊| 1.85G/1.89G [00:48<00:00, 40.3MB/s] 99%|█████████▊| 1.86G/1.89G [00:49<00:00, 42.4MB/s] 99%|█████████▉| 1.86G/1.89G [00:49<00:00, 39.4MB/s] 99%|█████████▉| 1.87G/1.89G [00:49<00:00, 40.0MB/s] 99%|█████████▉| 1.87G/1.89G [00:49<00:00, 42.2MB/s]100%|█████████▉| 1.88G/1.89G [00:49<00:00, 44.7MB/s]100%|█████████▉| 1.88G/1.89G [00:49<00:00, 45.4MB/s]100%|█████████▉| 1.89G/1.89G [00:49<00:00, 39.1MB/s]100%|██████████| 1.89G/1.89G [00:49<00:00, 40.7MB/s]
-2024-12-15 20:00:00,448 [WARNING] /home/atuin/g102ea/g102ea22/mr-Audio/lavis/models/eva_vit.py:433: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
-  state_dict = torch.load(cached_file, map_location="cpu")
-
-2024-12-15 20:00:00,448 [WARNING] /home/atuin/g102ea/g102ea22/mr-Audio/lavis/models/eva_vit.py:433: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
-  state_dict = torch.load(cached_file, map_location="cpu")
-
-2024-12-15 20:00:00,448 [WARNING] /home/atuin/g102ea/g102ea22/mr-Audio/lavis/models/eva_vit.py:433: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
-  state_dict = torch.load(cached_file, map_location="cpu")
-
-2024-12-15 20:00:00,449 [WARNING] /home/atuin/g102ea/g102ea22/mr-Audio/lavis/models/eva_vit.py:433: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
-  state_dict = torch.load(cached_file, map_location="cpu")
-
-2024-12-15 20:00:02,008 [INFO] freeze vision encoder
-Downloading shards:   0%|          | 0/2 [00:00<?, ?it/s]Downloading shards:   0%|          | 0/2 [00:00<?, ?it/s]Downloading shards:   0%|          | 0/2 [00:00<?, ?it/s]Downloading shards:   0%|          | 0/2 [00:00<?, ?it/s]Downloading shards:  50%|█████     | 1/2 [01:05<01:05, 65.41s/it]Downloading shards:  50%|█████     | 1/2 [01:05<01:05, 65.33s/it]Downloading shards:  50%|█████     | 1/2 [01:05<01:05, 65.42s/it]Downloading shards:  50%|█████     | 1/2 [01:05<01:05, 65.42s/it]Downloading shards: 100%|██████████| 2/2 [01:15<00:00, 33.02s/it]Downloading shards: 100%|██████████| 2/2 [01:15<00:00, 37.86s/it]
-Downloading shards: 100%|██████████| 2/2 [01:15<00:00, 33.04s/it]Downloading shards: 100%|██████████| 2/2 [01:15<00:00, 37.90s/it]
-Downloading shards: 100%|██████████| 2/2 [01:15<00:00, 33.05s/it]Downloading shards: 100%|██████████| 2/2 [01:15<00:00, 37.90s/it]
-Downloading shards: 100%|██████████| 2/2 [01:15<00:00, 33.07s/it]Downloading shards: 100%|██████████| 2/2 [01:15<00:00, 37.92s/it]
-Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|█████     | 1/2 [00:00<00:00,  1.76it/s]Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00,  2.67it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00,  2.48it/s]
-Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|█████     | 1/2 [00:00<00:00,  2.93it/s]Loading checkpoint shards:  50%|█████     | 1/2 [00:00<00:00,  2.06it/s]Loading checkpoint shards:  50%|█████     | 1/2 [00:00<00:00,  2.21it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00,  3.56it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00,  3.44it/s]
-Loading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00,  3.20it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00,  3.00it/s]
-Loading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00,  2.78it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00,  2.64it/s]
-2024-12-15 20:02:02,584 [INFO] Annoying numbers and their replacement: {112: 113, 128: 129, 135: 136, 161: 160, 162: 164, 163: 164, 170: 169, 171: 172, 173: 174, 175: 176, 181: 180, 182: 183, 191: 192, 193: 192, 194: 195}
-2024-12-15 20:02:09,197 [INFO] Downloading: "https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP2/blip2_pretrained_flant5xl.pth" to /home/hpc/g102ea/g102ea22/.cache/torch/hub/checkpoints/blip2_pretrained_flant5xl.pth
-
-  0%|          | 0.00/407M [00:00<?, ?B/s]  0%|          | 128k/407M [00:00<15:51, 449kB/s]  0%|          | 256k/407M [00:00<10:15, 694kB/s]  0%|          | 512k/407M [00:00<05:31, 1.29MB/s]  0%|          | 1.12M/407M [00:00<02:32, 2.79MB/s]  1%|          | 2.50M/407M [00:00<01:08, 6.18MB/s]  1%|▏         | 5.38M/407M [00:00<00:31, 13.2MB/s]  2%|▏         | 8.88M/407M [00:00<00:20, 20.0MB/s]  3%|▎         | 12.1M/407M [00:01<00:17, 24.0MB/s]  4%|▍         | 15.5M/407M [00:01<00:15, 27.0MB/s]  4%|▍         | 18.2M/407M [00:01<00:14, 27.4MB/s]  5%|▌         | 21.1M/407M [00:01<00:14, 28.1MB/s]  6%|▌         | 24.5M/407M [00:01<00:13, 30.1MB/s]  7%|▋         | 27.5M/407M [00:01<00:13, 30.4MB/s]  7%|▋         | 30.5M/407M [00:01<00:13, 30.1MB/s]  8%|▊         | 33.8M/407M [00:01<00:12, 31.1MB/s]  9%|▉         | 36.8M/407M [00:01<00:13, 28.6MB/s] 10%|▉         | 39.6M/407M [00:01<00:13, 28.4MB/s] 11%|█         | 43.0M/407M [00:02<00:12, 30.2MB/s] 11%|█▏        | 46.2M/407M [00:02<00:12, 31.2MB/s] 12%|█▏        | 49.6M/407M [00:02<00:11, 32.1MB/s] 13%|█▎        | 52.8M/407M [00:02<00:12, 30.9MB/s] 14%|█▍        | 56.1M/407M [00:02<00:11, 32.0MB/s] 15%|█▍        | 59.5M/407M [00:02<00:11, 31.2MB/s] 15%|█▌        | 62.9M/407M [00:02<00:11, 32.2MB/s] 16%|█▋        | 66.2M/407M [00:02<00:10, 32.8MB/s] 17%|█▋        | 69.5M/407M [00:02<00:11, 31.3MB/s] 18%|█▊        | 72.9M/407M [00:03<00:10, 32.3MB/s] 19%|█▊        | 76.0M/407M [00:03<00:11, 31.4MB/s] 19%|█▉        | 79.4M/407M [00:03<00:10, 32.4MB/s] 20%|██        | 82.8M/407M [00:03<00:10, 32.9MB/s] 21%|██        | 86.1M/407M [00:03<00:10, 33.3MB/s] 22%|██▏       | 89.4M/407M [00:03<00:10, 31.5MB/s] 23%|██▎       | 92.5M/407M [00:03<00:12, 25.9MB/s] 24%|██▎       | 95.9M/407M [00:03<00:11, 28.1MB/s] 24%|██▍       | 99.2M/407M [00:03<00:10, 29.8MB/s] 25%|██▌       | 103M/407M [00:04<00:10, 31.1MB/s]  26%|██▌       | 106M/407M [00:04<00:11, 27.8MB/s] 27%|██▋       | 109M/407M [00:04<00:10, 29.5MB/s] 28%|██▊       | 112M/407M [00:04<00:10, 30.7MB/s] 28%|██▊       | 116M/407M [00:04<00:10, 29.7MB/s] 29%|██▉       | 119M/407M [00:04<00:09, 31.0MB/s] 30%|██▉       | 122M/407M [00:04<00:10, 29.1MB/s] 31%|███       | 126M/407M [00:04<00:09, 30.7MB/s] 32%|███▏      | 129M/407M [00:05<00:09, 31.8MB/s] 32%|███▏      | 132M/407M [00:05<00:08, 32.6MB/s] 33%|███▎      | 136M/407M [00:05<00:08, 33.2MB/s] 34%|███▍      | 139M/407M [00:05<00:11, 24.7MB/s] 35%|███▍      | 142M/407M [00:05<00:10, 27.1MB/s] 36%|███▌      | 145M/407M [00:05<00:09, 28.3MB/s] 36%|███▋      | 148M/407M [00:05<00:10, 26.8MB/s] 37%|███▋      | 151M/407M [00:05<00:11, 23.3MB/s] 38%|███▊      | 154M/407M [00:06<00:10, 26.0MB/s] 39%|███▉      | 158M/407M [00:06<00:09, 28.3MB/s] 40%|███▉      | 161M/407M [00:06<00:08, 29.9MB/s] 40%|████      | 164M/407M [00:06<00:09, 26.6MB/s] 41%|████      | 168M/407M [00:06<00:08, 28.6MB/s] 42%|████▏     | 171M/407M [00:06<00:08, 30.2MB/s] 43%|████▎     | 174M/407M [00:06<00:07, 31.4MB/s] 44%|████▎     | 178M/407M [00:06<00:09, 26.2MB/s] 44%|████▍     | 181M/407M [00:06<00:08, 28.3MB/s] 45%|████▌     | 184M/407M [00:07<00:07, 29.9MB/s] 46%|████▌     | 188M/407M [00:07<00:07, 31.2MB/s] 47%|████▋     | 191M/407M [00:07<00:07, 32.1MB/s] 48%|████▊     | 194M/407M [00:07<00:07, 28.2MB/s] 49%|████▊     | 198M/407M [00:07<00:07, 29.8MB/s] 49%|████▉     | 201M/407M [00:07<00:06, 31.0MB/s] 50%|█████     | 204M/407M [00:07<00:07, 26.8MB/s] 51%|█████     | 208M/407M [00:07<00:07, 28.8MB/s] 52%|█████▏    | 211M/407M [00:08<00:08, 23.0MB/s] 53%|█████▎    | 214M/407M [00:08<00:07, 25.6MB/s] 53%|█████▎    | 217M/407M [00:08<00:07, 27.5MB/s] 54%|█████▍    | 220M/407M [00:08<00:08, 22.4MB/s] 55%|█████▍    | 224M/407M [00:08<00:07, 25.2MB/s] 56%|█████▌    | 226M/407M [00:08<00:07, 24.0MB/s] 56%|█████▋    | 230M/407M [00:08<00:06, 26.6MB/s] 57%|█████▋    | 233M/407M [00:09<00:07, 25.8MB/s] 58%|█████▊    | 236M/407M [00:09<00:06, 28.0MB/s] 59%|█████▉    | 240M/407M [00:09<00:05, 29.8MB/s] 60%|█████▉    | 243M/407M [00:09<00:05, 30.5MB/s] 60%|██████    | 246M/407M [00:09<00:05, 31.6MB/s] 61%|██████    | 249M/407M [00:09<00:06, 27.0MB/s] 62%|██████▏   | 253M/407M [00:09<00:05, 29.0MB/s] 63%|██████▎   | 256M/407M [00:09<00:05, 30.5MB/s] 64%|██████▎   | 260M/407M [00:09<00:04, 31.7MB/s] 65%|██████▍   | 263M/407M [00:10<00:04, 32.5MB/s] 65%|██████▌   | 266M/407M [00:10<00:05, 28.4MB/s] 66%|██████▌   | 270M/407M [00:10<00:04, 30.2MB/s] 67%|██████▋   | 273M/407M [00:10<00:04, 31.2MB/s] 68%|██████▊   | 276M/407M [00:10<00:05, 26.8MB/s] 69%|██████▊   | 279M/407M [00:10<00:04, 28.8MB/s] 69%|██████▉   | 282M/407M [00:10<00:04, 27.6MB/s] 70%|███████   | 286M/407M [00:10<00:04, 29.5MB/s] 71%|███████   | 289M/407M [00:10<00:04, 30.8MB/s] 72%|███████▏  | 292M/407M [00:11<00:04, 28.8MB/s] 73%|███████▎  | 296M/407M [00:11<00:03, 30.3MB/s] 73%|███████▎  | 299M/407M [00:11<00:04, 23.4MB/s] 74%|███████▍  | 301M/407M [00:11<00:04, 23.1MB/s] 75%|███████▍  | 304M/407M [00:11<00:04, 25.9MB/s] 76%|███████▌  | 308M/407M [00:11<00:03, 28.2MB/s] 76%|███████▋  | 311M/407M [00:11<00:03, 29.8MB/s] 77%|███████▋  | 314M/407M [00:12<00:03, 25.2MB/s] 78%|███████▊  | 318M/407M [00:12<00:03, 27.5MB/s] 79%|███████▉  | 321M/407M [00:12<00:03, 29.1MB/s] 80%|███████▉  | 324M/407M [00:12<00:02, 30.7MB/s] 80%|████████  | 328M/407M [00:12<00:02, 31.8MB/s] 81%|████████  | 331M/407M [00:12<00:03, 23.6MB/s] 82%|████████▏ | 334M/407M [00:12<00:02, 26.1MB/s] 83%|████████▎ | 338M/407M [00:12<00:02, 28.2MB/s] 84%|████████▎ | 341M/407M [00:12<00:02, 29.8MB/s] 85%|████████▍ | 344M/407M [00:13<00:02, 31.0MB/s] 85%|████████▌ | 348M/407M [00:13<00:02, 29.1MB/s] 86%|████████▌ | 351M/407M [00:13<00:01, 30.5MB/s] 87%|████████▋ | 354M/407M [00:13<00:01, 31.7MB/s] 88%|████████▊ | 358M/407M [00:13<00:01, 32.5MB/s] 89%|████████▊ | 361M/407M [00:13<00:01, 33.0MB/s] 89%|████████▉ | 364M/407M [00:13<00:01, 29.3MB/s] 90%|█████████ | 368M/407M [00:13<00:01, 30.6MB/s] 91%|█████████ | 371M/407M [00:13<00:01, 31.4MB/s] 92%|█████████▏| 374M/407M [00:14<00:01, 32.3MB/s] 93%|█████████▎| 378M/407M [00:14<00:00, 33.0MB/s] 93%|█████████▎| 381M/407M [00:14<00:01, 21.9MB/s] 94%|█████████▍| 384M/407M [00:14<00:00, 24.6MB/s] 95%|█████████▌| 387M/407M [00:14<00:01, 20.4MB/s] 96%|█████████▌| 390M/407M [00:14<00:00, 23.5MB/s] 97%|█████████▋| 393M/407M [00:14<00:00, 23.9MB/s] 97%|█████████▋| 397M/407M [00:15<00:00, 26.6MB/s] 98%|█████████▊| 400M/407M [00:15<00:00, 28.5MB/s] 99%|█████████▉| 403M/407M [00:15<00:00, 30.2MB/s]100%|█████████▉| 407M/407M [00:15<00:00, 31.3MB/s]100%|██████████| 407M/407M [00:15<00:00, 27.7MB/s]
-2024-12-15 20:02:25,181 [WARNING] /home/atuin/g102ea/g102ea22/mr-Audio/lavis/models/blip2_models/blip2.py:80: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
-  checkpoint = torch.load(cached_file, map_location="cpu")
-
-2024-12-15 20:02:25,181 [WARNING] /home/atuin/g102ea/g102ea22/mr-Audio/lavis/models/blip2_models/blip2.py:80: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
-  checkpoint = torch.load(cached_file, map_location="cpu")
-
-2024-12-15 20:02:25,183 [WARNING] /home/atuin/g102ea/g102ea22/mr-Audio/lavis/models/blip2_models/blip2.py:80: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
-  checkpoint = torch.load(cached_file, map_location="cpu")
-
-2024-12-15 20:02:25,186 [WARNING] /home/atuin/g102ea/g102ea22/mr-Audio/lavis/models/blip2_models/blip2.py:80: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
-  checkpoint = torch.load(cached_file, map_location="cpu")
-
-2024-12-15 20:02:25,376 [INFO] load checkpoint from https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP2/blip2_pretrained_flant5xl.pth
-2024-12-15 20:02:25,377 [INFO] load pretrained weights from https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP2/blip2_pretrained_flant5xl.pth
-2024-12-15 20:02:25,792 [INFO] Start training
-2024-12-15 20:02:26,448 [INFO] dataset_ratios not specified, datasets will be concatenated (map-style datasets) or chained (webdataset.DataPipeline).
-2024-12-15 20:02:26,449 [INFO] Loaded 12408 records for train split from the dataset.
-2024-12-15 20:02:26,449 [INFO] Loaded 3720 records for val split from the dataset.
-2024-12-15 20:02:26,449 [INFO] Loaded 3720 records for test split from the dataset.
-2024-12-15 20:02:26,484 [INFO] number of trainable parameters: 22825984
-2024-12-15 20:02:26,535 [WARNING] /home/atuin/g102ea/g102ea22/mr-Audio/lavis/runners/runner_base.py:147: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
-  self._scaler = torch.cuda.amp.GradScaler()
-
-2024-12-15 20:02:26,535 [WARNING] /home/atuin/g102ea/g102ea22/mr-Audio/lavis/runners/runner_base.py:147: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
-  self._scaler = torch.cuda.amp.GradScaler()
-
-2024-12-15 20:02:26,535 [WARNING] /home/atuin/g102ea/g102ea22/mr-Audio/lavis/runners/runner_base.py:147: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
-  self._scaler = torch.cuda.amp.GradScaler()
-
-2024-12-15 20:02:26,535 [WARNING] /home/atuin/g102ea/g102ea22/mr-Audio/lavis/runners/runner_base.py:147: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
-  self._scaler = torch.cuda.amp.GradScaler()
-
-2024-12-15 20:02:26,536 [INFO] Start training epoch 0, 775 iters per inner epoch.
-[rank3]: Traceback (most recent call last):
-[rank3]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/train.py", line 154, in <module>
-[rank3]:     main()
-[rank3]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/train.py", line 150, in main
-[rank3]:     runner.train()
-[rank3]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/runners/runner_base.py", line 386, in train
-[rank3]:     train_stats = self.train_epoch(cur_epoch)
-[rank3]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/runners/runner_base.py", line 445, in train_epoch
-[rank3]:     return self.task.train_epoch(
-[rank3]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/tasks/base_task.py", line 116, in train_epoch
-[rank3]:     return self._train_inner_loop(
-[rank3]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/tasks/moment_retrieval.py", line 228, in _train_inner_loop
-[rank3]:     samples = next(data_loader)
-[rank3]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/datasets/dataloader_utils.py", line 152, in __next__
-[rank3]:     data = next(self.iter_loader)
-[rank3]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/datasets/dataloader_utils.py", line 65, in __iter__
-[rank3]:     self.preload(loader_it)
-[rank3]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/datasets/dataloader_utils.py", line 83, in preload
-[rank3]:     self.batch = next(it)
-[rank3]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/utils/data/dataloader.py", line 701, in __next__
-[rank3]:     data = self._next_data()
-[rank3]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/utils/data/dataloader.py", line 1465, in _next_data
-[rank3]:     return self._process_data(data)
-[rank3]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/utils/data/dataloader.py", line 1491, in _process_data
-[rank3]:     data.reraise()
-[rank3]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/_utils.py", line 715, in reraise
-[rank3]:     raise exception
-[rank3]: ImportError: Caught ImportError in DataLoader worker process 0.
-[rank3]: Original Traceback (most recent call last):
-[rank3]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/utils/data/_utils/worker.py", line 351, in _worker_loop
-[rank3]:     data = fetcher.fetch(index)  # type: ignore[possibly-undefined]
-[rank3]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/utils/data/_utils/fetch.py", line 52, in fetch
-[rank3]:     data = [self.dataset[idx] for idx in possibly_batched_index]
-[rank3]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/utils/data/_utils/fetch.py", line 52, in <listcomp>
-[rank3]:     data = [self.dataset[idx] for idx in possibly_batched_index]
-[rank3]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/utils/data/dataset.py", line 350, in __getitem__
-[rank3]:     return self.datasets[dataset_idx][sample_idx]
-[rank3]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/datasets/moment_retrieval_dataset.py", line 31, in __getitem__
-[rank3]:     frms, indices, fps, audio, sr = self.vis_processor(video_path, clip_proposal=clip)
-[rank3]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/processors/blip_processors.py", line 320, in __call__
-[rank3]:     clip, indices, fps, audio, sr = load_video_frames_with_audio(
-[rank3]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/audioinclusion/intervals.py", line 41, in load_video_frames_with_audio
-[rank3]:     video, audio, info = torchvision.io.read_video(video_path, pts_unit="sec")
-[rank3]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torchvision/io/video.py", line 291, in read_video
-[rank3]:     _check_av_available()
-[rank3]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torchvision/io/video.py", line 41, in _check_av_available
-[rank3]:     raise av
-[rank3]: ImportError: PyAV is not installed, and is necessary for the video operations in torchvision.
-[rank3]: See https://github.com/mikeboers/PyAV#installation for instructions on how to
-[rank3]: install PyAV on your system.
-
-
-[rank1]: Traceback (most recent call last):
-[rank1]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/train.py", line 154, in <module>
-[rank1]:     main()
-[rank1]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/train.py", line 150, in main
-[rank1]:     runner.train()
-[rank1]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/runners/runner_base.py", line 386, in train
-[rank1]:     train_stats = self.train_epoch(cur_epoch)
-[rank1]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/runners/runner_base.py", line 445, in train_epoch
-[rank1]:     return self.task.train_epoch(
-[rank1]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/tasks/base_task.py", line 116, in train_epoch
-[rank1]:     return self._train_inner_loop(
-[rank1]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/tasks/moment_retrieval.py", line 228, in _train_inner_loop
-[rank1]:     samples = next(data_loader)
-[rank1]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/datasets/dataloader_utils.py", line 152, in __next__
-[rank1]:     data = next(self.iter_loader)
-[rank1]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/datasets/dataloader_utils.py", line 65, in __iter__
-[rank1]:     self.preload(loader_it)
-[rank1]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/datasets/dataloader_utils.py", line 83, in preload
-[rank1]:     self.batch = next(it)
-[rank1]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/utils/data/dataloader.py", line 701, in __next__
-[rank1]:     data = self._next_data()
-[rank1]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/utils/data/dataloader.py", line 1465, in _next_data
-[rank1]:     return self._process_data(data)
-[rank1]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/utils/data/dataloader.py", line 1491, in _process_data
-[rank1]:     data.reraise()
-[rank1]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/_utils.py", line 715, in reraise
-[rank1]:     raise exception
-[rank1]: ImportError: Caught ImportError in DataLoader worker process 0.
-[rank1]: Original Traceback (most recent call last):
-[rank1]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/utils/data/_utils/worker.py", line 351, in _worker_loop
-[rank1]:     data = fetcher.fetch(index)  # type: ignore[possibly-undefined]
-[rank1]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/utils/data/_utils/fetch.py", line 52, in fetch
-[rank1]:     data = [self.dataset[idx] for idx in possibly_batched_index]
-[rank1]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/utils/data/_utils/fetch.py", line 52, in <listcomp>
-[rank1]:     data = [self.dataset[idx] for idx in possibly_batched_index]
-[rank1]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/utils/data/dataset.py", line 350, in __getitem__
-[rank1]:     return self.datasets[dataset_idx][sample_idx]
-[rank1]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/datasets/moment_retrieval_dataset.py", line 31, in __getitem__
-[rank1]:     frms, indices, fps, audio, sr = self.vis_processor(video_path, clip_proposal=clip)
-[rank1]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/processors/blip_processors.py", line 320, in __call__
-[rank1]:     clip, indices, fps, audio, sr = load_video_frames_with_audio(
-[rank1]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/audioinclusion/intervals.py", line 41, in load_video_frames_with_audio
-[rank1]:     video, audio, info = torchvision.io.read_video(video_path, pts_unit="sec")
-[rank1]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torchvision/io/video.py", line 291, in read_video
-[rank1]:     _check_av_available()
-[rank1]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torchvision/io/video.py", line 41, in _check_av_available
-[rank1]:     raise av
-[rank1]: ImportError: PyAV is not installed, and is necessary for the video operations in torchvision.
-[rank1]: See https://github.com/mikeboers/PyAV#installation for instructions on how to
-[rank1]: install PyAV on your system.
-
-
-[rank2]: Traceback (most recent call last):
-[rank2]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/train.py", line 154, in <module>
-[rank2]:     main()
-[rank2]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/train.py", line 150, in main
-[rank2]:     runner.train()
-[rank2]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/runners/runner_base.py", line 386, in train
-[rank2]:     train_stats = self.train_epoch(cur_epoch)
-[rank2]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/runners/runner_base.py", line 445, in train_epoch
-[rank2]:     return self.task.train_epoch(
-[rank2]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/tasks/base_task.py", line 116, in train_epoch
-[rank2]:     return self._train_inner_loop(
-[rank2]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/tasks/moment_retrieval.py", line 228, in _train_inner_loop
-[rank2]:     samples = next(data_loader)
-[rank2]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/datasets/dataloader_utils.py", line 152, in __next__
-[rank2]:     data = next(self.iter_loader)
-[rank2]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/datasets/dataloader_utils.py", line 65, in __iter__
-[rank2]:     self.preload(loader_it)
-[rank2]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/datasets/dataloader_utils.py", line 83, in preload
-[rank2]:     self.batch = next(it)
-[rank2]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/utils/data/dataloader.py", line 701, in __next__
-[rank2]:     data = self._next_data()
-[rank2]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/utils/data/dataloader.py", line 1465, in _next_data
-[rank2]:     return self._process_data(data)
-[rank2]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/utils/data/dataloader.py", line 1491, in _process_data
-[rank2]:     data.reraise()
-[rank2]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/_utils.py", line 715, in reraise
-[rank2]:     raise exception
-[rank2]: ImportError: Caught ImportError in DataLoader worker process 0.
-[rank2]: Original Traceback (most recent call last):
-[rank2]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/utils/data/_utils/worker.py", line 351, in _worker_loop
-[rank2]:     data = fetcher.fetch(index)  # type: ignore[possibly-undefined]
-[rank2]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/utils/data/_utils/fetch.py", line 52, in fetch
-[rank2]:     data = [self.dataset[idx] for idx in possibly_batched_index]
-[rank2]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/utils/data/_utils/fetch.py", line 52, in <listcomp>
-[rank2]:     data = [self.dataset[idx] for idx in possibly_batched_index]
-[rank2]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/utils/data/dataset.py", line 350, in __getitem__
-[rank2]:     return self.datasets[dataset_idx][sample_idx]
-[rank2]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/datasets/moment_retrieval_dataset.py", line 31, in __getitem__
-[rank2]:     frms, indices, fps, audio, sr = self.vis_processor(video_path, clip_proposal=clip)
-[rank2]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/processors/blip_processors.py", line 320, in __call__
-[rank2]:     clip, indices, fps, audio, sr = load_video_frames_with_audio(
-[rank2]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/audioinclusion/intervals.py", line 41, in load_video_frames_with_audio
-[rank2]:     video, audio, info = torchvision.io.read_video(video_path, pts_unit="sec")
-[rank2]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torchvision/io/video.py", line 291, in read_video
-[rank2]:     _check_av_available()
-[rank2]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torchvision/io/video.py", line 41, in _check_av_available
-[rank2]:     raise av
-[rank2]: ImportError: PyAV is not installed, and is necessary for the video operations in torchvision.
-[rank2]: See https://github.com/mikeboers/PyAV#installation for instructions on how to
-[rank2]: install PyAV on your system.
-
-
-Traceback (most recent call last):
-  File "/home/atuin/g102ea/g102ea22/mr-Audio/train.py", line 154, in <module>
-    main()
-  File "/home/atuin/g102ea/g102ea22/mr-Audio/train.py", line 150, in main
-    runner.train()
-  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/runners/runner_base.py", line 386, in train
-    train_stats = self.train_epoch(cur_epoch)
-  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/runners/runner_base.py", line 445, in train_epoch
-    return self.task.train_epoch(
-  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/tasks/base_task.py", line 116, in train_epoch
-    return self._train_inner_loop(
-  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/tasks/moment_retrieval.py", line 228, in _train_inner_loop
-    samples = next(data_loader)
-  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/datasets/dataloader_utils.py", line 152, in __next__
-    data = next(self.iter_loader)
-  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/datasets/dataloader_utils.py", line 65, in __iter__
-    self.preload(loader_it)
-  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/datasets/dataloader_utils.py", line 83, in preload
-    self.batch = next(it)
-  File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/utils/data/dataloader.py", line 701, in __next__
-    data = self._next_data()
-  File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/utils/data/dataloader.py", line 1465, in _next_data
-    return self._process_data(data)
-  File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/utils/data/dataloader.py", line 1491, in _process_data
-    data.reraise()
-  File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/_utils.py", line 715, in reraise
-    raise exception
-ImportError: Caught ImportError in DataLoader worker process 0.
-Original Traceback (most recent call last):
-  File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/utils/data/_utils/worker.py", line 351, in _worker_loop
-    data = fetcher.fetch(index)  # type: ignore[possibly-undefined]
-  File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/utils/data/_utils/fetch.py", line 52, in fetch
-    data = [self.dataset[idx] for idx in possibly_batched_index]
-  File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/utils/data/_utils/fetch.py", line 52, in <listcomp>
-    data = [self.dataset[idx] for idx in possibly_batched_index]
-  File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/utils/data/dataset.py", line 350, in __getitem__
-    return self.datasets[dataset_idx][sample_idx]
-  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/datasets/moment_retrieval_dataset.py", line 31, in __getitem__
-    frms, indices, fps, audio, sr = self.vis_processor(video_path, clip_proposal=clip)
-  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/processors/blip_processors.py", line 320, in __call__
-    clip, indices, fps, audio, sr = load_video_frames_with_audio(
-  File "/home/atuin/g102ea/g102ea22/mr-Audio/audioinclusion/intervals.py", line 41, in load_video_frames_with_audio
-    video, audio, info = torchvision.io.read_video(video_path, pts_unit="sec")
-  File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torchvision/io/video.py", line 291, in read_video
-    _check_av_available()
-  File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torchvision/io/video.py", line 41, in _check_av_available
-    raise av
-ImportError: PyAV is not installed, and is necessary for the video operations in torchvision.
-See https://github.com/mikeboers/PyAV#installation for instructions on how to
-install PyAV on your system.
-
-
-[rank0]: Traceback (most recent call last):
-[rank0]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/train.py", line 154, in <module>
-[rank0]:     main()
-[rank0]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/train.py", line 150, in main
-[rank0]:     runner.train()
-[rank0]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/runners/runner_base.py", line 386, in train
-[rank0]:     train_stats = self.train_epoch(cur_epoch)
-[rank0]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/runners/runner_base.py", line 445, in train_epoch
-[rank0]:     return self.task.train_epoch(
-[rank0]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/tasks/base_task.py", line 116, in train_epoch
-[rank0]:     return self._train_inner_loop(
-[rank0]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/tasks/moment_retrieval.py", line 228, in _train_inner_loop
-[rank0]:     samples = next(data_loader)
-[rank0]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/datasets/dataloader_utils.py", line 152, in __next__
-[rank0]:     data = next(self.iter_loader)
-[rank0]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/datasets/dataloader_utils.py", line 65, in __iter__
-[rank0]:     self.preload(loader_it)
-[rank0]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/datasets/dataloader_utils.py", line 83, in preload
-[rank0]:     self.batch = next(it)
-[rank0]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/utils/data/dataloader.py", line 701, in __next__
-[rank0]:     data = self._next_data()
-[rank0]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/utils/data/dataloader.py", line 1465, in _next_data
-[rank0]:     return self._process_data(data)
-[rank0]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/utils/data/dataloader.py", line 1491, in _process_data
-[rank0]:     data.reraise()
-[rank0]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/_utils.py", line 715, in reraise
-[rank0]:     raise exception
-[rank0]: ImportError: Caught ImportError in DataLoader worker process 0.
-[rank0]: Original Traceback (most recent call last):
-[rank0]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/utils/data/_utils/worker.py", line 351, in _worker_loop
-[rank0]:     data = fetcher.fetch(index)  # type: ignore[possibly-undefined]
-[rank0]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/utils/data/_utils/fetch.py", line 52, in fetch
-[rank0]:     data = [self.dataset[idx] for idx in possibly_batched_index]
-[rank0]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/utils/data/_utils/fetch.py", line 52, in <listcomp>
-[rank0]:     data = [self.dataset[idx] for idx in possibly_batched_index]
-[rank0]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/utils/data/dataset.py", line 350, in __getitem__
-[rank0]:     return self.datasets[dataset_idx][sample_idx]
-[rank0]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/datasets/datasets/moment_retrieval_dataset.py", line 31, in __getitem__
-[rank0]:     frms, indices, fps, audio, sr = self.vis_processor(video_path, clip_proposal=clip)
-[rank0]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/processors/blip_processors.py", line 320, in __call__
-[rank0]:     clip, indices, fps, audio, sr = load_video_frames_with_audio(
-[rank0]:   File "/home/atuin/g102ea/g102ea22/mr-Audio/audioinclusion/intervals.py", line 41, in load_video_frames_with_audio
-[rank0]:     video, audio, info = torchvision.io.read_video(video_path, pts_unit="sec")
-[rank0]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torchvision/io/video.py", line 291, in read_video
-[rank0]:     _check_av_available()
-[rank0]:   File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torchvision/io/video.py", line 41, in _check_av_available
-[rank0]:     raise av
-[rank0]: ImportError: PyAV is not installed, and is necessary for the video operations in torchvision.
-[rank0]: See https://github.com/mikeboers/PyAV#installation for instructions on how to
-[rank0]: install PyAV on your system.
-
-
-W1215 20:02:29.183462 116803 torch/distributed/elastic/multiprocessing/api.py:897] Sending process 116871 closing signal SIGTERM
-W1215 20:02:29.185910 116803 torch/distributed/elastic/multiprocessing/api.py:897] Sending process 116872 closing signal SIGTERM
-W1215 20:02:29.186131 116803 torch/distributed/elastic/multiprocessing/api.py:897] Sending process 116874 closing signal SIGTERM
-E1215 20:02:29.752974 116803 torch/distributed/elastic/multiprocessing/api.py:869] failed (exitcode: 1) local_rank: 2 (pid: 116873) of binary: /home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/bin/python
-Traceback (most recent call last):
-  File "/apps/python/3.9-anaconda/lib/python3.9/runpy.py", line 197, in _run_module_as_main
-    return _run_code(code, main_globals, None,
-  File "/apps/python/3.9-anaconda/lib/python3.9/runpy.py", line 87, in _run_code
-    exec(code, run_globals)
-  File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/distributed/run.py", line 923, in <module>
-    main()
-  File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 355, in wrapper
-    return f(*args, **kwargs)
-  File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/distributed/run.py", line 919, in main
-    run(args)
-  File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/distributed/run.py", line 910, in run
-    elastic_launch(
-  File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/distributed/launcher/api.py", line 138, in __call__
-    return launch_agent(self._config, self._entrypoint, list(args))
-  File "/home/atuin/g102ea/g102ea22/venvs/mrBlipAudio/lib/python3.9/site-packages/torch/distributed/launcher/api.py", line 269, in launch_agent
-    raise ChildFailedError(
-torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
-============================================================
-train.py FAILED
-------------------------------------------------------------
-Failures:
-  <NO_OTHER_FAILURES>
-------------------------------------------------------------
-Root Cause (first observed failure):
-[0]:
-  time      : 2024-12-15_20:02:29
-  host      : a0804.nhr.fau.de
-  rank      : 2 (local_rank: 2)
-  exitcode  : 1 (pid: 116873)
-  error_file: <N/A>
-  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
-============================================================
