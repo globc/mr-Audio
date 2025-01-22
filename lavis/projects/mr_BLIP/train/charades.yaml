@@ -13,6 +13,8 @@ model:
   input_time_format: seconds_integers # [seconds_integers | seconds_floats | relative_integers | relative_floats | framenumbers | False]
   interleave_data: True
   frame_token_aggregation: False # [mean | False]
+  fusion_method: "concat"
+
 
 datasets:
   charades_sta: # name of the dataset builder
@@ -21,13 +23,13 @@ datasets:
           name: "blip2_video_train"
           n_frms: 20
           image_size: 224
-          audio_clip_len: 0.5 # length of the extracted audio clips in seconds
+          audio_clip_len: 1.5 # length of the extracted audio clips in seconds
           target_sr: 48000 # target audio sampling rate
         eval:
           name: "blip_video_eval"
           n_frms: 20
           image_size: 224
-          audio_clip_len: 0.5 # length of the extracted audio clips in seconds
+          audio_clip_len: 1.5 # length of the extracted audio clips in seconds
           target_sr: 48000 # target audio sampling rate
     text_processor:
         train:
@@ -41,7 +43,7 @@ run:
   task: moment_retrieval
   # optimizer
   lr_sched: "linear_warmup_cosine_lr"
-  init_lr: 3e-4 # vid2seq: 3e-4 | before: 5e-5
+  init_lr: 3e-4 #0.000113 #3e-4 # vid2seq: 3e-4 | before: 5e-5
   min_lr: 0
   warmup_lr: 1e-8
   # warmup_steps: 1074 # 10% * 30 epochs * 349 steps/epoch = 1047
@@ -52,7 +54,7 @@ run:
   max_epoch: 50
   batch_size_train: 8
   batch_size_eval: 8
-  num_workers: 8
+  num_workers: 6
   accum_grad_iters: 1
 
   max_len: 200
@@ -63,7 +65,7 @@ run:
   output_dir: "result/mr_BLIP/Charades/"
 
   amp: True
-  resume_ckpt_path: null
+  resume_ckpt_path: null #"lavis/result/mr_BLIP/Charades/Charades_20-5/checkpoint_best.pth" #null
 
   evaluate: False
   train_splits: ["train"]
@@ -71,13 +73,12 @@ run:
   test_splits: ["test"]
 
   device: "cuda"
-  world_size: 8
+  world_size: 4
   dist_url: "env://"
   distributed: True
   find_unused_parameters: True
 
   wandb: True
   wandb_project: "mr_BLIP"
-  wandb_name: "Charades_20"
+  wandb_name: "Charades_20_01_AudioCLipLen2_0_forcedTokens"
 
-  fusion_method: "concat"
