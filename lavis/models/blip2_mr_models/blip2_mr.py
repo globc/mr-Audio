@@ -272,7 +272,8 @@ class BLIP2_MR(Blip2Base):
 
         #Original:
         self.t5_proj = nn.Linear(
-            self.Qformer.config.hidden_size, self.t5_model.config.hidden_size).to(self.device)
+            self.Qformer.config.hidden_size, self.t5_model.config.hidden_size
+        ).to(self.device)
 
         self.frame_down_proj = nn.Linear(
             self.Qformer.config.hidden_size, self.audio_feature_dim
@@ -282,13 +283,13 @@ class BLIP2_MR(Blip2Base):
             self.fusion_layer = nn.Linear(
                 self.audio_feature_dim * 2,self.Qformer.config.hidden_size
             ).to(self.device)
-        elif self.fusion_method == "interleave":
+        elif self.fusion_method == "interleave": #TODO: make coherent if used
             self.audio_t5_proj = nn.Linear(
                 self.audio_feature_dim, self.t5_model.config.hidden_size
             ).to(self.device)
-        else: self.fusion_layer = nn.Linear(
-           self.audio_feature_dim * 2,self.Qformer.config.hidden_size
-        ).to(self.device)
+        else: raise ValueError(f"Unknown fusion method: {self.fusion_method}")
+
+
 
 
         ##########################################################################
@@ -321,12 +322,6 @@ class BLIP2_MR(Blip2Base):
         self,
         samples,
     ):
-        #For Batch Size 1 and 2
-        if isinstance(samples['video_filename'], list) and len(samples['video_filename']) > 1:
-            samples['video_filename'] = samples['video_filename'][0]
-        elif isinstance(samples['video_filename'], list) and len(samples['video_filename']) == 1:
-            samples['video_filename'] = samples['video_filename'][0]
-
 
         #Sample
         image = samples["video"]
@@ -336,7 +331,6 @@ class BLIP2_MR(Blip2Base):
         timestamps, durations = (samples["timestamps"],samples["duration"])
 
         #Audio
-
         audio_clips = samples["audio"]
 
         # audio shape b,t,512
@@ -347,20 +341,14 @@ class BLIP2_MR(Blip2Base):
         image_embeds, image_atts = self.uniform_sampling(image=image, c=c, w=w, h=h)
 
 
-        ### Apply Q-Former for Image Embeddings ####################################
+        ### Apply Q-Former for Image Embeddings and Fusionate with Audio Embeddings ####################################
         query_tokens = self.query_tokens.expand(image_embeds.shape[0], -1, -1)
-
-
 
 
         if self.multimodal_Qformer:
             query_atts, attention_mask, text, output = self.setup_multimodalQformer(query_tokens=query_tokens, query_prompt=query_prompt, image_embeds=image_embeds, image_atts=image_atts, t=t)
         else:
             frames_after_qformer, frames_for_projection = self.setup_unimodalQfomer(query_tokens=query_tokens, image_embeds=image_embeds, image_atts=image_atts)
-
-
-
-
 
         #alternative to downsampling layers
         #audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frames_for_projection.size(1), -1)
@@ -373,7 +361,7 @@ class BLIP2_MR(Blip2Base):
         audio_embeddings = audio_embeddings.reshape(-1, audio_embeddings.shape[2]) # reshape to [b*t, embedd_len]
         audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frames_for_projection.shape[1], -1) # reshape to [b*t, query_tokens, embed_len]
 
-        #if self.fusion_method == "concat":
+        # Forward our Stuff for Fusion here
         frame_down_proj = self.frame_down_proj(frames_for_projection)
         combined_video_audio_frame = torch.cat([frame_down_proj, audio_embeddings], dim=-1)
         fused_data = self.fusion_layer(combined_video_audio_frame)
@@ -460,7 +448,6 @@ class BLIP2_MR(Blip2Base):
 
             return {"loss": loss}
 
-    #TODO: add audio embeddings here
     def prompt_concatenation(
         self,
         timestamps,
@@ -1220,11 +1207,10 @@ class BLIP2_MR(Blip2Base):
     ):
         # uniform sampling
         image = image.reshape(-1, c, w, h) # reshape to (b*t, c, w, h)
-        with torch.cuda.amp.autocast(enabled=(self.device != torch.device("cpu"))): #switch to self.device for original
+        with torch.cuda.amp.autocast(enabled=(self.device != torch.device("cpu"))):
             image_embeds = self.ln_vision(self.visual_encoder(image))  # bt, n, c
         image_atts = torch.ones(image_embeds.size()[:-1], dtype=torch.long).to(
             self.device
-            #self.device #maybe set back for training
             # image.device
         )  # bt n c
 
