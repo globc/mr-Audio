@@ -15,7 +15,7 @@ import torch
 import torch.nn as nn
 from accelerate.commands.config.config_args import cache_dir
 from torch.cuda.amp import autocast as autocast
-from transformers import T5TokenizerFast
+from transformers import T5TokenizerFast, GenerationConfig
 from peft import LoraConfig, get_peft_model
 import wandb
 
@@ -85,7 +85,8 @@ class BLIP2_MR(Blip2Base):
         task="lora",
         device= torch.device("cuda" if torch.cuda.is_available() else "cpu"),
         sampling_rate=48000,
-        fusion_method="concat"
+        fusion_method="concat",
+        handle_annoying_numbers=False,
     ):
         """
         apply_lemmatizer: when set to True, postprocess predict_answers() result with lemmas.
@@ -114,7 +115,9 @@ class BLIP2_MR(Blip2Base):
         self.audio_embeddings_model = CLAPAudioEmbeddings()
         self.audio_feature_dim = 512
         self.sampling_rate = sampling_rate
-
+        self.fusion_method = fusion_method
+        self.fusion_layer = None
+        self.handle_annoying_numbers = handle_annoying_numbers
 
         if self.use_wandb and is_main_process():
             self.wandb_table_data = []
@@ -141,32 +144,66 @@ class BLIP2_MR(Blip2Base):
 
         ##########################################################################
 
+
+
         ### Text backbone ######################c##################################
         curr_path = os.getcwd() + '/cache'
         #example: '/work/scratch/kurse/kurs00079/hm66ryjy/mr-Audio/cache'
         self.t5_tokenizer = T5TokenizerFast.from_pretrained(t5_model, cache_dir=os.getcwd() + "/cache")
+
+        #letters = [chr(i) for i in range(ord('a'), ord('z') + 1)] + [chr(i) for i in range(ord('A'), ord('Z') + 1)]
+        #bad_words_ids = [[self.t5_tokenizer.convert_tokens_to_ids(letter)] for letter in letters]
+        #force_words_ids = [[self.t5_tokenizer.convert_tokens_to_ids('[')],
+        #                   [self.t5_tokenizer.convert_tokens_to_ids(']')],
+        #                   [self.t5_tokenizer.convert_tokens_to_ids(',')]
+        #                   ]
+
+
+        # Force use of only these Characters:
+        use_numbers = [chr(i) for i in range(0,9)]
+        decoder_input_ids = [
+            [self.t5_tokenizer.convert_tokens_to_ids('[')],
+            [self.t5_tokenizer.convert_tokens_to_ids('[')],
+            [[self.t5_tokenizer.convert_tokens_to_ids(_number)] for _number in use_numbers],
+            [self.t5_tokenizer.convert_tokens_to_ids(']')],
+            [self.t5_tokenizer.convert_tokens_to_ids(']')],
+            [self.t5_tokenizer.convert_tokens_to_ids(',')],
+            [self.t5_tokenizer.convert_tokens_to_ids('-')],
+        ]
+
         t5_config = T5Config.from_pretrained(t5_model, cache_dir=os.getcwd() + "/cache")
         t5_config.dense_act_fn = "gelu"
-        self.t5_model = T5ForConditionalGeneration.from_pretrained(
-            t5_model, config=t5_config, cache_dir= curr_path
-        )
+        t5_config.use_cache = True
+        t5_config.min_length = 7
+        #t5_config.force_words_ids = force_words_ids
+        #t5_config.bad_words_ids = bad_words_ids
+        #t5_config.forced_decoder_ids = forced_decoder_ids
+        t5_config.decoder_input_ids = decoder_input_ids
 
+        self.t5_model = T5ForConditionalGeneration.from_pretrained(
+            t5_model, config=t5_config, cache_dir=curr_path
+        )
+        
         #Move T5 to device
         self.t5_model = self.t5_model.to(self.device)
 
+        # Annoying Numbers handling
         # Depending on the tokenizer, some numbers are represented as 2 tokens
         # this is annoying and needs to be fixed
         # fairly dirty fix, is to just replace them with the closest number that is not "annoying"
-        self.annoying_numbers, _ = self.find_annoying_numbers(self.t5_tokenizer, 200)
-        self.annoying_numbers_replacement_dict = (
-            self.find_annoying_numbers_replacement_dict(self.annoying_numbers)
-        )
-
-        logging.info(
-            "Annoying numbers and their replacement: {}".format(
-                self.annoying_numbers_replacement_dict
+        if self.handle_annoying_numbers is True:
+            self.annoying_numbers, _ = self.find_annoying_numbers(self.t5_tokenizer, 200)
+            self.annoying_numbers_replacement_dict = (
+                self.find_annoying_numbers_replacement_dict(self.annoying_numbers)
             )
-        )
+        else:
+            self.annoying_numbers = None
+            self.annoying_numbers_replacement_dict = {}
+        #logging.info(
+        #    "Annoying numbers and their replacement: {}".format(
+        #        self.annoying_numbers_replacement_dict
+        #    )
+        #)
 
         ### LORA ##########
 
@@ -245,10 +282,14 @@ class BLIP2_MR(Blip2Base):
             self.fusion_layer = nn.Linear(
                 self.audio_feature_dim * 2,self.Qformer.config.hidden_size
             ).to(self.device)
-        if self.fusion_method == "interleave":
+        elif self.fusion_method == "interleave":
             self.audio_t5_proj = nn.Linear(
                 self.audio_feature_dim, self.t5_model.config.hidden_size
             ).to(self.device)
+        else: self.fusion_layer = nn.Linear(
+           self.audio_feature_dim * 2,self.Qformer.config.hidden_size
+        ).to(self.device)
+
 
         ##########################################################################
 
@@ -1001,7 +1042,7 @@ class BLIP2_MR(Blip2Base):
 
         sampling_rate = cfg.get("target_sr", 48000)
 
-        fusion_method = cfg.get("fusion_method", "none")
+        fusion_method = cfg.get("model", {}).get("fusion_method", "None")
 
         model = cls(
             img_size=img_size,
