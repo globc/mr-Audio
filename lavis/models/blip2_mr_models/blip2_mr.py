@@ -287,7 +287,10 @@ class BLIP2_MR(Blip2Base):
             self.audio_t5_proj = nn.Linear(
                 self.audio_feature_dim, self.t5_model.config.hidden_size
             ).to(self.device)
-        else: raise ValueError(f"Unknown fusion method: {self.fusion_method}")
+        else:
+            self.fusion_layer = nn.Linear(
+                self.audio_feature_dim * 2, self.Qformer.config.hidden_size
+            ).to(self.device)
 
 
 
