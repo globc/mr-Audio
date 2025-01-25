@@ -219,3 +219,44 @@ def get_ap(y_true, y_predict, interpolate=True, point_11=False):
     else:  # Compute the AP using precision at every additionally recalled sample
         indices = np.where(np.diff(recall))
         return np.mean(precision[indices])
+
+"""
+From NFnets
+https://github.com/google-deepmind/deepmind-research/blob/master/nfnets/optim.py
+"""
+import torch
+from typing import Iterable, Union
+_tensor_or_tensors = Union[torch.Tensor, Iterable[torch.Tensor]]
+
+def clip_grad_norm_adaptive(parameters: _tensor_or_tensors, clipping=0.01, eps=1e-3):
+    if isinstance(parameters, torch.Tensor):
+        parameters = [parameters]
+    
+    def unitwise_norm(x):
+        """Computes norms of each output unit separately, assuming (HW)IO weights."""
+        if x.ndimension() <= 1:  # Scalars and vectors
+            return x.norm(2)
+        elif x.ndimension() in [2, 3]:  # Linear layers
+            return x.norm(2, dim=0, keepdim=True)
+        elif x.ndimension() == 4:  # Convolution kernels
+            return x.norm(2, dim=(0, 1, 2), keepdim=True)
+        else:
+            raise ValueError(f"Unsupported parameter shape: {x.shape}")
+    
+    for param in parameters:
+        if param.grad is None:
+            continue
+
+        grad = param.grad
+        param_norm = torch.clamp(unitwise_norm(param), min=eps)
+        grad_norm = unitwise_norm(grad)
+        max_norm = param_norm * clipping
+        # If grad norm > clipping * param_norm, rescale
+        trigger = grad_norm > max_norm
+        # Note the max(||G||, 1e-6) is technically unnecessary here, as
+        # the clipping shouldn't trigger if the grad norm is zero,
+        # but we include it in practice as a "just-in-case".
+        scale = torch.where(trigger, max_norm / torch.clamp(grad_norm, min=1e-6), torch.tensor(1.0))
+        param.grad.mul_(scale)
+
+    return torch.tensor(0.0) # Should be total_norm but we don't need it

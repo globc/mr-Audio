@@ -22,6 +22,7 @@ from lavis.common.dist_utils import (
 from lavis.datasets.data_utils import prepare_sample
 
 from lavis.tasks.mr_eval import eval_submission
+from lavis.tasks.mr_utils import clip_grad_norm_adaptive
 
 
 @registry.register_task("moment_retrieval")
@@ -249,6 +250,9 @@ class MomentRetrievalTask(BaseTask):
 
             # update gradients every accum_grad_iters iterations
             if (i + 1) % accum_grad_iters == 0:
+                # if use_amp:
+                #     scaler.unscale_(optimizer)
+                # clip_grad_norm_adaptive(model.parameters())
                 if use_amp:
                     scaler.step(optimizer)
                     scaler.update()

@@ -12,7 +12,7 @@ model:
   finetuned: ""
   stage1_url_or_filename: https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP2/blip2_pretrained.pth
   lora: True
-  joint_video_audio: True
+  joint_video_audio: "full" # full | semi | False
   image_model: "eva_clip_g"
   pc_model: "ulip2_pointbert"
   video_model: "eva_clip_g"

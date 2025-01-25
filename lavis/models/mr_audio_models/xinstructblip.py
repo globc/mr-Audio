@@ -24,6 +24,7 @@ from peft import (
     LoraConfig,
     TaskType,
 )
+from lavis.models.mr_audio_models.utils import get_peft_config
 
 import transformers
 from transformers import BitsAndBytesConfig
@@ -144,6 +145,7 @@ class Blip2VicunaXInstruct(Blip2Base):
         llm_model="",
         lora_model="",
         lora=False,
+        lora_modalities=False,
 
         ## generation parameters
         prompt="",
@@ -373,7 +375,6 @@ class Blip2VicunaXInstruct(Blip2Base):
         self.llm_tokenizer.add_special_tokens({'eos_token': '</s>'})
         self.llm_tokenizer.add_special_tokens({'unk_token': '</s>'})
         if self.lora:
-            from lavis.models.mr_audio_models.utils import get_peft_config
             # reduce memory usage by loading model in 4 bit quantization, allowed as model is frozen using LoRA
             quantization_config = BitsAndBytesConfig(
                 load_in_4bit=True,
@@ -449,16 +450,13 @@ class Blip2VicunaXInstruct(Blip2Base):
                         )
                 setattr(self, f"{modality}_llm_proj", proj)
 
-        # Freeze QFormers
-        # for modality in self.modalities:
-        #     for name, param in getattr(self, f"{modality}_ln").named_parameters():
-        #         param.requires_grad = False
-        #     getattr(self, f"{modality}_query_tokens").requires_grad = False
-        #     for name, param in getattr(self, f'{modality}_Qformer').named_parameters():
-        #         param.requires_grad = False
-        #     for name, param in getattr(self, f'{modality}_llm_proj').named_parameters():
-        #         param.requires_grad = False
-
+        self.lora_modalities = lora_modalities
+        print(f"Lora for modalities set to {self.lora_modalities}")
+        if self.lora_modalities:
+            for modality in self.modalities:
+                setattr(self, f"{modality}_ln", get_peft_model(self.llm_model, get_peft_config(model=getattr(self, f"{modality}_ln"), load_in_4bit=False, rank=4)))
+                setattr(self, f"{modality}_Qformer", get_peft_model(self.llm_model, get_peft_config(model=getattr(self, f"{modality}_Qformer"), load_in_4bit=False, rank=4)))
+                setattr(self, f"{modality}_llm_proj", get_peft_model(self.llm_model, get_peft_config(model=getattr(self, f"{modality}_llm_proj"), load_in_4bit=False, rank=4)))
 
         self.clean_tokenization = clean_tokenization
         logging.info(f"Clean tokenization is set to {self.clean_tokenization}")
@@ -535,7 +533,7 @@ class Blip2VicunaXInstruct(Blip2Base):
         if samples == None or samples == {} or not any([modality in samples for modality in self.modalities]):
             return {"loss": torch.tensor(0.0)}
 
-        random.shuffle(self.modalities)
+        # random.shuffle(self.modalities)
 
         curr_modalities = [modality for modality in self.modalities if modality in samples]
         excess_modalities = [modality for modality in self.modalities if modality not in curr_modalities]
@@ -792,10 +790,10 @@ class Blip2VicunaXInstruct(Blip2Base):
             inp_list = [self.llm_model.get_input_embeddings()(self.tokenized_prefix.input_ids.to(self.device)).repeat(bs, 1, 1)] 
 
         prompt = samples["text_input"]
-        if self.joint_video_audio:
+        if self.joint_video_audio == "full":
             assert len(embeds["audio"]) == len(embeds["video"])
             num = len(embeds["audio"])
-            for pos in range(len(embeds["audio"])):
+            for pos in range(num):
                 if self.enumerate_inputs:
                     enumeration_pos = self.llm_tokenizer(
                         [f"{'' if pos == 0 else ' '}({chr(97+pos)}) " for _ in prompt],
@@ -806,8 +804,8 @@ class Blip2VicunaXInstruct(Blip2Base):
                     enumeration_atts_llm = enumeration_pos.attention_mask.to(self.device)
                     inp_list.extend([enumeration_inputs_llm])
                     att_list.extend([enumeration_atts_llm])
-                if self.use_cues:
-                    for modality in ['video', 'audio']:
+                for modality in ['video', 'audio']:
+                    if self.use_cues:
                         if self.clean_tokenization:
                             if self.prefix or pos > 1 or self.enumerate_inputs or modality == 'audio':
                                 att_list.extend([torch.tensor(self.tokenized_cue[modality].attention_mask[:,1:]).to(self.device).repeat(atts_llm[modality].shape[0], 1), atts_llm[modality].view(bs,  num, self.num_query_token)[:, pos, :]])
@@ -815,13 +813,34 @@ class Blip2VicunaXInstruct(Blip2Base):
                                 continue
                         att_list.extend([torch.tensor(self.tokenized_cue[modality].attention_mask).to(self.device).repeat(atts_llm[modality].shape[0], 1), atts_llm[modality].view(bs,  num, self.num_query_token)[:, pos, :]])
                         inp_list.extend([self.emb_cue[modality].to(self.device).repeat(inputs_llm[modality].shape[0], 1, 1), inputs_llm[modality].view(bs,  num, self.num_query_token, -1)[:, pos, :, :]])
-                else:
-                    att_list.extend([atts_llm[modality].view(bs, num, self.num_query_token)[:, pos, :]])
-                    inp_list.extend([inputs_llm[modality].view(bs, num, self.num_query_token, -1)[:, pos, :, :]])
+                    else:
+                        att_list.extend([atts_llm[modality].view(bs, num, self.num_query_token)[:, pos, :]])
+                        inp_list.extend([inputs_llm[modality].view(bs, num, self.num_query_token, -1)[:, pos, :, :]])
 
                 # interleave timestamps
                 inp_list.extend([timestamp_inputs_llm[:, pos, :, :]])
                 att_list.extend([timestamp_atts_llm[:, pos, :]])
+
+        # equal to 'full' but order of loops reversed
+        elif self.joint_video_audio == "semi":
+            for modality in ['audio', 'video']: # reversed order
+                num = len(embeds[modality])
+                for pos in range(num):
+                    if self.use_cues:
+                        if self.clean_tokenization:
+                            if self.prefix or pos > 1 or self.enumerate_inputs or modality == 'audio':
+                                att_list.extend([torch.tensor(self.tokenized_cue[modality].attention_mask[:,1:]).to(self.device).repeat(atts_llm[modality].shape[0], 1), atts_llm[modality].view(bs,  num, self.num_query_token)[:, pos, :]])
+                                inp_list.extend([self.emb_cue[modality][:,1:].to(self.device).repeat(inputs_llm[modality].shape[0], 1, 1), inputs_llm[modality].view(bs,  num, self.num_query_token, -1)[:, pos, :, :]])
+                                continue
+                        att_list.extend([torch.tensor(self.tokenized_cue[modality].attention_mask).to(self.device).repeat(atts_llm[modality].shape[0], 1), atts_llm[modality].view(bs,  num, self.num_query_token)[:, pos, :]])
+                        inp_list.extend([self.emb_cue[modality].to(self.device).repeat(inputs_llm[modality].shape[0], 1, 1), inputs_llm[modality].view(bs,  num, self.num_query_token, -1)[:, pos, :, :]])
+                    else:
+                        att_list.extend([atts_llm[modality].view(bs, num, self.num_query_token)[:, pos, :]])
+                        inp_list.extend([inputs_llm[modality].view(bs, num, self.num_query_token, -1)[:, pos, :, :]])
+
+                    # interleave timestamps
+                    inp_list.extend([timestamp_inputs_llm[:, pos, :, :]])
+                    att_list.extend([timestamp_atts_llm[:, pos, :]])
 
         else:           
             for modality in curr_modalities:
@@ -829,8 +848,9 @@ class Blip2VicunaXInstruct(Blip2Base):
                     if self.prefix and self.clean_tokenization:
                         att_list.extend([self.att_cue[modality][:,1:].repeat(bs, 1).to(self.device), atts_llm[modality]])
                         inp_list.extend([self.emb_cue[modality][:,1:].repeat(bs, 1, 1).to(self.device), inputs_llm[modality]])
-                    att_list.extend([self.att_cue[modality].repeat(bs, 1).to(self.device), atts_llm[modality]])
-                    inp_list.extend([self.emb_cue[modality].repeat(bs, 1, 1).to(self.device), inputs_llm[modality]])
+                    else:
+                        att_list.extend([self.att_cue[modality].repeat(bs, 1).to(self.device), atts_llm[modality]])
+                        inp_list.extend([self.emb_cue[modality].repeat(bs, 1, 1).to(self.device), inputs_llm[modality]])
                 else:
                     att_list.extend([atts_llm[modality]])
                     inp_list.extend([inputs_llm[modality]])
@@ -1542,7 +1562,7 @@ class Blip2VicunaXInstruct(Blip2Base):
             att_list = [self.tokenized_prefix.attention_mask.repeat(bs, 1).to(self.device)]
             inp_list = [self.llm_model.get_input_embeddings()(self.tokenized_prefix.input_ids.to(self.device)).repeat(bs, 1, 1)]            
 
-        if self.joint_video_audio:
+        if self.joint_video_audio == "full":
             for pos in range(num['video']):
                 if self.enumerate_inputs:
                     enumeration_pos = self.llm_tokenizer(
@@ -1554,8 +1574,8 @@ class Blip2VicunaXInstruct(Blip2Base):
                     enumeration_atts_llm = enumeration_pos.attention_mask.to(self.device)
                     inp_list.extend([enumeration_inputs_llm])
                     att_list.extend([enumeration_atts_llm])
-                if self.use_cues:
-                    for modality in ['video', 'audio']:
+                for modality in ['video', 'audio']:
+                    if self.use_cues:
                         if self.clean_tokenization:
                             if self.prefix or pos > 1 or self.enumerate_inputs or modality == 'audio':
                                 att_list.extend([torch.tensor(self.tokenized_cue[modality].attention_mask[:,1:]).to(self.device).repeat(atts_llm[modality].shape[0], 1), atts_llm[modality].view(bs,  num[modality], self.num_query_token)[:, pos, :]])
@@ -1563,13 +1583,34 @@ class Blip2VicunaXInstruct(Blip2Base):
                                 continue
                         att_list.extend([torch.tensor(self.tokenized_cue[modality].attention_mask).to(self.device).repeat(atts_llm[modality].shape[0], 1), atts_llm[modality].view(bs,  num[modality], self.num_query_token)[:, pos, :]])
                         inp_list.extend([self.emb_cue[modality].to(self.device).repeat(inputs_llm[modality].shape[0], 1, 1), inputs_llm[modality].view(bs,  num[modality], self.num_query_token, -1)[:, pos, :, :]])
-                else:
-                    att_list.extend([atts_llm[modality].view(bs, num[modality], self.num_query_token)[:, pos, :]])
-                    inp_list.extend([inputs_llm[modality].view(bs, num[modality], self.num_query_token, -1)[:, pos, :, :]])
+                    else:
+                        att_list.extend([atts_llm[modality].view(bs, num[modality], self.num_query_token)[:, pos, :]])
+                        inp_list.extend([inputs_llm[modality].view(bs, num[modality], self.num_query_token, -1)[:, pos, :, :]])
 
                 # interleave timestamps
                 inp_list.extend([timestamp_inputs_llm[:, pos, :, :]])
                 att_list.extend([timestamp_atts_llm[:, pos, :]])
+
+        # equal to 'full' but order of loops reversed
+        elif self.joint_video_audio == "semi":
+            for modality in ['audio', 'video']: # reversed
+                for pos in range(num[modality]):
+                    if self.use_cues:
+                        if self.clean_tokenization:
+                            if self.prefix or pos > 1 or self.enumerate_inputs or modality == 'audio':
+                                att_list.extend([torch.tensor(self.tokenized_cue[modality].attention_mask[:,1:]).to(self.device).repeat(atts_llm[modality].shape[0], 1), atts_llm[modality].view(bs,  num[modality], self.num_query_token)[:, pos, :]])
+                                inp_list.extend([self.emb_cue[modality][:,1:].to(self.device).repeat(inputs_llm[modality].shape[0], 1, 1), inputs_llm[modality].view(bs,  num[modality], self.num_query_token, -1)[:, pos, :, :]])
+                                continue
+                        att_list.extend([torch.tensor(self.tokenized_cue[modality].attention_mask).to(self.device).repeat(atts_llm[modality].shape[0], 1), atts_llm[modality].view(bs,  num[modality], self.num_query_token)[:, pos, :]])
+                        inp_list.extend([self.emb_cue[modality].to(self.device).repeat(inputs_llm[modality].shape[0], 1, 1), inputs_llm[modality].view(bs,  num[modality], self.num_query_token, -1)[:, pos, :, :]])
+                    else:
+                        att_list.extend([atts_llm[modality].view(bs, num[modality], self.num_query_token)[:, pos, :]])
+                        inp_list.extend([inputs_llm[modality].view(bs, num[modality], self.num_query_token, -1)[:, pos, :, :]])
+
+                    # interleave timestamps
+                    inp_list.extend([timestamp_inputs_llm[:, pos, :, :]])
+                    att_list.extend([timestamp_atts_llm[:, pos, :]])
+
         else:
             for modality in curr_modalities:
                 if self.enumerate_inputs:
@@ -2370,6 +2411,7 @@ class Blip2VicunaXInstruct(Blip2Base):
 
         llm_text_input = cfg.get("llm_text_input", True)
         lora = cfg.get("lora", False)
+        lora_modalities = cfg.get("lora_modalities", False)
         prefix = cfg.get("prefix", "")
         postfix = cfg.get("postfix", "")
 
@@ -2466,6 +2508,7 @@ class Blip2VicunaXInstruct(Blip2Base):
             llm_model=llm_model,
             lora_model=lora_model,
             lora = lora,
+            lora_modalities = lora_modalities,
             prompt=prompt,
             max_txt_len=max_txt_len,
             max_output_txt_len=max_output_txt_len,
@@ -2695,7 +2738,7 @@ class Blip2VicunaXInstruct(Blip2Base):
         self.load_state_dict(state_dict, strict=True)
         logging.info("load checkpoint from %s" % url_or_filename)
     
-    def load_state_dict(self, state_dict, strict=True):
+    def load_state_dict(self, state_dict, strict=False):
         # from pdb import set_trace; set_trace()
         unexpected_keys = []
         missing_keys = []

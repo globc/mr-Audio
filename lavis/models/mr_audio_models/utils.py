@@ -1,10 +1,11 @@
 from peft import LoraConfig
 import bitsandbytes as bnb
+import torch
 
-def get_peft_config(model):
-    target_modules = find_all_linear_names(model)
+def get_peft_config(model, load_in_4bit=True, rank=8):
+    target_modules = find_all_linear_names(model, load_in_4bit)
     peft_config = LoraConfig(
-        r=8,
+        r=rank,
         target_modules=target_modules,
         lora_alpha=8,
         lora_dropout=0.05,
@@ -14,8 +15,8 @@ def get_peft_config(model):
     return peft_config
 
 
-def find_all_linear_names(model):
-    cls = bnb.nn.Linear4bit #if args.bits == 4 else (bnb.nn.Linear8bitLt if args.bits == 8 else torch.nn.Linear)
+def find_all_linear_names(model, load_in_4bit):
+    cls = bnb.nn.Linear4bit if load_in_4bit else torch.nn.Linear
     lora_module_names = set()
     for name, module in model.named_modules():
         if isinstance(module, cls):
