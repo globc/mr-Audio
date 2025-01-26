@@ -39,7 +39,7 @@ from lavis.models.blip2_mr_models.model_helpers import *
 
 
 from audioinclusion.AudioEmbeddingsCLAP import CLAPAudioEmbeddings
-
+from audioinclusion.MiniTransformer import ImageAudioFusion
 
 
 # set the environment variable TOKENIZERS_PARALLELISM = false
@@ -275,9 +275,16 @@ class BLIP2_MR(Blip2Base):
             self.Qformer.config.hidden_size, self.t5_model.config.hidden_size
         ).to(self.device)
 
+        #second MLP layer, use right before Linear Layer into T5 (t5_proj)
+        self.secondMLPLayer = nn.Linear(
+            self.Qformer.config.hidden_size, self.t5_model.config.hidden_size
+        ).to(self.device)
+
         self.frame_down_proj = nn.Linear(
             self.Qformer.config.hidden_size, self.audio_feature_dim
         ).to(self.device)
+
+        self.fusion_attention = ImageAudioFusion()
 
         if self.fusion_method == "concat":
             self.fusion_layer = nn.Linear(
@@ -368,6 +375,8 @@ class BLIP2_MR(Blip2Base):
         frame_down_proj = self.frame_down_proj(frames_for_projection)
         combined_video_audio_frame = torch.cat([frame_down_proj, audio_embeddings], dim=-1)
         fused_data = self.fusion_layer(combined_video_audio_frame)
+        #fused_data = self.secondMLPLayer(fused_data)
+        fused_data = self.fusion_layer(fused_data)
         frames_for_t5 = self.t5_proj(fused_data)
 
         # TODO: Use average pooling to aggregate the 32 embeddings of one frame
