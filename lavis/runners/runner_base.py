@@ -10,6 +10,7 @@ import json
 import logging
 import os
 import time
+import sys
 from pathlib import Path
 
 import torch
@@ -622,13 +623,22 @@ class RunnerBase:
         param_grad_dic = {
             k: v.requires_grad for (k, v) in model_no_ddp.named_parameters()
         }
+
+        #logging.info("Parameter Gradient Req?\n")
+        #for k, v in param_grad_dic.items():
+        #    logging.info(f"{k}: {v}")
+        #for handler in logging.getLogger().handlers:
+        #    handler.flush()
+        #sys.exit(0)
+
+
         state_dict = model_no_ddp.state_dict()
-        for k in list(state_dict.keys()):
-            if k in param_grad_dic.keys() and not param_grad_dic[k]:
+        #for k in list(state_dict.keys()):
+        #    if k in param_grad_dic.keys() and not param_grad_dic[k]:
                 # delete parameters that do not require gradient
                 # if 't5_model' not in k and 'visual_encoder' not in k:
                 # print(k)
-                del state_dict[k]
+        #        del state_dict[k]
         save_obj = {
             "model": state_dict,
             "optimizer": self.optimizer.state_dict(),
