@@ -320,10 +320,6 @@ class BLIP2_MR(Blip2Base):
 
 
 
-
-        #alternative to downsampling layers
-        #audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frames_for_projection.size(1), -1)
-
         #TODO: Downsample frame token embeddings from 32x768 to 32x512 w/ nn.Linear
         #TODO: torch. cat --> [1, 32, 512+512], hälfte audio, hälfte frame embedding, 32 mal selbes audio embedding, 32 unterschiedloche frame embeddings
         #TODO: Idee ist gemeinsamen Embeddingspace für Audio und Frame zu haben
@@ -332,11 +328,17 @@ class BLIP2_MR(Blip2Base):
         audio_embeddings = audio_embeddings.reshape(-1, audio_embeddings.shape[2]) # reshape to [b*t, embedd_len]
         audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frames_for_projection.shape[1], -1) # reshape to [b*t, query_tokens, embed_len]
 
-        #if self.fusion_method == "concat":
         frame_down_proj = self.frame_down_proj(frames_for_projection)
-        combined_video_audio_frame = torch.cat([frame_down_proj, audio_embeddings], dim=-1)
-        fused_data = self.fusion_layer(combined_video_audio_frame)
-        frames_for_t5 = self.t5_proj(fused_data)
+        if self.fusion_method == "lcam":
+            combined_video_audio_frame = self.lcam_fusion(audio_embeddings, frame_down_proj)
+        else:
+            combined_video_audio_frame = torch.cat([frame_down_proj, audio_embeddings], dim=-1)
+
+        if self.fusion_method == "concat" or self.fusion_method == "lcam":
+            fused_data = self.fusion_layer(combined_video_audio_frame)
+            frames_for_t5 = self.t5_proj(fused_data)
+        else:
+            frames_for_t5 = self.t5_proj(frames_for_projection)
 
         # TODO: Use average pooling to aggregate the 32 embeddings of one frame
         if self.frame_token_aggregation:
@@ -767,8 +769,12 @@ class BLIP2_MR(Blip2Base):
         audio_embeddings = audio_embeddings.reshape(-1, audio_embeddings.shape[2])
         audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frame_down_proj.shape[1], -1)
         # print(f"emb shaoe: {audio_embeddings.shape}")
+        if self.fusion_method == "lcam":
+            combined_video_audio_frame = self.lcam_fusion(audio_embeddings, frame_down_proj)
+        else:
+            combined_video_audio_frame = torch.cat([frame_down_proj, audio_embeddings], dim=-1)
 
-        combined_video_audio_frame = torch.cat([frame_down_proj, audio_embeddings], dim=-1)
+        #combined_video_audio_frame = torch.cat([frame_down_proj, audio_embeddings], dim=-1)
         # print(f"combined_video_audio_frame: {combined_video_audio_frame.shape}")
         fused_data = self.fusion_layer(combined_video_audio_frame)
         # print(f"fused_data: {fused_data.shape}")
@@ -1282,3 +1288,36 @@ class BLIP2_MR(Blip2Base):
         frames_atts_for_t5 = frames_atts_for_t5.reshape(b, -1)  # b, t * n
 
         return frames_for_t5, frames_atts_for_t5
+
+    def lcam_fusion(self, audio_features, vision_features, lambda1=1.0, lambda2=1.0):
+        """
+        Lightweight Cross-Modal Attention Mechanism (LCAM) using dot product.
+
+        Args:
+            vision_features (torch.Tensor): Video features of shape (b*t, #query_tokens, #features).
+            audio_features (torch.Tensor): Audio features of shape (b*t, #query_tokens, #features).
+            lambda1 (float): Weight for the linear term in the discriminant function.
+            lambda2 (float): Weight for the quadratic term in the discriminant function.
+
+        Returns:
+            torch.Tensor: The fused features of shape (b*t, #query_tokens, #features).
+        """
+        # Step 1: Compute dot product between video and audio features across the last dimension (#features)
+        dot_product = torch.sum(vision_features * audio_features, dim=-1, keepdim=True)  # Shape: (b*t, #query_tokens, 1)
+
+        # Step 2: Compute mean and variance of the dot product across the batch-temporal axis (b*t)
+        mean = torch.mean(dot_product, dim=0, keepdim=True)  # Shape: (1, #query_tokens, 1)
+        variance = torch.var(dot_product, dim=0, unbiased=True, keepdim=True)  # Shape: (1, #query_tokens, 1)
+
+        # Step 3: Compute the discriminant function
+        difference = dot_product - mean  # Shape: (b*t, #query_tokens, 1)
+        discriminant_function = (lambda1 * difference + lambda2 * difference**2) / (variance + 1e-6)  # Shape: (b*t, #query_tokens, 1)
+
+        # Step 4: Apply sigmoid to get gating weights
+        gating_weights = torch.sigmoid(discriminant_function)  # Shape: (b*t, #query_tokens, 1)
+
+        # Step 5: Compute the cross-modal fused features
+        fused_output = vision_features * gating_weights + audio_features * (1 - gating_weights)  # Shape: (b*t, #query_tokens, #features)
+
+        return fused_output
+

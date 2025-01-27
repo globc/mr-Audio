@@ -21,13 +21,13 @@ datasets:
           name: "blip2_video_train"
           n_frms: 20
           image_size: 224
-          audio_clip_len: 0.5 # length of the extracted audio clips in seconds
+          audio_clip_len: 1.5 # length of the extracted audio clips in seconds
           target_sr: 48000 # target audio sampling rate
         eval:
           name: "blip_video_eval"
           n_frms: 20
           image_size: 224
-          audio_clip_len: 0.5 # length of the extracted audio clips in seconds
+          audio_clip_len: 1.5 # length of the extracted audio clips in seconds
           target_sr: 48000 # target audio sampling rate
     text_processor:
         train:
@@ -78,6 +78,6 @@ run:
 
   wandb: True
   wandb_project: "mr_BLIP"
-  wandb_name: "Charades_20"
+  wandb_name: "Charades_lcam"
 
-  fusion_method: "concat"
+  fusion_method: "lcam"
