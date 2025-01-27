@@ -241,6 +241,8 @@ class BLIP2_MR(Blip2Base):
             self.Qformer.config.hidden_size, self.audio_feature_dim
         ).to(self.device)
 
+        self.fusion_method = fusion_method
+
         if self.fusion_method == "concat":
             self.fusion_layer = nn.Linear(
                 self.audio_feature_dim * 2,self.Qformer.config.hidden_size
