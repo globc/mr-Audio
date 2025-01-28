@@ -376,7 +376,7 @@ class BLIP2_MR(Blip2Base):
         combined_video_audio_frame = torch.cat([frame_down_proj, audio_embeddings], dim=-1)
         fused_data = self.fusion_layer(combined_video_audio_frame)
         #fused_data = self.secondMLPLayer(fused_data)
-        fused_data = self.fusion_layer(fused_data)
+        #fused_data = self.fusion_attention(fused_data)
         frames_for_t5 = self.t5_proj(fused_data)
 
         # TODO: Use average pooling to aggregate the 32 embeddings of one frame
