@@ -229,10 +229,6 @@ class BLIP2_MR(Blip2Base):
 
         self.num_query_token = num_query_token
 
-        self.t5_proj_2 = nn.Linear(
-            self.audio_feature_dim * 2, self.t5_model.config.hidden_size
-        ).to(self.device)
-
         #Original:
         self.t5_proj = nn.Linear(
             self.Qformer.config.hidden_size, self.t5_model.config.hidden_size).to(self.device)
@@ -243,7 +239,7 @@ class BLIP2_MR(Blip2Base):
 
         self.fusion_method = fusion_method
 
-        if self.fusion_method == "concat":
+        if self.fusion_method == "concat" or self.fusion_method == "lcam":
             self.fusion_layer = nn.Linear(
                 self.audio_feature_dim * 2,self.Qformer.config.hidden_size
             ).to(self.device)
