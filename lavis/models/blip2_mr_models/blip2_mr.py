@@ -19,9 +19,11 @@ from transformers import T5TokenizerFast
 from peft import LoraConfig, get_peft_model
 import wandb
 
+from lavis.models.beats.BEATs import BEATs
+
 sys.path.append(sys.path[0] + "/..")
 from lavis.common.registry import registry
-from lavis.models.blip2_models.blip2 import Blip2Base, disabled_train
+from lavis.models.blip2_models.blip2 import Blip2Base, disabled_train, LayerNorm
 from lavis.models.blip2_models.modeling_t5 import T5Config, T5ForConditionalGeneration
 from lavis.common.dist_utils import is_main_process
 from lavis.models.blip2_mr_models.utils import (
@@ -85,7 +87,8 @@ class BLIP2_MR(Blip2Base):
         task="lora",
         device= torch.device("cuda" if torch.cuda.is_available() else "cpu"),
         sampling_rate=48000,
-        fusion_method="concat"
+        fusion_method="concat",
+        audio_encoder_type="clap"
     ):
         """
         apply_lemmatizer: when set to True, postprocess predict_answers() result with lemmas.
@@ -239,8 +242,8 @@ class BLIP2_MR(Blip2Base):
 
         self.fusion_method = fusion_method
 
-        if self.fusion_method == "concat" or self.fusion_method == "lcam":
-            self.fusion_layer = nn.Linear(
+        #if self.fusion_method == "concat" or self.fusion_method == "lcam":
+        self.fusion_layer = nn.Linear(
                 self.audio_feature_dim * 2,self.Qformer.config.hidden_size
             ).to(self.device)
         if self.fusion_method == "interleave":
@@ -1006,6 +1009,7 @@ class BLIP2_MR(Blip2Base):
         sampling_rate = cfg.get("target_sr", 48000)
 
         fusion_method = cfg.get("fusion_method", "none")
+        audio_encoder = cfg.get("audio_encoder", "clap")
 
         model = cls(
             img_size=img_size,
@@ -1025,7 +1029,8 @@ class BLIP2_MR(Blip2Base):
             task=task,
             device=device,
             sampling_rate=sampling_rate,
-            fusion_method=fusion_method
+            fusion_method=fusion_method,
+            audio_encoder_type=audio_encoder
         )
         model.load_checkpoint_from_config(cfg)
 
