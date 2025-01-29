@@ -64,6 +64,7 @@ run:
 
   amp: True
   resume_ckpt_path: null
+  save_after_epoch: True
 
   evaluate: False
   train_splits: ["train"]

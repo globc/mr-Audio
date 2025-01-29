@@ -35,15 +35,24 @@ class CLAPAudioEmbeddings:
     def get_audio_embeddings(self, audio_clips, sr=48000):
         #with torch.cuda.amp.autocast(enabled=(self.eigendevice != torch.device("cpu"))):
         #print(f"audio shape: {audio_clips.shape}")
-        embeddings_lst = []
-        for batch in audio_clips:
-            audio_inputs = self.processor(audios=batch.cpu().numpy(), sampling_rate=sr, return_tensors="pt", padding=True)
-            audio_inputs = audio_inputs.to(self.eigendevice)
-            with torch.no_grad():
-                audio_embeddings = self.clap_model.get_audio_features(**audio_inputs)
-            embeddings_lst.append(audio_embeddings)
-        embeddings = torch.stack(embeddings_lst, dim=0)
+        #embeddings_lst = []
+        #for batch in audio_clips:
+        #    audio_inputs = self.processor(audios=batch.cpu().numpy(), sampling_rate=sr, return_tensors="pt", padding=True)
+        #    audio_inputs = audio_inputs.to(self.eigendevice)
+        #    with torch.no_grad():
+        #        audio_embeddings = self.clap_model.get_audio_features(**audio_inputs)
+        #    embeddings_lst.append(audio_embeddings)
+        #embeddings = torch.stack(embeddings_lst, dim=0)
         #print(f"audio embdinngs shape: {embeddings.shape}")
+        #return embeddings
+        audio_inputs = self.processor(audios=[clip for clip in audio_clips], sampling_rate=sr, return_tensors="pt",
+                                     padding=True)
+
+        audio_inputs = audio_inputs.to(self.eigendevice)
+
+        with torch.no_grad():
+            embeddings = self.clap_model.get_audio_features(**audio_inputs)
+
         return embeddings
 
     #@staticmethod
