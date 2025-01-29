@@ -718,7 +718,8 @@ class BLIP2_MR(Blip2Base):
         answer = samples["relevant_windows"]
 
         audio_clips = samples["audio"]
-        audio_embeddings = self.audio_embeddings_model.get_audio_embeddings(audio_clips=audio_clips, sr=48000)
+        audio = audio_clips.reshape(-1, audio_clips.shape[2])
+        audio_embeddings = self.audio_embeddings_model.get_audio_embeddings(audio_clips=audio, sr=48000)
 
         # uniform sampling
         b, t, c, w, h = image.shape
@@ -743,7 +744,7 @@ class BLIP2_MR(Blip2Base):
         ## Add audio
         frame_down_proj = self.frame_down_proj(frames_after_qformer.last_hidden_state)
 
-        audio_embeddings = audio_embeddings.reshape(-1, audio_embeddings.shape[2])
+        #audio_embeddings = audio_embeddings.reshape(-1, audio_embeddings.shape[2])
         audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frame_down_proj.shape[1], -1)
 
         if self.fusion_method == "lcam":
