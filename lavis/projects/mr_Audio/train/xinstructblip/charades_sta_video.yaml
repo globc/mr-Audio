@@ -64,7 +64,7 @@ model:
   few_shot_prob: 0
   qformer_text_input: True
   llm_text_input: True
-  modalities :  ["audio", "video"]
+  modalities :  ["video"]
   use_cues: True
   shared_qformer: False
   pretrained_shared_qformer: Null
@@ -78,7 +78,7 @@ model:
 
 datasets:
   qvh_audio: # name of the dataset builder
-    data_type: [video, audio]
+    data_type: [video]
 
     video_processor:
         train:
@@ -89,17 +89,6 @@ datasets:
           name: "alpro_video_eval_stamps"
           n_frms: 20
           image_size: 224
-
-    audio_processor:
-        train:
-          name: beats_audio
-          sampling_rate: 16000
-          n_frames: 20
-        eval:
-          name: beats_audio
-          sampling_rate: 16000
-          n_frames: 20
-          is_eval: False
 
     text_processor:
           train:
@@ -129,14 +118,12 @@ datasets:
             - /home/atuin/g102ea/g102ea15/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/test.json
       video:
         storage: /home/atuin/g102ea/shared/videos/Charades_v1
-      audio:
-        storage: /home/atuin/g102ea/shared/videos/Charades_v1
 
 run:
   task: moment_retrieval
   # optimizer
   lr_sched: "linear_warmup_cosine_lr"
-  init_lr: 3e-4
+  init_lr: 1e-4
   min_lr: 0
   warmup_lr: 1e-8
   warmup_steps: 698 # 10% * 20 epochs * 349 steps/epoch = 698

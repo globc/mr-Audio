@@ -268,6 +268,7 @@ class MomentRetrievalTask(BaseTask):
                 wandb.log(
                     {
                         "train/lr": optimizer.param_groups[0]["lr"],
+                        "train/loss": loss.item(),
                     }
                 )
 

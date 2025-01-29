@@ -65,7 +65,7 @@ class MomentRetrievalDataset(BaseDataset):
 class MomentRetrievalDataset_Audio(BaseDataset):
     def __init__(self, **kwargs):
         super().__init__(kwargs['video_processor'], kwargs['text_processor'], kwargs['video_root'], kwargs['ann_paths'])
-        self.audio_processor = kwargs['audio_processor']
+        self.audio_processor = kwargs['audio_processor'] if "audio_processor" in kwargs else None
 
     def __len__(self):
         return len(self.annotation)
@@ -90,9 +90,6 @@ class MomentRetrievalDataset_Audio(BaseDataset):
             except:
                 print("video read error")
                 video_path = None
-
-
-        audio = self.audio_processor(video_path) # TODO VideoLLaMA
 
         video, indices, fps = self.vis_processor(video_path)
 
@@ -147,12 +144,17 @@ class MomentRetrievalDataset_Audio(BaseDataset):
         task_prompt = "Given the video and the query, find the relevant windows.\nRelevant windows: "
         text_input = query_prompt + task_prompt
 
-        return {
+        out = {
             "text_input": text_input,
             "relevant_windows": str(ann["relevant_windows"]),
             "video": video,
-            "audio": audio,
             "timestamps": timestamps,
             "duration": duration,
             "query_id": ann["qid"],
         }
+
+        if self.audio_processor is not None:
+            audio = self.audio_processor(video_path)
+            out["audio"] = audio
+
+        return out

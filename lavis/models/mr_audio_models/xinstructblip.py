@@ -375,20 +375,12 @@ class Blip2VicunaXInstruct(Blip2Base):
         self.llm_tokenizer.add_special_tokens({'eos_token': '</s>'})
         self.llm_tokenizer.add_special_tokens({'unk_token': '</s>'})
         if self.lora:
-            # reduce memory usage by loading model in 4 bit quantization, allowed as model is frozen using LoRA
-            quantization_config = BitsAndBytesConfig(
-                load_in_4bit=True,
-                bnb_4bit_use_double_quant=True,
-                bnb_4bit_quant_type="nf4",
-                bnb_4bit_compute_dtype=torch.bfloat16,
-            )
             self.llm_model = LlamaForCausalLM.from_pretrained(
                 llm_model,
                 torch_dtype=torch.float16,
-                quantization_config=quantization_config
             )
             self.llm_model.resize_token_embeddings(len(self.llm_tokenizer))
-            self.peft_config = get_peft_config(self.llm_model)
+            self.peft_config = get_peft_config(self.llm_model, rank=8)
             self.llm_model.gradient_checkpointing_enable()
             self.llm_model.enable_input_require_grads()
             self.llm_model.lm_head = CastOutputToFloat(self.llm_model.lm_head)
@@ -454,9 +446,9 @@ class Blip2VicunaXInstruct(Blip2Base):
         print(f"Lora for modalities set to {self.lora_modalities}")
         if self.lora_modalities:
             for modality in self.modalities:
-                setattr(self, f"{modality}_ln", get_peft_model(self.llm_model, get_peft_config(model=getattr(self, f"{modality}_ln"), load_in_4bit=False, rank=4)))
-                setattr(self, f"{modality}_Qformer", get_peft_model(self.llm_model, get_peft_config(model=getattr(self, f"{modality}_Qformer"), load_in_4bit=False, rank=4)))
-                setattr(self, f"{modality}_llm_proj", get_peft_model(self.llm_model, get_peft_config(model=getattr(self, f"{modality}_llm_proj"), load_in_4bit=False, rank=4)))
+                # setattr(self, f"{modality}_ln", get_peft_model(getattr(self, f"{modality}_ln"), get_peft_config(model=getattr(self, f"{modality}_ln"), load_in_4bit=False, rank=4)))
+                setattr(self, f"{modality}_Qformer", get_peft_model(getattr(self, f"{modality}_Qformer"), get_peft_config(getattr(self, f"{modality}_Qformer"), rank=4, task_type="FEATURE_EXTRACTION")))
+                # setattr(self, f"{modality}_llm_proj", get_peft_model(getattr(self, f"{modality}_llm_proj"), get_peft_config(model=getattr(self, f"{modality}_llm_proj"), load_in_4bit=False, rank=4, task_type="FEATURE_EXTRACTION")))
 
         self.clean_tokenization = clean_tokenization
         logging.info(f"Clean tokenization is set to {self.clean_tokenization}")
@@ -791,8 +783,9 @@ class Blip2VicunaXInstruct(Blip2Base):
 
         prompt = samples["text_input"]
         if self.joint_video_audio == "full":
-            assert len(embeds["audio"]) == len(embeds["video"])
-            num = len(embeds["audio"])
+            if "audio" in self.modalities:
+                assert len(embeds["audio"]) == len(embeds["video"])
+            num = len(embeds["video"])
             for pos in range(num):
                 if self.enumerate_inputs:
                     enumeration_pos = self.llm_tokenizer(
@@ -804,7 +797,7 @@ class Blip2VicunaXInstruct(Blip2Base):
                     enumeration_atts_llm = enumeration_pos.attention_mask.to(self.device)
                     inp_list.extend([enumeration_inputs_llm])
                     att_list.extend([enumeration_atts_llm])
-                for modality in ['video', 'audio']:
+                for modality in self.modalities[::-1]: # ["video", "audio"]
                     if self.use_cues:
                         if self.clean_tokenization:
                             if self.prefix or pos > 1 or self.enumerate_inputs or modality == 'audio':
@@ -823,7 +816,7 @@ class Blip2VicunaXInstruct(Blip2Base):
 
         # equal to 'full' but order of loops reversed
         elif self.joint_video_audio == "semi":
-            for modality in ['audio', 'video']: # reversed order
+            for modality in self.modalities: # ["audio", "video"]
                 num = len(embeds[modality])
                 for pos in range(num):
                     if self.use_cues:
@@ -1227,8 +1220,6 @@ class Blip2VicunaXInstruct(Blip2Base):
 
         if 'modalities' in samples:
             curr_modalities = samples['modalities'][0] if isinstance(samples['modalities'][0], list) else  samples['modalities']
-        elif self.joint_video_audio:
-            curr_modalities = ["video", "audio"]
         else:
             curr_modalities = [modality for modality in self.modalities if modality in samples]
 
@@ -1574,7 +1565,7 @@ class Blip2VicunaXInstruct(Blip2Base):
                     enumeration_atts_llm = enumeration_pos.attention_mask.to(self.device)
                     inp_list.extend([enumeration_inputs_llm])
                     att_list.extend([enumeration_atts_llm])
-                for modality in ['video', 'audio']:
+                for modality in self.modalities[::-1]:
                     if self.use_cues:
                         if self.clean_tokenization:
                             if self.prefix or pos > 1 or self.enumerate_inputs or modality == 'audio':
@@ -1593,7 +1584,7 @@ class Blip2VicunaXInstruct(Blip2Base):
 
         # equal to 'full' but order of loops reversed
         elif self.joint_video_audio == "semi":
-            for modality in ['audio', 'video']: # reversed
+            for modality in self.modalities: # reversed
                 for pos in range(num[modality]):
                     if self.use_cues:
                         if self.clean_tokenization:
@@ -2738,7 +2729,7 @@ class Blip2VicunaXInstruct(Blip2Base):
         self.load_state_dict(state_dict, strict=True)
         logging.info("load checkpoint from %s" % url_or_filename)
     
-    def load_state_dict(self, state_dict, strict=False):
+    def load_state_dict(self, state_dict, strict=True):
         # from pdb import set_trace; set_trace()
         unexpected_keys = []
         missing_keys = []
@@ -2826,13 +2817,43 @@ class Blip2VicunaXInstruct(Blip2Base):
                         unexpected_keys.extend(msg.unexpected_keys)
         
         ## llm model is loaded from pretrained
-        lora_state_dict = {'.'.join(k.split('.')[1:]):v for k,v in state_dict.items() if f"llm_model" in k.split('.')[0]}
+        llm_model_state_dict = {'.'.join(k.split('.')[1:]):v for k,v in state_dict.items() if f"llm_model" in k.split('.')[0]}
 
-        if not self.lora or len(lora_state_dict) == 0:
+        if not self.lora or len(llm_model_state_dict) == 0:
+            logging.info(f"llm_model weights not found")
             unexpected_keys = [k for k in unexpected_keys if k.split('.')[0] != 'llm_model']
-        else:
+        else: # Load Lora weights
             msg = self.llm_model.load_state_dict({'.'.join(k.split('.')[1:]):v for k,v in state_dict.items() if f"llm_model" in k.split('.')[0]}, strict=False)
             missing_keys.extend(["llm_model."+k for k in msg.missing_keys])
+        
+        for modality in self.modalities:
+            q_former_state_dict = {'.'.join(k.split('.')[1:]):v for k,v in state_dict.items() if f"{modality}_Qformer" in k.split('.')[0]}
+            if not self.lora or len(q_former_state_dict) == 0:
+                logging.info(f"{modality}_Qformer weights not found")
+                unexpected_keys = [k for k in unexpected_keys if k.split('.')[0] != f"{modality}_Qformer"]
+            else:
+                msg = getattr(self, f"{modality}_Qformer").load_state_dict(q_former_state_dict, strict=False)
+                missing_keys.extend([f"{modality}_Qformer."+k for k in msg.missing_keys])
+                unexpected_keys.extend(msg.unexpected_keys)
+
+            ln_state_dict = {'.'.join(k.split('.')[1:]):v for k,v in state_dict.items() if f"{modality}_ln" in k.split('.')[0]}
+            if len(ln_state_dict) == 0:
+                logging.info(f"{modality}_ln weights not found")
+                unexpected_keys = [k for k in unexpected_keys if k.split('.')[0] != f"{modality}_ln"]
+            else:
+                msg = getattr(self, f"{modality}_ln").load_state_dict(ln_state_dict, strict=False)
+                missing_keys.extend(msg.missing_keys)
+                unexpected_keys.extend(msg.unexpected_keys)
+
+            llm_proj_state_dict = {'.'.join(k.split('.')[1:]):v for k,v in state_dict.items() if f"{modality}_llm_proj" in k.split('.')[0]}
+            if len(llm_proj_state_dict) == 0:
+                logging.info(f"{modality}_llm_proj weights not found")
+                unexpected_keys = [k for k in unexpected_keys if k.split('.')[0] != f"{modality}_llm_proj"]
+            else:
+                msg = getattr(self, f"{modality}_llm_proj").load_state_dict(llm_proj_state_dict, strict=False)
+                missing_keys.extend(msg.missing_keys)
+                unexpected_keys.extend(msg.unexpected_keys)
+
         missing_keys = [k for k in missing_keys if 'encoder' not in k.split('.')[0]]
         missing_keys = [k for k in missing_keys if k.split('.')[0] != 'llm_model']
         return _IncompatibleKeys(missing_keys, unexpected_keys)
