@@ -3,6 +3,7 @@ import os
 import torch
 
 from lavis.datasets.datasets.base_dataset import BaseDataset
+from lavis.processors.blip_processors import Blip2VideoTrainProcessor, BlipVideoEvalProcessor
 
 
 class MomentRetrievalDataset(BaseDataset):
@@ -92,7 +93,8 @@ class MomentRetrievalDataset_Audio(BaseDataset):
                 video_path = None
 
         video, indices, fps = self.vis_processor(video_path)
-
+        if isinstance(self.vis_processor, (Blip2VideoTrainProcessor, BlipVideoEvalProcessor)):
+            video = video.permute(1, 0, 2, 3)
         timestamps = [round(idx / fps) for idx in indices]
         timestamps = torch.tensor(timestamps)
 
@@ -146,9 +148,12 @@ class MomentRetrievalDataset_Audio(BaseDataset):
 
         out = {
             "text_input": text_input,
+            "query_prompt": query_prompt,
+            "task_prompt": task_prompt,
             "relevant_windows": str(ann["relevant_windows"]),
             "video": video,
             "timestamps": timestamps,
+            "video_prompt_end": "<extra_id_0>",
             "duration": duration,
             "query_id": ann["qid"],
         }

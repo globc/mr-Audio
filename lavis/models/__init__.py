@@ -53,6 +53,7 @@ from lavis.processors.base_processor import BaseProcessor
 # from lavis.models.blip2_mr_models.blip2_mr_opt import Blip2_OPT_MR
 
 from lavis.models.mr_audio_models.xinstructblip import Blip2VicunaXInstruct
+from lavis.models.mr_audio_models.blip2_mr_audio_xinstructblip import BLIP2_MR_AUDIO_XINSTRUCTBLIP
 
 __all__ = [
     "load_model",
@@ -90,6 +91,7 @@ __all__ = [
     # "BLIP2_MR",
     # "Blip2_OPT_MR",
     "Blip2VicunaXInstruct",
+    "BLIP2_MR_AUDIO_XINSTRUCTBLIP"
 ]
 
 
