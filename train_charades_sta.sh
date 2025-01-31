@@ -1,5 +1,5 @@
 #!/bin/bash -l
-#SBATCH --job-name=mr_audio_charades
+#SBATCH --job-name=mr_audio_charades_test_deubg
 #SBATCH --time=24:00:00
 #SBATCH --gres=gpu:a100:4 -C a100_80
 
@@ -15,7 +15,9 @@ unset SLURM_EXPORT_ENV
 #ml gcc/11 python/3.8 cuda/11.8
 #ml gcc/11 python/3.9-anaconda cuda/12.1
 
-source $WORK/venvs/mrBlipAudio/bin/activate
+#source $WORK/venvs/mrBlipAudio/bin/activate
+conda init
+conda activate mrAudioConda
 
 export http_proxy=http://proxy:80
 export https_proxy=http://proxy:80

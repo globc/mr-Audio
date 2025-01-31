@@ -7,6 +7,7 @@ model:
   arch: blip2_mr
   model_type: pretrain_flant5xl
   load_finetuned: False # True
+  #finetuned:
   use_grad_checkpoint: False
   freeze_vit: True
   task: qformer_freeze_lora
@@ -65,7 +66,7 @@ run:
   output_dir: "result/mr_BLIP/Charades/"
 
   amp: True
-  resume_ckpt_path: null #"lavis/result/mr_BLIP/Charades/Charades_20-5/checkpoint_best.pth" #null
+  resume_ckpt_path: null #"lavis/result/mr_BLIP/Charades/Charades_22_01_AudioCLipLen1_5_forcedTokens_CHKPT-3/checkpoint_best.pth" #null
 
   evaluate: False
   train_splits: ["train"]
@@ -80,5 +81,5 @@ run:
 
   wandb: True
   wandb_project: "mr_BLIP"
-  wandb_name: "Charades_20_01_AudioCLipLen2_0_forcedTokens"
+  wandb_name: "Charades_31_01_AudioOnly_CLAP"
 
