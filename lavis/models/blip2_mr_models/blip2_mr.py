@@ -131,8 +131,8 @@ class BLIP2_MR(Blip2Base):
         )
 
         #Move Vision Encoder to device
-        #self.visual_encoder = self.visual_encoder
-        #self.ln_vision = self.ln_vision
+        self.visual_encoder = self.visual_encoder
+        self.ln_vision = self.ln_vision
 
         # freeze ViT
         if freeze_vit:
@@ -175,9 +175,6 @@ class BLIP2_MR(Blip2Base):
         t5_config.dense_act_fn = "gelu"
         t5_config.use_cache = True
         t5_config.min_length = 7
-        #t5_config.force_words_ids = force_words_ids
-        #t5_config.bad_words_ids = bad_words_ids
-        #t5_config.forced_decoder_ids = forced_decoder_ids
         t5_config.decoder_input_ids = decoder_input_ids
 
         self.t5_model = T5ForConditionalGeneration.from_pretrained(
@@ -266,38 +263,43 @@ class BLIP2_MR(Blip2Base):
 
         self.num_query_token = num_query_token
 
-        self.t5_proj_2 = nn.Linear(
-            self.audio_feature_dim * 2, self.t5_model.config.hidden_size
-        ).to(self.device)
 
-        #Original:
+        ######### Projection & Fusion Layers ########
+        #Last Layer before T5:
         self.t5_proj = nn.Linear(
             self.Qformer.config.hidden_size, self.t5_model.config.hidden_size
         ).to(self.device)
 
-        #second MLP layer, use right before Linear Layer into T5 (t5_proj)
-        self.secondMLPLayer = nn.Linear(
-            self.Qformer.config.hidden_size, self.t5_model.config.hidden_size
+        # Audio Only Projection layer to t5_proj (second last layer before T5)
+        self.audio_to_t5 = nn.Linear(
+            self.audio_feature_dim, self.Qformer.config.hidden_size
         ).to(self.device)
 
+        # Projecting down the Q-Former output to audio feature dimension
         self.frame_down_proj = nn.Linear(
             self.Qformer.config.hidden_size, self.audio_feature_dim
         ).to(self.device)
 
-        self.fusion_attention = ImageAudioFusion()
+        #Experimental, dont use, TODO
+        #self.fusion_attention = ImageAudioFusion()
 
-        if self.fusion_method == "concat":
-            self.fusion_layer = nn.Linear(
-                self.audio_feature_dim * 2,self.Qformer.config.hidden_size
-            ).to(self.device)
-        elif self.fusion_method == "interleave": #TODO: make coherent if used
-            self.audio_t5_proj = nn.Linear(
-                self.audio_feature_dim, self.t5_model.config.hidden_size
-            ).to(self.device)
-        else:
-            self.fusion_layer = nn.Linear(
-                self.audio_feature_dim * 2, self.Qformer.config.hidden_size
-            ).to(self.device)
+
+
+        # Fusion Method to decide the Fusion Layer (Projection to 768)
+        #if self.fusion_method == "concat":
+        #     self.fusion_layer = nn.Linear(
+        #        self.audio_feature_dim * 2,self.Qformer.config.hidden_size
+        #     ).to(self.device)
+
+        #elif self.fusion_method == "interleave":  # TODO: make coherent if used
+        #    self.audio_t5_proj = nn.Linear(
+        #        self.audio_feature_dim, self.t5_model.config.hidden_size
+        #    ).to(self.device)
+        #else:
+        #     self.fusion_layer = nn.Linear(
+        #        self.audio_feature_dim * 2, self.Qformer.config.hidden_size
+        #     ).to(self.device)
+
 
 
 
@@ -371,13 +373,18 @@ class BLIP2_MR(Blip2Base):
         audio_embeddings = audio_embeddings.reshape(-1, audio_embeddings.shape[2]) # reshape to [b*t, embedd_len]
         audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frames_for_projection.shape[1], -1) # reshape to [b*t, query_tokens, embed_len]
 
-        # Forward our Stuff for Fusion here
-        frame_down_proj = self.frame_down_proj(frames_for_projection)
-        combined_video_audio_frame = torch.cat([frame_down_proj, audio_embeddings], dim=-1)
-        fused_data = self.fusion_layer(combined_video_audio_frame)
-        #fused_data = self.secondMLPLayer(fused_data)
-        #fused_data = self.fusion_attention(fused_data)
-        frames_for_t5 = self.t5_proj(fused_data)
+        ###### Forward our Stuff for Fusion here ######
+
+        ####Multimodal
+        #frame_down_proj = self.frame_down_proj(frames_for_projection)
+        #combined_video_audio_frame = torch.cat([frame_down_proj, audio_embeddings], dim=-1)
+        #fused_data = self.fusion_layer(combined_video_audio_frame)
+        #frames_for_t5 = self.t5_proj(fused_data)
+        #audio_data = self.fusion_layer(audio_embeddings)
+
+        ####Audio Only
+        audio_data = self.audio_to_t5(audio_embeddings)
+        frames_for_t5 = self.t5_proj(audio_data)
 
         # TODO: Use average pooling to aggregate the 32 embeddings of one frame
         if self.frame_token_aggregation:
@@ -387,9 +394,6 @@ class BLIP2_MR(Blip2Base):
             ], "Invalid aggregation method, please choose from ['mean']"
             frames_for_t5 = frames_for_t5.mean(dim=1, keepdim=True)
 
-        #if self.fusion_method == "interleave":
-        #    frames_for_t5 = self.t5_proj(frames_for_projection)
-        #    audio_for_t5 = self.audio_t5_proj(audio_embeddings)
 
         frames_for_t5, frames_atts_for_t5 = self.reshape_frames_for_t5(frames_for_t5= frames_for_t5, b=b, t=t, image=image)
         #print(f"frames_for_t5 after reshaping: {frames_for_t5.shape}")
@@ -466,13 +470,9 @@ class BLIP2_MR(Blip2Base):
         durations,
         frames_for_t5,
         frames_atts_for_t5,
-        #audio_for_t5,  # TODO
-        #audio_atts_t5, #TODO
         video_prompt_end,
         query_prompt,
         task_prompt,
-        #audio_embeddings=None,
-        #audio_atts=None
     ):
 
         ### video prompt
@@ -808,13 +808,11 @@ class BLIP2_MR(Blip2Base):
         audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frame_down_proj.shape[1], -1)
         # print(f"emb shaoe: {audio_embeddings.shape}")
 
-        combined_video_audio_frame = torch.cat([frame_down_proj, audio_embeddings], dim=-1)
-        # print(f"combined_video_audio_frame: {combined_video_audio_frame.shape}")
-        fused_data = self.fusion_layer(combined_video_audio_frame)
-        # print(f"fused_data: {fused_data.shape}")
-        frames_for_t5 = self.t5_proj(fused_data)
-
-        #frames_for_t5 = self.t5_proj(frames_after_qformer.last_hidden_state)
+        #combined_video_audio_frame = torch.cat([frame_down_proj, audio_embeddings], dim=-1)
+        #fused_data = self.fusion_layer(combined_video_audio_frame)
+        #frames_for_t5 = self.t5_proj(fused_data)
+        audio_data = self.audio_to_t5(audio_embeddings)
+        frames_for_t5 = self.t5_proj(audio_data)
 
         if self.frame_token_aggregation:
             assert self.frame_token_aggregation in [
