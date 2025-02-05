@@ -12,6 +12,10 @@ model:
   beats_precision: fp16
   freeze_vit: True
   freeze_beats: True
+  freeze_vision_qformer: True
+  freeze_audio_qformer: True
+  vision_qformer_text_input: False
+  audio_qformer_text_input: False
   audio_encoder_kwargs :  {"checkpoint_path": "/home/atuin/g102ea/shared/group_2/checkpoints/X-InstructBLIP/BEATs_iter3_plus_AS2M.pt"}
   pretrained_audio_qformer: https://storage.googleapis.com/sfr-xinstructblip-data-research/model/xinstructblip_checkpoints/vicuna7b/audio_qformer_improved.pth
   task: qformer_freeze_lora
@@ -38,10 +42,12 @@ datasets:
           name: beats_audio
           sampling_rate: 16000
           n_frames: 20
+          frame_length: 150 # Equals 1.5s
         eval:
           name: beats_audio
           sampling_rate: 16000
           n_frames: 20
+          frame_length: 150 # Equals 1.5s
           is_eval: False
 
     text_processor:

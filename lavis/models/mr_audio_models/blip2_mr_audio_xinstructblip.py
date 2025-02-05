@@ -69,6 +69,10 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
         beats_precision="fp16",
         freeze_vit=True,
         freeze_beats=True,
+        freeze_vision_qformer=True,
+        freeze_audio_qformer=True,
+        vision_qformer_text_input=False,
+        audio_qformer_text_input=False,
         audio_encoder_kwargs={},
         pretrained_audio_qformer = "https://storage.googleapis.com/sfr-xinstructblip-data-research/model/xinstructblip_checkpoints/vicuna7b/audio_qformer_improved.pth",
         num_query_token=32,
@@ -100,6 +104,9 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
         self.input_time_format = input_time_format
         self.interleave_data = interleave_data
         self.frame_token_aggregation = frame_token_aggregation
+
+        self.vision_qformer_text_input = vision_qformer_text_input
+        self.audio_qformer_text_input = audio_qformer_text_input
 
         if self.use_wandb and is_main_process():
             self.wandb_table_data = []
@@ -136,8 +143,8 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
         if freeze_beats:
             for name, param in self.audio_encoder.named_parameters():
                 param.requires_grad = False
-            modality_encoder = self.audio_encoder.eval()
-            modality_encoder.train = disabled_train
+            self.audio_encoder = self.audio_encoder.eval()
+            self.audio_encoder.train = disabled_train
             logging.info(f"freeze audio encoder")
         ##########################################################################
 
@@ -182,13 +189,12 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
         ##########################################################################
 
         ### Q-Former for Image Embeddings ########################################
-        self.multimodal_Qformer = False
 
         self.Qformer, self.query_tokens = self.init_Qformer(
             num_query_token, self.visual_encoder.num_features
         )
 
-        if not self.multimodal_Qformer:
+        if not self.vision_qformer_text_input:
             self.Qformer.cls = None
             self.Qformer.bert.embeddings.word_embeddings = None
             self.Qformer.bert.embeddings.position_embeddings = None
@@ -213,10 +219,18 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
             self.num_query_token, 
             audio_num_features,
             pretrained_qformer=pretrained_audio_qformer,
-            load_attention=True, # load pretrained q-former cross-attention to text for audio
+            load_attention=self.audio_qformer_text_input, # load pretrained q-former cross-attention to text for audio
             load_qformer_type="audio"
         )
-        self.audio_Qformer.resize_token_embeddings(len(self.Qformer_tokenizer))
+        
+        if not self.audio_qformer_text_input:
+            self.audio_Qformer.bert.embeddings.word_embeddings = None
+            self.audio_Qformer.bert.embeddings.position_embeddings = None
+            for layer in self.audio_Qformer.bert.encoder.layer:
+                layer.output = None
+                layer.intermediate = None
+        else:
+            self.audio_Qformer.resize_token_embeddings(len(self.Qformer_tokenizer))
         self.audio_Qformer.cls = None
 
         # Pre-initialize projection with Vicuna projection
@@ -239,13 +253,15 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
         self.seperator_token = self.t5_tokenizer.convert_tokens_to_ids(">")
         self.pad_token_id = self.t5_tokenizer.pad_token_id
 
-        if "qformer_freeze" in self.task:
+        if freeze_vision_qformer:
             for name, param in self.Qformer.named_parameters():
                 param.requires_grad = False
             self.query_tokens.requires_grad = False
             self.t5_proj.requires_grad = False
+        elif self.use_lora:
+            self.Qformer = get_peft_model(self.Qformer, get_peft_config(self.Qformer, rank=4, task_type="FEATURE_EXTRACTION"))
             
-            # Audio QFormer
+        if freeze_audio_qformer:
             for name, param in self.ln_audio.named_parameters():
                 param.requires_grad = False
             self.audio_query_tokens.requires_grad = False
@@ -253,6 +269,9 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
                 param.requires_grad = False
             # for name, param in self.audio_t5_proj.named_parameters():
             #     param.requires_grad = False
+        elif self.use_lora:
+            self.audio_Qformer = get_peft_model(self.audio_Qformer, get_peft_config(self.audio_Qformer, rank=4, task_type="FEATURE_EXTRACTION"))
+
 
         if is_main_process() and self.use_wandb:
             if self.use_lora:
@@ -286,7 +305,7 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
         ### Apply Q-Former for Image Embeddings ####################################
         query_tokens = self.query_tokens.expand(image_embeds.shape[0], -1, -1)
 
-        if self.multimodal_Qformer:
+        if self.vision_qformer_text_input:
             query_atts = torch.ones(query_tokens.size()[:-1], dtype=torch.long).to(
                 self.device
             )
@@ -357,33 +376,39 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
             audio_atts.append(torch.ones(audio_embeds[j].size()[:-1], dtype=torch.long).to(self.device))
         audio_query_tokens = self.audio_query_tokens.expand(audio.size(0), -1, -1)
         
-
-        text = self.Qformer_tokenizer(
-            samples["query_prompt"],
-            padding='longest',
-            return_tensors="pt",
-        ).to(self.device) # Equal to text above, query per frame is done below
-
-        
-        # B, Token Size
-        audio_query_atts = torch.ones(audio_query_tokens.size()[:-1], dtype=torch.long).to(self.device)
-        # B, Token Size + Inp Size
-        audio_Qformer_atts = torch.cat([audio_query_atts, text.attention_mask],dim=1)
-
         num = len(audio_embeds)
         bs = audio_embeds[0].shape[0]
         indices = [j_+r for r,j in enumerate([[i*bs for i in range(num)]]*bs) for j_ in j]
         reordered_embeds = torch.cat(audio_embeds)[indices]
         reordered_atts = torch.cat(audio_atts)[indices]
-        
-        audio_query_output = self.audio_Qformer.bert(
-            text.input_ids.repeat(num, 1),
-            attention_mask=audio_Qformer_atts.repeat(num, 1),
-            query_embeds=audio_query_tokens.repeat(num, 1, 1),
-            encoder_hidden_states=reordered_embeds,
-            encoder_attention_mask=reordered_atts,
-            return_dict=True,
-        )
+
+        if self.audio_qformer_text_input:
+            text = self.Qformer_tokenizer(
+                samples["query_prompt"],
+                padding='longest',
+                return_tensors="pt",
+            ).to(self.device) # Equal to text above, query per frame is done below
+
+            # B, Token Size
+            audio_query_atts = torch.ones(audio_query_tokens.size()[:-1], dtype=torch.long).to(self.device)
+            # B, Token Size + Inp Size
+            audio_Qformer_atts = torch.cat([audio_query_atts, text.attention_mask],dim=1)
+            
+            audio_query_output = self.audio_Qformer.bert(
+                text.input_ids.repeat(num, 1),
+                attention_mask=audio_Qformer_atts.repeat(num, 1),
+                query_embeds=audio_query_tokens.repeat(num, 1, 1),
+                encoder_hidden_states=reordered_embeds,
+                encoder_attention_mask=reordered_atts,
+                return_dict=True,
+            )
+        else:
+            audio_query_output = self.audio_Qformer.bert(
+                query_embeds=audio_query_tokens.repeat(num, 1, 1),
+                encoder_hidden_states=reordered_embeds,
+                encoder_attention_mask=reordered_atts,
+                return_dict=True,
+            )
 
         audios_for_t5 = self.audio_t5_proj(audio_query_output.last_hidden_state[:,:audio_query_tokens.size(1),:]) # b, t, n, c
 
@@ -805,32 +830,39 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
         audio_query_tokens = self.audio_query_tokens.expand(audio.size(0), -1, -1)
         
 
-        text = self.Qformer_tokenizer(
-            samples["query_prompt"],
-            padding='longest',
-            return_tensors="pt",
-        ).to(self.device) # Equal to text above, query per frame is done below
-
-        
-        # B, Token Size
-        audio_query_atts = torch.ones(audio_query_tokens.size()[:-1], dtype=torch.long).to(self.device)
-        # B, Token Size + Inp Size
-        audio_Qformer_atts = torch.cat([audio_query_atts, text.attention_mask],dim=1)
-
         num = len(audio_embeds)
         bs = audio_embeds[0].shape[0]
         indices = [j_+r for r,j in enumerate([[i*bs for i in range(num)]]*bs) for j_ in j]
         reordered_embeds = torch.cat(audio_embeds)[indices]
         reordered_atts = torch.cat(audio_atts)[indices]
-        
-        audio_query_output = self.audio_Qformer.bert(
-            text.input_ids.repeat(num, 1),
-            attention_mask=audio_Qformer_atts.repeat(num, 1),
-            query_embeds=audio_query_tokens.repeat(num, 1, 1),
-            encoder_hidden_states=reordered_embeds,
-            encoder_attention_mask=reordered_atts,
-            return_dict=True,
-        )
+
+        if self.audio_qformer_text_input:
+            text = self.Qformer_tokenizer(
+                samples["query_prompt"],
+                padding='longest',
+                return_tensors="pt",
+            ).to(self.device) # Equal to text above, query per frame is done below
+
+            # B, Token Size
+            audio_query_atts = torch.ones(audio_query_tokens.size()[:-1], dtype=torch.long).to(self.device)
+            # B, Token Size + Inp Size
+            audio_Qformer_atts = torch.cat([audio_query_atts, text.attention_mask],dim=1)
+            
+            audio_query_output = self.audio_Qformer.bert(
+                text.input_ids.repeat(num, 1),
+                attention_mask=audio_Qformer_atts.repeat(num, 1),
+                query_embeds=audio_query_tokens.repeat(num, 1, 1),
+                encoder_hidden_states=reordered_embeds,
+                encoder_attention_mask=reordered_atts,
+                return_dict=True,
+            )
+        else:
+            audio_query_output = self.audio_Qformer.bert(
+                query_embeds=audio_query_tokens.repeat(num, 1, 1),
+                encoder_hidden_states=reordered_embeds,
+                encoder_attention_mask=reordered_atts,
+                return_dict=True,
+            )
 
         audios_for_t5 = self.audio_t5_proj(audio_query_output.last_hidden_state[:,:audio_query_tokens.size(1),:]) # b, t, n, c
 
@@ -1036,6 +1068,10 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
         beats_precision = cfg.get("beats_precision", "fp16")
         freeze_vit = cfg.get("freeze_vit", True)
         freeze_beats = cfg.get("freeze_beats", True)
+        freeze_vision_qformer = cfg.get("freeze_vision_qformer", True)
+        freeze_audio_qformer = cfg.get("freeze_audio_qformer", True)
+        vision_qformer_text_input = cfg.get("vision_qformer_text_input", False)
+        audio_qformer_text_input = cfg.get("audio_qformer_text_input", False)
         audio_encoder_kwargs = cfg.get("audio_encoder_kwargs", {})
         pretrained_audio_qformer = cfg.get("pretrained_audio_qformer", "https://storage.googleapis.com/sfr-xinstructblip-data-research/model/xinstructblip_checkpoints/vicuna7b/audio_qformer_improved.pth")
         input_time_format = cfg.get("input_time_format", "seconds_integers")
@@ -1055,6 +1091,10 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
             beats_precision=beats_precision,
             freeze_vit=freeze_vit,
             freeze_beats=freeze_beats,
+            freeze_vision_qformer=freeze_vision_qformer,
+            freeze_audio_qformer=freeze_audio_qformer,
+            vision_qformer_text_input=vision_qformer_text_input,
+            audio_qformer_text_input=audio_qformer_text_input,
             audio_encoder_kwargs=audio_encoder_kwargs,
             pretrained_audio_qformer = pretrained_audio_qformer,
             num_query_token=num_query_token,
