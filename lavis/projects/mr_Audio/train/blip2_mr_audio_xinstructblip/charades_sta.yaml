@@ -38,11 +38,13 @@ datasets:
           name: beats_audio
           sampling_rate: 16000
           n_frames: 20
+          frame_length: 256
         eval:
           name: beats_audio
           sampling_rate: 16000
           n_frames: 20
           is_eval: False
+          frame_length: 256
 
     text_processor:
           train:
