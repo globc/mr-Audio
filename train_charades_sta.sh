@@ -1,5 +1,5 @@
 #!/bin/bash -l
-#SBATCH --job-name=mr_audio_charades_test_deubg
+#SBATCH --job-name=mr_audio_charades_AdioOnly_CLAP
 #SBATCH --time=24:00:00
 #SBATCH --gres=gpu:a100:4 -C a100_80
 
