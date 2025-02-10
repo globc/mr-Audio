@@ -88,7 +88,8 @@ class BLIP2_MR(Blip2Base):
         device= torch.device("cuda" if torch.cuda.is_available() else "cpu"),
         sampling_rate=48000,
         fusion_method="concat",
-        audio_encoder_type="clap"
+        audio_encoder_type="clap",
+        use_rna_loss=False,
     ):
         """
         apply_lemmatizer: when set to True, postprocess predict_answers() result with lemmas.
@@ -271,6 +272,8 @@ class BLIP2_MR(Blip2Base):
                 wandb.watch(self.Qformer, log="all")
                 wandb.watch(self.t5_proj, log="all")
 
+        self.use_rna_loss = use_rna_loss
+
     def forward(
         self,
         samples,
@@ -290,6 +293,9 @@ class BLIP2_MR(Blip2Base):
         audio = audio_clips.reshape(-1, audio_clips.shape[2])
         # audio shape [b*t,512]
         audio_embeddings = self.audio_embeddings_model.get_audio_embeddings(audio_clips=audio, sr=self.sampling_rate).to(self.device)
+
+        audio_norm = torch.linalg.norm(audio_embeddings, dim=-1)  # L2-norm along embed_length
+        mean_audio_norm = audio_norm.mean()
 
         #Image
         b, t, c, w, h = image.shape
@@ -317,82 +323,87 @@ class BLIP2_MR(Blip2Base):
         else:
             combined_video_audio_frame = torch.cat([frame_down_proj, audio_embeddings], dim=-1)
 
-        if self.fusion_method == "concat" or self.fusion_method == "lcam":
-            fused_data = self.fusion_layer(combined_video_audio_frame)
-            frames_for_t5 = self.t5_proj(fused_data)
-        else:
-            frames_for_t5 = self.t5_proj(frames_for_projection)
+
+        # if self.fusion_method == "concat" or self.fusion_method == "lcam":
+        #     fused_data = self.fusion_layer(combined_video_audio_frame)
+        #     frames_for_t5 = self.t5_proj(fused_data)
+        # else:
+        #     frames_for_t5 = self.t5_proj(frames_for_projection)
 
         # TODO: Use average pooling to aggregate the 32 embeddings of one frame
-        if self.frame_token_aggregation:
-            assert self.frame_token_aggregation in [
-                "mean",
-                False,
-            ], "Invalid aggregation method, please choose from ['mean']"
-            frames_for_t5 = frames_for_t5.mean(dim=1, keepdim=True)
+        # if self.frame_token_aggregation:
+        #     assert self.frame_token_aggregation in [
+        #         "mean",
+        #         False,
+        #     ], "Invalid aggregation method, please choose from ['mean']"
+        #     frames_for_t5 = frames_for_t5.mean(dim=1, keepdim=True)
 
-        frames_for_t5, frames_atts_for_t5 = self.reshape_frames_for_t5(frames_for_t5= frames_for_t5, b=b, t=t, image=image)
+        #frames_for_t5, frames_atts_for_t5 = self.reshape_frames_for_t5(frames_for_t5= frames_for_t5, b=b, t=t, image=image)
 
 
         with (torch.cuda.amp.autocast(dtype=torch.float32)):
             #print(f"Starting Prompt Concat")
-            inputs_embs_mr, inputs_atts_mr, video_prompt = self.prompt_concatenation(
-                timestamps=timestamps,
-                durations=durations,
-                frames_for_t5=frames_for_t5,
-                frames_atts_for_t5=frames_atts_for_t5,
-                video_prompt_end=video_prompt_end,
-                query_prompt=query_prompt,
-                task_prompt=task_prompt,
-            )
+            #inputs_embs_mr, inputs_atts_mr, video_prompt = self.prompt_concatenation(
+            #    timestamps=timestamps,
+            #    durations=durations,
+            #    frames_for_t5=frames_for_t5,
+            #    frames_atts_for_t5=frames_atts_for_t5,
+            #    video_prompt_end=video_prompt_end,
+            #    query_prompt=query_prompt,
+            #    task_prompt=task_prompt,
+            #)
 
 
 
             ### Encode answer ################################################
-            output_tokens_mr = self.t5_tokenizer(
-                answer,
-                padding="longest",
-                truncation=True,
-                max_length=self.max_txt_len,
-                return_tensors="pt",
-            ).to(image.device)
-            targets_mr = output_tokens_mr.input_ids.masked_fill(
-                output_tokens_mr.input_ids == self.t5_tokenizer.pad_token_id, -100
-            )
-            output_tokens_mask_mr = output_tokens_mr.attention_mask
+            #output_tokens_mr = self.t5_tokenizer(
+            #    answer,
+            #    padding="longest",
+            #    truncation=True,
+            #    max_length=self.max_txt_len,
+            #    return_tensors="pt",
+            #).to(image.device)
+            #targets_mr = output_tokens_mr.input_ids.masked_fill(
+            #    output_tokens_mr.input_ids == self.t5_tokenizer.pad_token_id, -100
+            #)
+            #output_tokens_mask_mr = output_tokens_mr.attention_mask
 
             ### Apply moment retrieval prompt ######################################
-            outputs_loc = self.t5_model(
-                inputs_embeds=inputs_embs_mr,
-                attention_mask=inputs_atts_mr,
-                decoder_attention_mask=output_tokens_mask_mr,
-                return_dict=True,
-                labels=targets_mr,
-            )
-            loss = outputs_loc.loss
+            #outputs_loc = self.t5_model(
+            #    inputs_embeds=inputs_embs_mr,
+            #    attention_mask=inputs_atts_mr,
+            #    decoder_attention_mask=output_tokens_mask_mr,
+            #    return_dict=True,
+            #    labels=targets_mr,
+            #)
 
+            #loss = outputs_loc.loss
+            loss = torch.tensor(1.0).to(self.device)
             # write the following to a wandb table
             if self.use_wandb and is_main_process():
                 log = {}
                 log["train/log_likelihood_loss"] = loss.item()
+                log["train/vision_mean_feature_norm"] = torch.mean(torch.linalg.norm(frames_for_projection.mean(dim=1), dim=-1), dim=-1).item()
+                log["train/audio_mean_feature_norm"] = mean_audio_norm.item()
+                log["train/fused_mean_feature_norm"] = torch.mean(torch.linalg.norm(combined_video_audio_frame.mean(dim=1), dim=-1), dim=-1).item()
                 # Log images and predictions
-                if samples["iters"] % self.log_samples_every_n == 0:
-                    pred = self.t5_tokenizer.batch_decode(
-                        torch.argmax(outputs_loc.logits, dim=-1)
-                    )
-                    out, self.wandb_table_data = (
-                        format_wandb_log_images_and_predictions(
-                            samples=samples,
-                            wandb_table_data=self.wandb_table_data,
-                            pred=pred,
-                            video_prompt=video_prompt,
-                            post_process_fn=self.post_process,
-                            input_time_format=self.input_time_format,
-                            interleave_data=True,
-                            train_data=True,
-                        )
-                    )
-                    log.update(out)
+                #if samples["iters"] % self.log_samples_every_n == 0:
+                #    pred = self.t5_tokenizer.batch_decode(
+                #        torch.argmax(outputs_loc.logits, dim=-1)
+                #    )
+                #    out, self.wandb_table_data = (
+                #        format_wandb_log_images_and_predictions(
+                #            samples=samples,
+                #            wandb_table_data=self.wandb_table_data,
+                #            pred=pred,
+                #            video_prompt=video_prompt,
+                #            post_process_fn=self.post_process,
+                #            input_time_format=self.input_time_format,
+                #            interleave_data=True,
+                #            train_data=True,
+                #        )
+                #    )
+                #   log.update(out)
                 # Log iteration
                 wandb.log(log)
 
@@ -718,98 +729,98 @@ class BLIP2_MR(Blip2Base):
         answer = samples["relevant_windows"]
 
         audio_clips = samples["audio"]
-        audio = audio_clips.reshape(-1, audio_clips.shape[2])
-        audio_embeddings = self.audio_embeddings_model.get_audio_embeddings(audio_clips=audio, sr=48000)
+        # audio = audio_clips.reshape(-1, audio_clips.shape[2])
+        # audio_embeddings = self.audio_embeddings_model.get_audio_embeddings(audio_clips=audio, sr=48000)
+        #
+        # # uniform sampling
+        # b, t, c, w, h = image.shape
+        # image = image.reshape(-1, c, w, h)
+        # with torch.cuda.amp.autocast(enabled=(self.device != torch.device("cpu"))):
+        #     image_embeds = self.ln_vision(self.visual_encoder(image))  # bt, n, c
+        # _, n, _ = image_embeds.shape
+        # image_atts = torch.ones(image_embeds.size()[:-1], dtype=torch.long).to(
+        #     image.device
+        # )  # bt n c
+        #
+        # ### Apply Q-Former for Image Embeddings ####################################
+        # query_tokens_qa = self.query_tokens.expand(image_embeds.shape[0], -1, -1)
+        # frames_after_qformer = self.Qformer.bert(
+        #     query_embeds=query_tokens_qa,
+        #     encoder_hidden_states=image_embeds,
+        #     encoder_attention_mask=image_atts,
+        #     return_dict=True,
+        # )
+        #
+        #
+        # ## Add audio
+        # frame_down_proj = self.frame_down_proj(frames_after_qformer.last_hidden_state)
+        #
+        # #audio_embeddings = audio_embeddings.reshape(-1, audio_embeddings.shape[2])
+        # audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frame_down_proj.shape[1], -1)
+        #
+        # if self.fusion_method == "lcam":
+        #     combined_video_audio_frame = self.lcam_fusion(audio_embeddings, frame_down_proj)
+        # else:
+        #     combined_video_audio_frame = torch.cat([frame_down_proj, audio_embeddings], dim=-1)
+        #
+        # if self.fusion_method == "lcam" or self.fusion_method == "concat":
+        #     fused_data = self.fusion_layer(combined_video_audio_frame)
+        #     frames_for_t5 = self.t5_proj(fused_data)
+        # else:
+        #     frames_for_t5 = self.t5_proj(frames_after_qformer.last_hidden_state)
+        #
+        # if self.frame_token_aggregation:
+        #     assert self.frame_token_aggregation in [
+        #         "mean"
+        #     ], "Invalid aggregation method, please choose from ['mean']"
+        #     frames_for_t5 = frames_for_t5.mean(dim=1, keepdim=True)
+        #
+        # # reshape the frames for t5 from (bt, n, c) to (b, t * n, c)
+        # frames_for_t5 = frames_for_t5.reshape(
+        #     b, t, frames_for_t5.shape[-2], -1
+        # )  # b, t, n, c
+        # frames_atts_for_t5 = torch.ones(frames_for_t5.size()[:-1], dtype=torch.long).to(
+        #     image.device
+        # )  # b, t, n
+        # frames_for_t5 = frames_for_t5.reshape(
+        #     b, -1, frames_for_t5.shape[-1]
+        # )  # b, t * n, c
+        # frames_atts_for_t5 = frames_atts_for_t5.reshape(b, -1)  # b, t * n
+        #
+        # with torch.cuda.amp.autocast(dtype=torch.bfloat16):
+        #     inputs_embs_mr, inputs_atts_mr, video_prompt = self.prompt_concatenation(
+        #         timestamps,
+        #         durations,
+        #         frames_for_t5,
+        #         frames_atts_for_t5,
+        #         video_prompt_end,
+        #         query_prompt,
+        #         task_prompt,
+        #     )
+        #
+        #     ### Apply moment retrieval prompt ######################################
+        #     outputs = self.t5_model.generate(
+        #         inputs_embeds=inputs_embs_mr,
+        #         attention_mask=inputs_atts_mr,
+        #         do_sample=use_nucleus_sampling,
+        #         top_p=top_p,
+        #         temperature=temperature,
+        #         num_beams=num_beams,
+        #         max_new_tokens=max_length,
+        #         min_length=min_length,
+        #         repetition_penalty=repetition_penalty,
+        #         length_penalty=length_penalty,
+        #         num_return_sequences=num_captions,
+        #         return_dict_in_generate=True,
+        #         output_hidden_states=True,
+        #         output_scores=True,
+        #         output_attentions=output_attentions,
+        #     )
 
-        # uniform sampling
-        b, t, c, w, h = image.shape
-        image = image.reshape(-1, c, w, h)
-        with torch.cuda.amp.autocast(enabled=(self.device != torch.device("cpu"))):
-            image_embeds = self.ln_vision(self.visual_encoder(image))  # bt, n, c
-        _, n, _ = image_embeds.shape
-        image_atts = torch.ones(image_embeds.size()[:-1], dtype=torch.long).to(
-            image.device
-        )  # bt n c
-
-        ### Apply Q-Former for Image Embeddings ####################################
-        query_tokens_qa = self.query_tokens.expand(image_embeds.shape[0], -1, -1)
-        frames_after_qformer = self.Qformer.bert(
-            query_embeds=query_tokens_qa,
-            encoder_hidden_states=image_embeds,
-            encoder_attention_mask=image_atts,
-            return_dict=True,
-        )
-
-
-        ## Add audio
-        frame_down_proj = self.frame_down_proj(frames_after_qformer.last_hidden_state)
-
-        #audio_embeddings = audio_embeddings.reshape(-1, audio_embeddings.shape[2])
-        audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frame_down_proj.shape[1], -1)
-
-        if self.fusion_method == "lcam":
-            combined_video_audio_frame = self.lcam_fusion(audio_embeddings, frame_down_proj)
-        else:
-            combined_video_audio_frame = torch.cat([frame_down_proj, audio_embeddings], dim=-1)
-
-        if self.fusion_method == "lcam" or self.fusion_method == "concat":
-            fused_data = self.fusion_layer(combined_video_audio_frame)
-            frames_for_t5 = self.t5_proj(fused_data)
-        else:
-            frames_for_t5 = self.t5_proj(frames_after_qformer.last_hidden_state)
-
-        if self.frame_token_aggregation:
-            assert self.frame_token_aggregation in [
-                "mean"
-            ], "Invalid aggregation method, please choose from ['mean']"
-            frames_for_t5 = frames_for_t5.mean(dim=1, keepdim=True)
-
-        # reshape the frames for t5 from (bt, n, c) to (b, t * n, c)
-        frames_for_t5 = frames_for_t5.reshape(
-            b, t, frames_for_t5.shape[-2], -1
-        )  # b, t, n, c
-        frames_atts_for_t5 = torch.ones(frames_for_t5.size()[:-1], dtype=torch.long).to(
-            image.device
-        )  # b, t, n
-        frames_for_t5 = frames_for_t5.reshape(
-            b, -1, frames_for_t5.shape[-1]
-        )  # b, t * n, c
-        frames_atts_for_t5 = frames_atts_for_t5.reshape(b, -1)  # b, t * n
-
-        with torch.cuda.amp.autocast(dtype=torch.bfloat16):
-            inputs_embs_mr, inputs_atts_mr, video_prompt = self.prompt_concatenation(
-                timestamps,
-                durations,
-                frames_for_t5,
-                frames_atts_for_t5,
-                video_prompt_end,
-                query_prompt,
-                task_prompt,
-            )
-
-            ### Apply moment retrieval prompt ######################################
-            outputs = self.t5_model.generate(
-                inputs_embeds=inputs_embs_mr,
-                attention_mask=inputs_atts_mr,
-                do_sample=use_nucleus_sampling,
-                top_p=top_p,
-                temperature=temperature,
-                num_beams=num_beams,
-                max_new_tokens=max_length,
-                min_length=min_length,
-                repetition_penalty=repetition_penalty,
-                length_penalty=length_penalty,
-                num_return_sequences=num_captions,
-                return_dict_in_generate=True,
-                output_hidden_states=True,
-                output_scores=True,
-                output_attentions=output_attentions,
-            )
-
-            # tokenizer decode outputs
-            pred_ans = self.t5_tokenizer.batch_decode(
-                outputs[0], skip_special_tokens=True
-            )
+            # # tokenizer decode outputs
+            # pred_ans = self.t5_tokenizer.batch_decode(
+            #     outputs[0], skip_special_tokens=True
+            # )
 
         # if duration is Tensor, convert to list
         if isinstance(samples["duration"], torch.Tensor):
@@ -821,35 +832,36 @@ class BLIP2_MR(Blip2Base):
             self.input_time_format == "relative_integers"
             or self.input_time_format == "relative_floats"
         ):
-            prediction = [self.post_process(pred) for pred in pred_ans]
-            out["prediction"] = self.convert_to_absolute_time(
-                prediction, out["duration"]
-            )
+            #prediction = [self.post_process(pred) for pred in pred_ans]
+            #out["prediction"] = self.convert_to_absolute_time(
+            #    prediction, out["duration"]
+            #)
+            out["prediction"] = ["[[0, 1]]"]
         else:
-            out["prediction"] = [self.post_process(pred) for pred in pred_ans]
+            out["prediction"] = ["[[0, 1]]", "[[0, 1]]"] #[self.post_process(pred) for pred in pred_ans]
 
-        out["raw_prediction"] = pred_ans
+        out["raw_prediction"] = "[[0, 1]]"
         out["answer"] = answer
         out["qid"] = qid
 
         # write the following to a wandb table
-        if self.use_wandb and is_main_process():
-            # Log images and predictions
-            if samples["iters"] % self.log_samples_every_n_eval == 0:
-                table, self.wandb_table_data_eval = (
-                    format_wandb_log_images_and_predictions(
-                        samples=samples,
-                        wandb_table_data=self.wandb_table_data_eval,
-                        pred=pred_ans,
-                        video_prompt=video_prompt,
-                        post_process_fn=self.post_process,
-                        input_time_format=self.input_time_format,
-                        interleave_data=True,
-                        train_data=False,
-                    )
-                )
-                # Log iteration
-                wandb.log(table)
+        # if self.use_wandb and is_main_process():
+        #     # Log images and predictions
+        #     if samples["iters"] % self.log_samples_every_n_eval == 0:
+        #         table, self.wandb_table_data_eval = (
+        #             format_wandb_log_images_and_predictions(
+        #                 samples=samples,
+        #                 wandb_table_data=self.wandb_table_data_eval,
+        #                 pred=pred_ans,
+        #                 video_prompt=video_prompt,
+        #                 post_process_fn=self.post_process,
+        #                 input_time_format=self.input_time_format,
+        #                 interleave_data=True,
+        #                 train_data=False,
+        #             )
+        #         )
+        #         # Log iteration
+        #         wandb.log(table)
 
         return out
 
@@ -985,6 +997,7 @@ class BLIP2_MR(Blip2Base):
 
         fusion_method = cfg.get("fusion_method", "none")
         audio_encoder = cfg.get("audio_encoder", "clap")
+        use_rna_loss = cfg.get("use_rna_loss", False)
 
         model = cls(
             img_size=img_size,
@@ -1005,7 +1018,8 @@ class BLIP2_MR(Blip2Base):
             device=device,
             sampling_rate=sampling_rate,
             fusion_method=fusion_method,
-            audio_encoder_type=audio_encoder
+            audio_encoder_type=audio_encoder,
+            use_rna_loss=use_rna_loss
         )
         model.load_checkpoint_from_config(cfg)
 
@@ -1298,4 +1312,9 @@ class BLIP2_MR(Blip2Base):
         fused_output = vision_features * gating_weights + audio_features * (1 - gating_weights)  # Shape: (b*t, #query_tokens, #features)
 
         return fused_output
+
+    def rna_loss(self, vision_features, audio_features):
+        vision_norm = torch.mean(torch.linalg.norm(vision_features), dim=0, keepdim=True)
+        audio_norm = torch.mean(torch.linalg.norm(audio_features), dim=0, keepdim=True)
+        return ((vision_norm / audio_norm + 1e-6) -1) ** 2
 
