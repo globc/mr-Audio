@@ -34,7 +34,7 @@ from lavis.models.blip2_mr_models.utils import (
     get_timestamps_as_relative_floats,
     get_timestamps_as_framenumbers,
 )
-
+from lavis.models.beats.BEATS import BEATs, BEATsConfig
 from lavis.models.blip2_mr_models.model_helpers import *
 
 
@@ -86,6 +86,7 @@ class BLIP2_MR(Blip2Base):
         device= torch.device("cuda" if torch.cuda.is_available() else "cpu"),
         sampling_rate=48000,
         fusion_method="concat",
+        audio_encoder="clap", # "beats"
         handle_annoying_numbers=False,
     ):
         """
@@ -112,7 +113,7 @@ class BLIP2_MR(Blip2Base):
         self.interleave_data = interleave_data
         self.frame_token_aggregation = frame_token_aggregation
 
-        self.audio_embeddings_model = CLAPAudioEmbeddings()
+        self.audio_embeddings_model = CLAPAudioEmbeddings() if audio_encoder == "clap" elif audio_encoder == "beats" else None
         self.audio_feature_dim = 512
         self.sampling_rate = sampling_rate
         self.fusion_method = fusion_method
