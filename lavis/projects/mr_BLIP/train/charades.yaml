@@ -80,5 +80,5 @@ run:
 
   wandb: True
   wandb_project: "mr_BLIP"
-  wandb_name: "Charades_20_01_AudioCLipLen2_0_forcedTokens"
+  wandb_name: "Charades_BEATS"
 
