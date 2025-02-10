@@ -52,9 +52,6 @@ class MomentRetrievalDataset(BaseDataset):
 
         # "image_id" is kept to stay compatible with the COCO evaluation format
         # modify samples here
-        if len(self.annotation[index]['video']) > 1: #TODO: check if this is bad
-           print("2 entries at index", index)
-           print("video name", vname)
 
         # Check if the sample is None or an empty tensor
         print(f"current video: {vname}. index: {index}, query_idx: {ann['qid']}.")

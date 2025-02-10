@@ -88,7 +88,9 @@ class BLIP2_MR(Blip2Base):
         device= torch.device("cuda" if torch.cuda.is_available() else "cpu"),
         sampling_rate=48000,
         fusion_method="concat",
-        audio_encoder_type="clap"
+        audio_encoder_type="clap",
+        use_rna_loss=False,
+        log_feature_means=False
     ):
         """
         apply_lemmatizer: when set to True, postprocess predict_answers() result with lemmas.
@@ -236,6 +238,8 @@ class BLIP2_MR(Blip2Base):
         ).to(self.device)
 
         self.fusion_method = fusion_method
+        self.use_rna_loss = use_rna_loss
+        self.log_feature_means = log_feature_means
 
         self.fusion_layer = nn.Linear(
                 self.audio_feature_dim * 2,self.Qformer.config.hidden_size
@@ -290,6 +294,11 @@ class BLIP2_MR(Blip2Base):
         audio = audio_clips.reshape(-1, audio_clips.shape[2])
         # audio shape [b*t,512]
         audio_embeddings = self.audio_embeddings_model.get_audio_embeddings(audio_clips=audio, sr=self.sampling_rate).to(self.device)
+
+        orig_shape_audio_embeddings = audio_embeddings
+        if self.log_feature_means:
+            audio_norm = torch.linalg.norm(audio_embeddings, dim=-1)  # L2-norm along embed_length
+            mean_audio_norm = audio_norm.mean()
 
         #Image
         b, t, c, w, h = image.shape
@@ -369,12 +378,22 @@ class BLIP2_MR(Blip2Base):
                 return_dict=True,
                 labels=targets_mr,
             )
-            loss = outputs_loc.loss
+            if self.use_rna_loss:
+                delta = 1
+                loss = outputs_loc.loss + delta * self.rna_loss(frames_for_projection, orig_shape_audio_embeddings)
+            else:
+                loss = outputs_loc.loss
 
             # write the following to a wandb table
             if self.use_wandb and is_main_process():
                 log = {}
                 log["train/log_likelihood_loss"] = loss.item()
+                if self.log_feature_means:
+                    log["train/vision_mean_feature_norm"] = torch.mean(
+                        torch.linalg.norm(frames_for_projection.mean(dim=1), dim=-1), dim=-1).item()
+                    log["train/audio_mean_feature_norm"] = mean_audio_norm.item()
+                    log["train/fused_mean_feature_norm"] = torch.mean(
+                        torch.linalg.norm(combined_video_audio_frame.mean(dim=1), dim=-1), dim=-1).item()
                 # Log images and predictions
                 if samples["iters"] % self.log_samples_every_n == 0:
                     pred = self.t5_tokenizer.batch_decode(
@@ -985,6 +1004,8 @@ class BLIP2_MR(Blip2Base):
 
         fusion_method = cfg.get("fusion_method", "none")
         audio_encoder = cfg.get("audio_encoder", "clap")
+        use_rna_loss = cfg.get("use_rna_loss", False)
+        log_feature_means = cfg.get("log_feature_means", False)
 
         model = cls(
             img_size=img_size,
@@ -1005,7 +1026,9 @@ class BLIP2_MR(Blip2Base):
             device=device,
             sampling_rate=sampling_rate,
             fusion_method=fusion_method,
-            audio_encoder_type=audio_encoder
+            audio_encoder_type=audio_encoder,
+            use_rna_loss=use_rna_loss,
+            log_feature_means=log_feature_means
         )
         model.load_checkpoint_from_config(cfg)
 
@@ -1298,4 +1321,18 @@ class BLIP2_MR(Blip2Base):
         fused_output = vision_features * gating_weights + audio_features * (1 - gating_weights)  # Shape: (b*t, #query_tokens, #features)
 
         return fused_output
+
+    def rna_loss(self, vision_features, audio_features):
+        """
+
+        Args:
+            vision_features:
+            audio_features:
+
+        Returns:
+
+        """
+        vision_norm = torch.linalg.norm(vision_features.mean(dim=1), dim=-1)
+        audio_norm = torch.linalg.norm(audio_features, dim=-1)  # L2-norm along embed_length
+        return ((vision_norm.mean() / audio_norm.mean() + 1e-6) - 1) ** 2
 
