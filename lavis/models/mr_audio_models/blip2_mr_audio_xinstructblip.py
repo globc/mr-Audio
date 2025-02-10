@@ -392,7 +392,10 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
             return_dict=True,
         )
 
-        audios_for_t5 = self.audio_t5_proj(audio_query_output.last_hidden_state[:,:audio_query_tokens.size(1),:]) # b, t, n, c
+        audio_features = audio_query_output.last_hidden_state[:,:audio_query_tokens.size(1),:]
+        audio_norm = torch.linalg.norm(audio_features, dim=-1)  # L2-norm along embed_length
+        mean_audio_norm = audio_norm.mean()
+        audios_for_t5 = self.audio_t5_proj(audio_features) # b, t, n, c
 
         audios_for_t5 = audios_for_t5.reshape(bs, num, self.num_query_token, -1).view(bs, num*self.num_query_token, -1) # b, t*n, c
         audios_atts_for_t5 =  torch.ones(audios_for_t5.size()[:-1], dtype=torch.long).to(self.device) # b, t*n
@@ -440,6 +443,7 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
             if self.use_wandb and is_main_process():
                 log = {}
                 log["train/log_likelihood_loss"] = loss.item()
+                log["train/audio_mean_feature_norm"] = mean_audio_norm.item()
                 # Log images and predictions
                 if samples["iters"] % self.log_samples_every_n == 0:
                     pred = self.t5_tokenizer.batch_decode(
