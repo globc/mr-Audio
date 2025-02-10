@@ -236,36 +236,36 @@ class MomentRetrievalTask(BaseTask):
                 }
             )
 
-            lr_scheduler.step(cur_epoch=inner_epoch, cur_step=i)
+            #lr_scheduler.step(cur_epoch=inner_epoch, cur_step=i)
 
             with torch.cuda.amp.autocast(enabled=use_amp):
                 loss = self.train_step(model=model, samples=samples)
 
             # after_train_step()
-            if use_amp:
-                scaler.scale(loss).backward()
-            else:
-                loss.backward()
+            #if use_amp:
+            #    scaler.scale(loss).backward()
+            #else:
+            #    loss.backward()
 
             # update gradients every accum_grad_iters iterations
-            if (i + 1) % accum_grad_iters == 0:
-                if use_amp:
-                    scaler.step(optimizer)
-                    scaler.update()
-                else:
-                    optimizer.step()
-                optimizer.zero_grad()
-
-            metric_logger.update(loss=loss.item())
-            metric_logger.update(lr=optimizer.param_groups[0]["lr"])
+            # if (i + 1) % accum_grad_iters == 0:
+            #     if use_amp:
+            #         scaler.step(optimizer)
+            #         scaler.update()
+            #     else:
+            #         optimizer.step()
+            #     optimizer.zero_grad()
+            #
+            # metric_logger.update(loss=loss.item())
+            # metric_logger.update(lr=optimizer.param_groups[0]["lr"])
 
             # log to wandb
-            if is_main_process() and wandb.run is not None:
-                wandb.log(
-                    {
-                        "train/lr": optimizer.param_groups[0]["lr"],
-                    }
-                )
+            # if is_main_process() and wandb.run is not None:
+            #     wandb.log(
+            #         {
+            #             "train/lr": optimizer.param_groups[0]["lr"],
+            #         }
+            #     )
 
             # print("breaking in train_inner_loop in moment_retrieval.py")
             # break
@@ -273,7 +273,7 @@ class MomentRetrievalTask(BaseTask):
         # after train_epoch()
         # gather the stats from all processes
         metric_logger.synchronize_between_processes()
-        logging.info("Averaged stats: " + str(metric_logger.global_avg()))
+        # logging.info("Averaged stats: " + str(metric_logger.global_avg()))
 
         return {
             k: "{:.3f}".format(meter.global_avg)
