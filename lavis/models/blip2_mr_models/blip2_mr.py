@@ -130,9 +130,7 @@ class BLIP2_MR(Blip2Base):
             img_size, drop_path_rate, use_grad_checkpoint, vit_precision
         )
 
-        #Move Vision Encoder to device
-        #self.visual_encoder = self.visual_encoder
-        #self.ln_vision = self.ln_vision
+
 
         # freeze ViT
         if freeze_vit:
@@ -175,17 +173,12 @@ class BLIP2_MR(Blip2Base):
         t5_config.dense_act_fn = "gelu"
         t5_config.use_cache = True
         t5_config.min_length = 7
-        #t5_config.force_words_ids = force_words_ids
-        #t5_config.bad_words_ids = bad_words_ids
-        #t5_config.forced_decoder_ids = forced_decoder_ids
         t5_config.decoder_input_ids = decoder_input_ids
 
         self.t5_model = T5ForConditionalGeneration.from_pretrained(
             t5_model, config=t5_config, cache_dir=curr_path
-        )
-        
-        #Move T5 to device
-        self.t5_model = self.t5_model.to(self.device)
+        ).to(self.device)
+
 
         # Annoying Numbers handling
         # Depending on the tokenizer, some numbers are represented as 2 tokens

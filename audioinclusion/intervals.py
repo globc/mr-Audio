@@ -104,7 +104,7 @@ def sample_audio_fixed_center(audio, frame_indices, fps, sr, desired_length):
     audio_segments = []
     for start, end in zip(start_indices, end_indices):
         duration = end - start
-        print(f"Segment: {start}, {end}")
+        #print(f"Segment: {start}, {end}")
         if(duration == 0):
             # If duration is zero, the start and end of the interval were outside the audio tensor
             segment = torch.zeros(audio.shape[0], num_samples)
@@ -114,7 +114,7 @@ def sample_audio_fixed_center(audio, frame_indices, fps, sr, desired_length):
             
             start_idx = middle - dl
             end_idx = middle + dr
-            print(f"clip interval: {start_idx},{end_idx}")
+            #print(f"clip interval: {start_idx},{end_idx}")
             segment = audio[:,start_idx:end_idx]
             segment = pad_or_crop_clip(segment, num_samples)
 
