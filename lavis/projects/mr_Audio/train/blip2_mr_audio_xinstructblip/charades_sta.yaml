@@ -59,21 +59,21 @@ datasets:
       annotations:
         train:
           url:
-            - /home/atuin/g102ea/g102ea15/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/new_train.json
+            - /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/new_train.json
           storage:
-            - /home/atuin/g102ea/g102ea15/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/new_train.json
+            - /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/new_train.json
         val:
           url:
-            - /home/atuin/g102ea/g102ea15/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/new_val.json
+            - /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/new_val.json
           storage:
-            - /home/atuin/g102ea/g102ea15/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/new_val.json
+            - /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/new_val.json
         test:
           # url: Your/path/to/test_dummy.json
           # storage: Your/path/to/test_dummy.json
           url:
-            - /home/atuin/g102ea/g102ea15/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/test.json
+            - /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/test.json
           storage:
-            - /home/atuin/g102ea/g102ea15/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/test.json
+            - /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/test.json
       video:
         storage: /home/atuin/g102ea/shared/videos/Charades_v1
       audio:
@@ -88,7 +88,7 @@ run:
   warmup_lr: 1e-8
   warmup_steps: 1745 # 10% * 50 epochs * 349 steps/epoch = 1745
   weight_decay: 0.05
-  max_epoch: 50
+  max_epoch: 1
   batch_size_train: 16
   batch_size_eval: 8
   num_workers: 2
