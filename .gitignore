@@ -174,5 +174,6 @@ cython_debug/
 
 mr_BLIP_data/QVH/
 mr_BLIP_data/Charades/
+mr_BLIP_data/Charades_STA_annotations
 mraudio/
 checkpoints/
