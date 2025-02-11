@@ -242,8 +242,8 @@ class BLIP2_MR(Blip2Base):
         self.use_rna_loss = use_rna_loss
         self.log_feature_means = log_feature_means
         self.late_fusion = late_fusion
-        if self.late_fusion:
-            self.audio_t5_proj = nn.Linear(
+
+        self.audio_t5_proj = nn.Linear(
                 self.audio_feature_dim, self.t5_model.config.hidden_size
             ).to(self.device)
 
@@ -331,8 +331,9 @@ class BLIP2_MR(Blip2Base):
         audio_for_t5 = self.audio_t5_proj(audio_embeddings)
         audio_norm = torch.linalg.norm(audio_for_t5, dim=-1)  # L2-norm along embed_length
         projected_mean_audio_norm = audio_norm.mean()
+        vision_for_t5 = self.t5_proj(frames_for_projection)
 
-        frames_for_t5 = self.lcam_fusion(audio_for_t5, frames_for_projection)
+        frames_for_t5 = self.lcam_fusion(audio_for_t5, vision_for_t5)
 
         # TODO: Use average pooling to aggregate the 32 embeddings of one frame
         if self.frame_token_aggregation:
@@ -390,7 +391,7 @@ class BLIP2_MR(Blip2Base):
             if self.use_wandb and is_main_process():
                 log = {}
                 log["train/log_likelihood_loss"] = loss.item()
-                log["train/vision_mean_feature_norm"] = torch.mean(torch.linalg.norm(frames_for_projection.mean(dim=1), dim=-1), dim=-1).item()
+                log["train/proj_vision_mean_feature_norm"] = torch.mean(torch.linalg.norm(vision_for_t5.mean(dim=1), dim=-1), dim=-1).item()
                 #log["train/audio_mean_feature_norm"] = mean_audio_norm.item()
                 log["train/proj_audio_mean_feature_norm"] = projected_mean_audio_norm.item()
                 #log["train/fused_mean_feature_norm"] = torch.mean(
