@@ -23,6 +23,6 @@ export https_proxy=http://proxy:80
 ml gcc/11 cuda/12.1.1 cudnn/8.9.6.50-12.x
 #conda activate mrBlipAudio
 
-./run_scripts/mr_Audio/train/X-InstructBLIP/charades_sta.sh
+./run_scripts/mr_BLIP/train/q_former_charades.sh
 #conda deactivate
 
