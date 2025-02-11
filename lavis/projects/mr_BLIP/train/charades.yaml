@@ -84,3 +84,4 @@ run:
   fusion_method: "lcam"
   use_rna_loss: False
   log_feature_means: True
+  late_fusion: True
