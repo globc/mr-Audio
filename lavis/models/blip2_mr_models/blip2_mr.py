@@ -302,9 +302,9 @@ class BLIP2_MR(Blip2Base):
         audio_embeddings = self.audio_embeddings_model.get_audio_embeddings(audio_clips=audio, sr=self.sampling_rate).to(self.device)
 
         orig_shape_audio_embeddings = audio_embeddings
-        if self.log_feature_means:
-            audio_norm = torch.linalg.norm(audio_embeddings, dim=-1)  # L2-norm along embed_length
-            mean_audio_norm = audio_norm.mean()
+        #if self.log_feature_means:
+        #    audio_norm = torch.linalg.norm(audio_embeddings, dim=-1)  # L2-norm along embed_length
+        #    mean_audio_norm = audio_norm.mean()
 
         #Image
         b, t, c, w, h = image.shape
@@ -340,6 +340,9 @@ class BLIP2_MR(Blip2Base):
                 frames_for_t5 = self.t5_proj(frames_for_projection)
         else:
             audio_for_t5 = self.audio_t5_proj(audio_embeddings)
+            if self.log_feature_means:
+                audio_norm = torch.linalg.norm(audio_embeddings, dim=-1)  # L2-norm along embed_length
+                projected_mean_audio_norm = audio_norm.mean()
             frames_for_t5 = self.lcam_fusion(audio_embeddings, frames_for_projection)
 
         # TODO: Use average pooling to aggregate the 32 embeddings of one frame
@@ -401,9 +404,12 @@ class BLIP2_MR(Blip2Base):
                 if self.log_feature_means:
                     log["train/vision_mean_feature_norm"] = torch.mean(
                         torch.linalg.norm(frames_for_projection.mean(dim=1), dim=-1), dim=-1).item()
-                    log["train/audio_mean_feature_norm"] = mean_audio_norm.item()
-                    log["train/fused_mean_feature_norm"] = torch.mean(
-                        torch.linalg.norm(combined_video_audio_frame.mean(dim=1), dim=-1), dim=-1).item()
+                    #log["train/audio_mean_feature_norm"] = mean_audio_norm.item()
+                    log["train/proj_audio_mean_feature_norm"] = projected_mean_audio_norm.item()
+                    #log["train/fused_mean_feature_norm"] = torch.mean(
+                    #    torch.linalg.norm(combined_video_audio_frame.mean(dim=1), dim=-1), dim=-1).item()
+                    log["train/latefused_mean_feature_norm"] = torch.mean(
+                        torch.linalg.norm(frames_for_t5.mean(dim=1), dim=-1), dim=-1).item()
                 # Log images and predictions
                 if samples["iters"] % self.log_samples_every_n == 0:
                     pred = self.t5_tokenizer.batch_decode(
