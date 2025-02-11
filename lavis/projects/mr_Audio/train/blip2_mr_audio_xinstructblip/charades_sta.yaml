@@ -95,7 +95,7 @@ run:
   accum_grad_iters: 1
 
   max_len: 200
-  min_len: 4
+  min_len: 8
   num_beams: 5
 
   seed: 42
@@ -117,5 +117,5 @@ run:
 
   wandb: True
   wandb_project: "mr_BLIP"
-  wandb_name: "Charades_mr_BLIP"
+  wandb_name: "Charades_AudioOnly_BEATS_QFormer"
 
