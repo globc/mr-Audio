@@ -113,11 +113,13 @@ class BeatsAudioProcessor(BaseProcessor):
 
         # Handle padding and frames extraction differently for eval and training modes
         if not self.is_eval:
-            fbank_pad_len = self.frame_length * self.n_frames - fbank.shape[0]
-            if fbank_pad_len > 0:
-                fbank = torch.nn.ZeroPad2d((0, 0, 0, fbank_pad_len))(fbank)
-            fbank = fbank[:self.frame_length * self.n_frames]
-            frames = [fbank[i*self.frame_length:(i+1)*self.frame_length].unsqueeze(0) for i in range(self.n_frames)]
+            frames = []
+            chunks = torch.chunk(fbank, self.n_frames, dim=0)
+            for chunk in chunks:
+                if chunk.shape[0] < self.frame_length:
+                    chunk = torch.nn.ZeroPad2d((0, 0, 0, self.frame_length - chunk.shape[0]))(chunk)
+                chunk = chunk[:self.frame_length]
+                frames.append(chunk.unsqueeze(0))
         else:
             fbank_pad_len = fbank.shape[0] % self.frame_length
             if fbank_pad_len > 0:
