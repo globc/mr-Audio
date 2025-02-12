@@ -18,6 +18,7 @@ model:
   audio_qformer_text_input: False
   audio_encoder_kwargs :  {"checkpoint_path": "/home/atuin/g102ea/shared/group_2/checkpoints/X-InstructBLIP/BEATs_iter3_plus_AS2M.pt"}
   pretrained_audio_qformer: https://storage.googleapis.com/sfr-xinstructblip-data-research/model/xinstructblip_checkpoints/vicuna7b/audio_qformer_improved.pth
+  pretrained_audio_t5_proj: "https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP2/blip2_pretrained_flant5xl.pth"
   task: qformer_freeze_lora
   input_time_format: seconds_integers # [seconds_integers | seconds_floats | relative_integers | relative_floats | framenumbers | False]
   interleave_data: True
