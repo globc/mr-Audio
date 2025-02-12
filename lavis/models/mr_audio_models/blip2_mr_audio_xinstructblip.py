@@ -35,6 +35,7 @@ from lavis.models.blip2_mr_models.utils import (
     get_timestamps_as_relative_floats,
     get_timestamps_as_framenumbers,
 )
+from lavis.models.mr_audio_models.utils import get_peft_config
 
 # set the environment variable TOKENIZERS_PARALLELISM = false
 # to disable tokenizers parallelism
@@ -75,6 +76,7 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
         audio_qformer_text_input=False,
         audio_encoder_kwargs={},
         pretrained_audio_qformer = "https://storage.googleapis.com/sfr-xinstructblip-data-research/model/xinstructblip_checkpoints/vicuna7b/audio_qformer_improved.pth",
+        pretrained_audio_t5_proj = "https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP2/blip2_pretrained_flant5xl.pth",
         num_query_token=32,
         t5_model="google/flan-t5-xl",
         num_beams=5,
@@ -173,7 +175,6 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
         ### LORA ##########
 
         if self.use_lora:
-            from lavis.models.mr_audio_models.utils import get_peft_config
             self.peft_config = get_peft_config(self.t5_model, rank=8)
             self.t5_model.gradient_checkpointing_enable()
             self.t5_model.enable_input_require_grads()
@@ -234,11 +235,10 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
         self.audio_Qformer.cls = None
 
         # Pre-initialize projection with Vicuna projection
-        self.audio_t5_proj = self.init_vicuna_projection(
+        self.audio_t5_proj = self.init_t5_projection(
             self.audio_Qformer.config.hidden_size,
             self.t5_model.config.hidden_size,
-            load_projection_path=pretrained_audio_qformer,
-            load_projection_type="audio"
+            load_projection_path=pretrained_audio_t5_proj,
             )
 
         ##########################################################################
@@ -259,7 +259,7 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
             self.query_tokens.requires_grad = False
             self.t5_proj.requires_grad = False
         elif self.use_lora:
-            self.Qformer = get_peft_model(self.Qformer, get_peft_config(self.Qformer, rank=4, task_type="FEATURE_EXTRACTION"))
+            self.Qformer = get_peft_model(self.Qformer, get_peft_config(self.Qformer, rank=4, task_type="FEATURE_EXTRACTION", quantization=False))
             
         if freeze_audio_qformer:
             for name, param in self.ln_audio.named_parameters():
@@ -270,7 +270,7 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
             # for name, param in self.audio_t5_proj.named_parameters():
             #     param.requires_grad = False
         elif self.use_lora:
-            self.audio_Qformer = get_peft_model(self.audio_Qformer, get_peft_config(self.audio_Qformer, rank=4, task_type="FEATURE_EXTRACTION"))
+            self.audio_Qformer = get_peft_model(self.audio_Qformer, get_peft_config(self.audio_Qformer, rank=4, task_type="FEATURE_EXTRACTION", quantization=False))
 
 
         if is_main_process() and self.use_wandb:
@@ -1074,6 +1074,7 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
         audio_qformer_text_input = cfg.get("audio_qformer_text_input", False)
         audio_encoder_kwargs = cfg.get("audio_encoder_kwargs", {})
         pretrained_audio_qformer = cfg.get("pretrained_audio_qformer", "https://storage.googleapis.com/sfr-xinstructblip-data-research/model/xinstructblip_checkpoints/vicuna7b/audio_qformer_improved.pth")
+        pretrained_audio_t5_proj = cfg.get("pretrained_audio_t5_proj", "https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP2/blip2_pretrained_flant5xl.pth")
         input_time_format = cfg.get("input_time_format", "seconds_integers")
         interleave_data = cfg.get("interleave_data", True)
         frame_token_aggregation = cfg.get("frame_token_aggregation", None)
@@ -1097,6 +1098,7 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
             audio_qformer_text_input=audio_qformer_text_input,
             audio_encoder_kwargs=audio_encoder_kwargs,
             pretrained_audio_qformer = pretrained_audio_qformer,
+            pretrained_audio_t5_proj = pretrained_audio_t5_proj,
             num_query_token=num_query_token,
             t5_model=t5_model,
             num_beams=num_beams,
@@ -1345,7 +1347,7 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
         return Qformer, query_tokens
     
     @classmethod
-    def init_vicuna_projection(cls, input_size, output_size, load_projection_path=False, load_projection_type="", projection_key=None):
+    def init_t5_projection(cls, input_size, output_size, load_projection_path=False, load_projection_type="", projection_key=None):
         proj = nn.Linear(input_size, output_size)
         if load_projection_path:
             url_or_filename=load_projection_path
@@ -1359,8 +1361,7 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
                 checkpoint = torch.load(url_or_filename, map_location="cpu")
             else:
                 raise RuntimeError("checkpoint url or path is invalid")
-            if load_projection_type:
-                load_projection_type = f"{load_projection_type}_"
+            prefix = "t5_proj." if "blip2" in load_projection_path else "audio_llm_proj."
             loaded_state_dict = {}
             if 'model' in checkpoint:
                 checkpoint = checkpoint['model'] 
@@ -1369,16 +1370,18 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
                     if projection_key in k:
                         loaded_state_dict['.'.join(k.split('.')[1:])] = checkpoint[k]
                 else:
-                    if load_projection_type+'llm_proj.' in k:
+                    if prefix in k:
                         loaded_state_dict['.'.join(k.split('.')[1:])] = checkpoint[k]
 
+            logging.info(f"Found {loaded_state_dict['weight'].shape[0]} audio_t5_proj weights")
             # Uniform weight sampling
-            import numpy as np
-            indices = np.linspace(0, loaded_state_dict["weight"].shape[0] - 1, output_size)
-            reduced_state_dict = {
-                "weight": loaded_state_dict["weight"][indices],
-                "bias": loaded_state_dict["bias"][indices]
-            }
-            proj.load_state_dict(reduced_state_dict, strict=False)
+            if loaded_state_dict["weight"].shape[0] > output_size:
+                import numpy as np
+                indices = np.linspace(0, loaded_state_dict["weight"].shape[0] - 1, output_size)
+                loaded_state_dict = {
+                    "weight": loaded_state_dict["weight"][indices],
+                    "bias": loaded_state_dict["bias"][indices]
+                }
+            proj.load_state_dict(loaded_state_dict, strict=False)
         
         return proj
