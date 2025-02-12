@@ -356,7 +356,7 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
 
         print("audio_embeds.shape", audio_embeds.shape)
 
-        fused_output, attn_weights = self.fusion_stack(audio_embeds, image_embeds)  # or fusion_cat, fusion_x
+        fused_output, attn_weights = self.fusion_stack(audio_embeds, frames_for_projection)  # or fusion_cat, fusion_x
 
         ##########################################################################
 
@@ -376,16 +376,6 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
 
         ##########################################################################
 
-        ### Audio Embeddings ####################################
-        audio = samples["audio"]
-        audio_embeds = []
-        audio_atts = []
-        for j in range(audio.size(1)):
-            this_frame = audio[:,j,:,:]
-            with self.maybe_autocast():
-                audio_embeds.append(self.ln_audio(self.audio_encoder(this_frame)))
-            audio_atts.append(torch.ones(audio_embeds[j].size()[:-1], dtype=torch.long).to(self.device))
-        audio_query_tokens = self.audio_query_tokens.expand(audio.size(0), -1, -1)
 
         """num = len(audio_embeds)
                 bs = audio_embeds[0].shape[0]
@@ -820,33 +810,20 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
             ], "Invalid aggregation method, please choose from ['mean']"
             frames_for_t5 = frames_for_t5.mean(dim=1, keepdim=True)
 
-        # reshape the frames for t5 from (bt, n, c) to (b, t * n, c)
-        frames_for_t5 = frames_for_t5.reshape(
-            b, t, frames_for_t5.shape[-2], -1
-        )  # b, t, n, c
-        frames_atts_for_t5 = torch.ones(frames_for_t5.size()[:-1], dtype=torch.long).to(
-            image.device
-        )  # b, t, n
-        frames_for_t5 = frames_for_t5.reshape(
-            b, -1, frames_for_t5.shape[-1]
-        )  # b, t * n, c
-        frames_atts_for_t5 = frames_atts_for_t5.reshape(b, -1)  # b, t * n
+        frames_for_t5, frames_atts_for_t5 = self.reshape_frames_for_t5(frames_for_t5=frames_for_t5, b=b, t=t,
+                                                                       image=image)
 
         ##########################################################################
 
         ### Audio Embeddings ####################################
         audio = samples["audio"]
-        audio_embeds = []
-        audio_atts = []
-        for j in range(audio.size(1)):
-            this_frame = audio[:,j,:,:]
-            with self.maybe_autocast():
-                audio_embeds.append(self.ln_audio(self.audio_encoder(this_frame)))
-            audio_atts.append(torch.ones(audio_embeds[j].size()[:-1], dtype=torch.long).to(self.device))
-        audio_query_tokens = self.audio_query_tokens.expand(audio.size(0), -1, -1)
+        audio_embeds, audio_atts, audio_query_tokens = self.get_audio_embeddings(audio)
+        fused_output, attn_weights = self.fusion_stack(audio_embeds, frames_after_qformer)  # or fusion_cat, fusion_x
+                                            ## TODO Check if frames_after_qformer is correct, or if it should be frames_for_t5
+        ##########################################################################
 
-
-        num = len(audio_embeds)
+        frames_for_t5 = self.t5_proj(fused_output)
+        """num = len(audio_embeds)
         bs = audio_embeds[0].shape[0]
         indices = [j_+r for r,j in enumerate([[i*bs for i in range(num)]]*bs) for j_ in j]
         reordered_embeds = torch.cat(audio_embeds)[indices]
@@ -883,8 +860,12 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
         audios_for_t5 = self.audio_t5_proj(audio_query_output.last_hidden_state[:,:audio_query_tokens.size(1),:]) # b, t, n, c
 
         audios_for_t5 = audios_for_t5.reshape(bs, num, self.num_query_token, -1).view(bs, num*self.num_query_token, -1) # b, t*n, c
-        audios_atts_for_t5 =  torch.ones(audios_for_t5.size()[:-1], dtype=torch.long).to(self.device) # b, t*n
-
+        audios_atts_for_t5 =  torch.ones(audios_for_t5.size()[:-1], dtype=torch.long).to(self.device)""" # b, t*n
+        bs = audio.shape[0]  # Assuming 'audio' has shape [B, num, ...]
+        num = audio.shape[1]  # Number of audio frames or tokens
+        hidden_size_t5 = self.t5_model.config.hidden_size
+        audios_for_t5 = torch.zeros(bs, num * self.num_query_token, hidden_size_t5).to(self.device)
+        audios_atts_for_t5 = torch.zeros(bs, num * self.num_query_token, dtype=torch.long).to(self.device)
 
         ##########################################################################
 
