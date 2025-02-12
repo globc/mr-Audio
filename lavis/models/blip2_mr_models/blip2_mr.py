@@ -72,7 +72,11 @@ class BLIP2_MR(Blip2Base):
         drop_path_rate=0,
         use_grad_checkpoint=False,
         vit_precision="fp32", #"fp16",
+        beats_precision='fp16',
+        freeze_beats = True,
         freeze_vit=True,
+        audio_encoder_kwargs={},
+        pretrained_audio_qformer="https://storage.googleapis.com/sfr-xinstructblip-data-research/model/xinstructblip_checkpoints/vicuna7b/audio_qformer_improved.pth",
         num_query_token=32,
         t5_model="google/flan-t5-xl",
         num_beams=5,
@@ -112,7 +116,7 @@ class BLIP2_MR(Blip2Base):
         self.interleave_data = interleave_data
         self.frame_token_aggregation = frame_token_aggregation
 
-        self.audio_embeddings_model = CLAPAudioEmbeddings()
+        #self.audio_embeddings_model = CLAPAudioEmbeddings() # CLAP
         self.audio_feature_dim = 512
         self.sampling_rate = sampling_rate
         self.fusion_method = fusion_method
@@ -144,7 +148,23 @@ class BLIP2_MR(Blip2Base):
 
         ##########################################################################
 
+        ### Audio backbone ######################################################
+        audio_encoder_kwargs["load_ln_path"] = pretrained_audio_qformer
+        audio_encoder_kwargs["load_ln_type"] = "audio"
+        (
+            self.audio_encoder,
+            self.ln_audio,
+        ) = self.init_audio_encoder(
+            "beats", beats_precision, **audio_encoder_kwargs
+        )
 
+        if freeze_beats:
+            for name, param in self.audio_encoder.named_parameters():
+                param.requires_grad = False
+            self.audio_encoder = self.audio_encoder.eval()
+            self.audio_encoder.train = disabled_train
+            logging.info(f"freeze audio encoder")
+            ##########################################################################
 
         ### Text backbone ######################c##################################
         curr_path = os.getcwd() + '/cache'
@@ -335,22 +355,48 @@ class BLIP2_MR(Blip2Base):
         samples,
     ):
 
-        #Sample
+        ######Sample
         image = samples["video"]
         video_prompt_end = samples["video_prompt_end"]
         query_prompt, task_prompt = samples["query_prompt"], samples["task_prompt"]
         answer = samples["relevant_windows"]
         timestamps, durations = (samples["timestamps"],samples["duration"])
 
-        #Audio
-        audio_clips = samples["audio"]
-
-        # audio shape b,t,512
-        audio_embeddings = self.audio_embeddings_model.get_audio_embeddings(audio_clips=audio_clips, sr=self.sampling_rate).to(self.device)
-
-        #Image
+        #! Image #!
         b, t, c, w, h = image.shape
         image_embeds, image_atts = self.uniform_sampling(image=image, c=c, w=w, h=h)
+
+        #################################Audio ########################################
+
+        #####BEATS
+        audio = samples["audio"]
+        audio_embeds, _, _ = self.get_audio_from_BEATS(audio)
+
+        num = len(audio_embeds)
+        bs = audio_embeds[0].shape[0]
+        indices = [j_ + r for r, j in enumerate([[i * bs for i in range(num)]] * bs) for j_ in j]
+        reordered_embeds = torch.cat(audio_embeds)[indices]
+
+        frames_for_t5 = self.t5_proj(audio_embeds)
+
+
+
+        ####CLAP
+        # audio shape b,t,512
+        audio_clips = samples["audio"]
+        #audio_embeddings = self.audio_embeddings_model.get_audio_embeddings(audio_clips=audio_clips, sr=self.sampling_rate).to(self.device)
+
+
+
+
+
+
+
+
+
+
+
+
 
 
         ### Apply Q-Former for Image Embeddings and Fusionate with Audio Embeddings ####################################
@@ -369,9 +415,11 @@ class BLIP2_MR(Blip2Base):
         #TODO: torch. cat --> [1, 32, 512+512], hälfte audio, hälfte frame embedding, 32 mal selbes audio embedding, 32 unterschiedloche frame embeddings
         #TODO: Idee ist gemeinsamen Embeddingspace für Audio und Frame zu haben
 
+
+        ####CLAP
         # flatten audio embeddings like the image tensors
-        audio_embeddings = audio_embeddings.reshape(-1, audio_embeddings.shape[2]) # reshape to [b*t, embedd_len]
-        audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frames_for_projection.shape[1], -1) # reshape to [b*t, query_tokens, embed_len]
+        #audio_embeddings = audio_embeddings.reshape(-1, audio_embeddings.shape[2]) # reshape to [b*t, embedd_len]
+        #audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frames_for_projection.shape[1], -1) # reshape to [b*t, query_tokens, embed_len]
 
         ###### Forward our Stuff for Fusion here ######
 
@@ -382,9 +430,9 @@ class BLIP2_MR(Blip2Base):
         #frames_for_t5 = self.t5_proj(fused_data)
         #audio_data = self.fusion_layer(audio_embeddings)
 
-        ####Audio Only
-        audio_data = self.audio_to_t5(audio_embeddings)
-        frames_for_t5 = self.t5_proj(audio_data)
+        ####Audio Only CLAP
+        #audio_data = self.audio_to_t5(audio_embeddings)
+        #frames_for_t5 = self.t5_proj(audio_data)
 
         # TODO: Use average pooling to aggregate the 32 embeddings of one frame
         if self.frame_token_aggregation:
@@ -778,6 +826,8 @@ class BLIP2_MR(Blip2Base):
         query_prompt, task_prompt = samples["query_prompt"], samples["task_prompt"]
         answer = samples["relevant_windows"]
 
+
+        # CLAP
         audio_clips = samples["audio"]
         audio_embeddings = self.audio_embeddings_model.get_audio_embeddings(audio_clips=audio_clips, sr=48000)
 
@@ -1319,3 +1369,34 @@ class BLIP2_MR(Blip2Base):
         frames_atts_for_t5 = frames_atts_for_t5.reshape(b, -1)  # b, t * n
 
         return frames_for_t5, frames_atts_for_t5
+
+    def init_audio_encoder(
+        self, model_name, precision, **kwargs
+        ):
+        assert model_name in [
+            'beats'
+        ], "audio model must be in [beats]"
+
+        load_ln_path = kwargs['load_ln_path']
+        del kwargs['load_ln_path']
+        load_ln_type=kwargs['load_ln_type']
+        del kwargs['load_ln_type']
+        if "beats" in model_name:
+            from lavis.models.beats_encoder import BeatsEncoder
+            audio_encoder = BeatsEncoder(**kwargs)
+        ln_audio = self.init_ln(audio_encoder.num_features, load_ln_path=load_ln_path, load_ln_type=load_ln_type)
+        self.audio_enc_name = model_name
+        return audio_encoder, ln_audio
+
+    def get_audio_from_BEATS(self, audio):
+
+        audio_embeds = []
+        audio_atts = []
+        for j in range(audio.size(1)):
+            this_frame = audio[:, j, :, :]
+            with self.maybe_autocast():
+                audio_embeds.append(self.ln_audio(self.audio_encoder(this_frame)))
+            audio_atts.append(torch.ones(audio_embeds[j].size()[:-1], dtype=torch.long).to(self.device))
+        audio_query_tokens = self.audio_query_tokens.expand(audio.size(0), -1, -1)
+
+        return audio_embeds, audio_atts, audio_query_tokens
