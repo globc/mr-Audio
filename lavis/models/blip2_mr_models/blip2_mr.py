@@ -234,10 +234,6 @@ class BLIP2_MR(Blip2Base):
         self.t5_proj = nn.Linear(
             self.Qformer.config.hidden_size, self.t5_model.config.hidden_size).to(self.device)
 
-        self.frame_down_proj = nn.Linear(
-            self.Qformer.config.hidden_size, self.audio_feature_dim
-        ).to(self.device)
-
         self.fusion_method = fusion_method
         self.use_rna_loss = use_rna_loss
         self.log_feature_means = log_feature_means
@@ -247,9 +243,6 @@ class BLIP2_MR(Blip2Base):
                 self.audio_feature_dim, self.t5_model.config.hidden_size
             ).to(self.device)
 
-        self.fusion_layer = nn.Linear(
-                self.audio_feature_dim * 2,self.Qformer.config.hidden_size
-            ).to(self.device)
         if self.fusion_method == "interleave":
             self.audio_t5_proj = nn.Linear(
                 self.audio_feature_dim, self.t5_model.config.hidden_size
@@ -764,21 +757,14 @@ class BLIP2_MR(Blip2Base):
 
 
         ## Add audio
-        frame_down_proj = self.frame_down_proj(frames_after_qformer.last_hidden_state)
-
         #audio_embeddings = audio_embeddings.reshape(-1, audio_embeddings.shape[2])
-        audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frame_down_proj.shape[1], -1)
+        audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frames_after_qformer.last_hidden_state.shape[1], -1)
 
-        if self.fusion_method == "lcam":
-            combined_video_audio_frame = self.lcam_fusion(audio_embeddings, frame_down_proj)
-        else:
-            combined_video_audio_frame = torch.cat([frame_down_proj, audio_embeddings], dim=-1)
+        audio_for_t5 = self.audio_t5_proj(audio_embeddings)
 
-        if self.fusion_method == "lcam" or self.fusion_method == "concat":
-            fused_data = self.fusion_layer(combined_video_audio_frame)
-            frames_for_t5 = self.t5_proj(fused_data)
-        else:
-            frames_for_t5 = self.t5_proj(frames_after_qformer.last_hidden_state)
+        vision_for_t5 = self.t5_proj(frames_after_qformer.last_hidden_state)
+
+        frames_for_t5 = self.lcam_fusion(audio_for_t5, vision_for_t5)
 
         if self.frame_token_aggregation:
             assert self.frame_token_aggregation in [
