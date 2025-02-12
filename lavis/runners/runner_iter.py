@@ -160,6 +160,8 @@ class RunnerIter(RunnerBase):
             "config": self.config.to_dict(),
             "scaler": self.scaler.state_dict() if self.scaler else None,
             "iters": cur_iters,
+            "lr_scheduler": self.lr_scheduler.state_dict() if self.lr_scheduler else None,
+
         }
         save_to = os.path.join(
             self.output_dir,
@@ -186,6 +188,10 @@ class RunnerIter(RunnerBase):
         self.unwrap_dist_model(self.model).load_state_dict(state_dict)
 
         self.optimizer.load_state_dict(checkpoint["optimizer"])
+
+        if self.lr_scheduler and "lr_scheduler" in checkpoint and checkpoint["lr_scheduler"]:
+            self.lr_scheduler.load_state_dict(checkpoint["lr_scheduler"])
+
         if self.scaler and "scaler" in checkpoint:
             self.scaler.load_state_dict(checkpoint["scaler"])
 
