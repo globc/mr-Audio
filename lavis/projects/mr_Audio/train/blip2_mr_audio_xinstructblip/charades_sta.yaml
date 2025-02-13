@@ -64,21 +64,21 @@ datasets:
       annotations:
         train:
           url:
-            - /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/new_train.json
+            - /home/atuin/g102ea/shared/charades_sta_annotations/new_train.json
           storage:
-            - /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/new_train.json
+            - /home/atuin/g102ea/shared/charades_sta_annotations/new_train.json
         val:
           url:
-            - /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/new_val.json
+            - /home/atuin/g102ea/shared/charades_sta_annotations/new_val.json
           storage:
-            - /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/new_val.json
+            - /home/atuin/g102ea/shared/charades_sta_annotations/new_val.json
         test:
           # url: Your/path/to/test_dummy.json
           # storage: Your/path/to/test_dummy.json
           url:
-            - /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/test.json
+            - /home/atuin/g102ea/shared/charades_sta_annotations/test.json
           storage:
-            - /home/atuin/g102ea/g102ea2/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/test.json
+            - /home/atuin/g102ea/shared/charades_sta_annotations/test.json
       video:
         storage: /home/atuin/g102ea/shared/videos/Charades_v1
       audio:
