@@ -341,7 +341,7 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
             )
             frames_for_projection = frames_after_qformer.last_hidden_state
 
-        frames_for_t5 = self.t5_proj(frames_for_projection)
+        video_frames_for_t5 = self.t5_proj(frames_for_projection)
 
         # TODO: Use average pooling to aggregate the 32 embeddings of one frame
         if self.frame_token_aggregation:
@@ -349,17 +349,17 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
                 "mean",
                 False,
             ], "Invalid aggregation method, please choose from ['mean']"
-            frames_for_t5 = frames_for_t5.mean(dim=1, keepdim=True)
+            video_frames_for_t5 = video_frames_for_t5.mean(dim=1, keepdim=True)
 
         # reshape the frames for t5 from (bt, n, c) to (b, t * n, c)
-        frames_for_t5 = frames_for_t5.reshape(
-            b, t, frames_for_t5.shape[-2], -1
+        video_frames_for_t5 = video_frames_for_t5.reshape(
+            b, t, video_frames_for_t5.shape[-2], -1
         )  # b, t, n, c
-        frames_atts_for_t5 = torch.ones(frames_for_t5.size()[:-1], dtype=torch.long).to(
+        frames_atts_for_t5 = torch.ones(video_frames_for_t5.size()[:-1], dtype=torch.long).to(
             image.device
         )  # b, t, n
-        frames_for_t5 = frames_for_t5.reshape(
-            b, -1, frames_for_t5.shape[-1]
+        video_frames_for_t5 = video_frames_for_t5.reshape(
+            b, -1, video_frames_for_t5.shape[-1]
         )  # b, t * n, c
         frames_atts_for_t5 = frames_atts_for_t5.reshape(b, -1)  # b, t * n
 
@@ -413,8 +413,12 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
         audios_for_t5 = self.audio_t5_proj(audio_query_output.last_hidden_state[:,:audio_query_tokens.size(1),:]) # b, t, n, c
 
         audios_for_t5 = audios_for_t5.reshape(bs, num, self.num_query_token, -1).view(bs, num*self.num_query_token, -1) # b, t*n, c
-        audios_atts_for_t5 =  torch.ones(audios_for_t5.size()[:-1], dtype=torch.long).to(self.device) # b, t*n
-    
+        #audios_atts_for_t5 =  torch.ones(audios_for_t5.size()[:-1], dtype=torch.long).to(self.device) # b, t*n
+
+        audio_norm = torch.linalg.norm(audios_for_t5, dim=-1)  # L2-norm along embed_length
+        projected_mean_audio_norm = audio_norm.mean()
+
+        frames_for_t5 = self.lcam_fusion(audios_for_t5, video_frames_for_t5)
 
         ##########################################################################
 
@@ -424,8 +428,6 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
                 durations,
                 frames_for_t5,
                 frames_atts_for_t5,
-                audios_for_t5,
-                audios_atts_for_t5,
                 video_prompt_end,
                 query_prompt,
                 task_prompt,
@@ -458,6 +460,14 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
             if self.use_wandb and is_main_process():
                 log = {}
                 log["train/log_likelihood_loss"] = loss.item()
+                log["train/proj_vision_mean_feature_norm"] = torch.mean(
+                    torch.linalg.norm(video_frames_for_t5.mean(dim=1), dim=-1), dim=-1).item()
+                # log["train/audio_mean_feature_norm"] = mean_audio_norm.item()
+                log["train/proj_audio_mean_feature_norm"] = projected_mean_audio_norm.item()
+                # log["train/fused_mean_feature_norm"] = torch.mean(
+                #    torch.linalg.norm(combined_video_audio_frame.mean(dim=1), dim=-1), dim=-1).item()
+                log["train/latefused_mean_feature_norm"] = torch.mean(
+                    torch.linalg.norm(frames_for_t5.mean(dim=1), dim=-1), dim=-1).item()
                 # Log images and predictions
                 if samples["iters"] % self.log_samples_every_n == 0:
                     pred = self.t5_tokenizer.batch_decode(
@@ -487,8 +497,6 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
         durations,
         frames_for_t5,
         frames_atts_for_t5,
-        audios_for_t5,
-        audios_atts_for_t5,
         video_prompt_end,
         query_prompt,
         task_prompt,
@@ -600,8 +608,8 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
             t = t_n // n
 
             # iterate over the batch
-            for j, (timestamp_embs, frame_embs, audio_embs) in enumerate(
-                zip(batch_timestamps_embs, frames_for_t5, audios_for_t5)
+            for j, (timestamp_embs, frame_embs) in enumerate(
+                zip(batch_timestamps_embs, frames_for_t5)
             ):
                 interleaved_prompt = torch.tensor([]).to(frames_for_t5.device)
                 _video_prompt = []
@@ -609,7 +617,6 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
                 for i in range(t):
                     # each frame has n tokens -> shape (t*n, c)
                     frame_emb = frame_embs[i * n : i * n + n]
-                    audio_emb = audio_embs[i * n : i * n + n]
                     timestamp_emb = timestamp_embs[i]
 
                     # for logging of input design
@@ -623,7 +630,6 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
                     frame_audio_and_time = torch.cat(
                         [
                             frame_emb,
-                            audio_emb,
                             timestamp_emb,
                         ]
                     )
@@ -713,7 +719,6 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
                 [
                     video_prompt_embs,
                     frames_for_t5,
-                    audios_for_t5,
                     video_prompt_end_embs,
                     text_prompt_embs,
                 ],
@@ -724,7 +729,6 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
                 [
                     video_prompt_tokens.attention_mask,
                     frames_atts_for_t5,
-                    audios_atts_for_t5,
                     video_prompt_end_tokens.attention_mask,
                     text_prompt_tokens.attention_mask,
                 ],
@@ -796,23 +800,23 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
             encoder_attention_mask=image_atts,
             return_dict=True,
         )
-        frames_for_t5 = self.t5_proj(frames_after_qformer.last_hidden_state)
+        video_frames_for_t5 = self.t5_proj(frames_after_qformer.last_hidden_state)
 
         if self.frame_token_aggregation:
             assert self.frame_token_aggregation in [
                 "mean"
             ], "Invalid aggregation method, please choose from ['mean']"
-            frames_for_t5 = frames_for_t5.mean(dim=1, keepdim=True)
+            video_frames_for_t5 = video_frames_for_t5.mean(dim=1, keepdim=True)
 
         # reshape the frames for t5 from (bt, n, c) to (b, t * n, c)
-        frames_for_t5 = frames_for_t5.reshape(
-            b, t, frames_for_t5.shape[-2], -1
+        video_frames_for_t5 = video_frames_for_t5.reshape(
+            b, t, video_frames_for_t5.shape[-2], -1
         )  # b, t, n, c
-        frames_atts_for_t5 = torch.ones(frames_for_t5.size()[:-1], dtype=torch.long).to(
+        frames_atts_for_t5 = torch.ones(video_frames_for_t5.size()[:-1], dtype=torch.long).to(
             image.device
         )  # b, t, n
-        frames_for_t5 = frames_for_t5.reshape(
-            b, -1, frames_for_t5.shape[-1]
+        video_frames_for_t5 = video_frames_for_t5.reshape(
+            b, -1, video_frames_for_t5.shape[-1]
         )  # b, t * n, c
         frames_atts_for_t5 = frames_atts_for_t5.reshape(b, -1)  # b, t * n
 
@@ -867,9 +871,9 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
         audios_for_t5 = self.audio_t5_proj(audio_query_output.last_hidden_state[:,:audio_query_tokens.size(1),:]) # b, t, n, c
 
         audios_for_t5 = audios_for_t5.reshape(bs, num, self.num_query_token, -1).view(bs, num*self.num_query_token, -1) # b, t*n, c
-        audios_atts_for_t5 =  torch.ones(audios_for_t5.size()[:-1], dtype=torch.long).to(self.device) # b, t*n
-    
+        #audios_atts_for_t5 =  torch.ones(audios_for_t5.size()[:-1], dtype=torch.long).to(self.device) # b, t*n
 
+        frames_for_t5 = self.lcam_fusion(audios_for_t5, video_frames_for_t5)
         ##########################################################################
 
         with torch.cuda.amp.autocast(dtype=torch.bfloat16):
@@ -878,8 +882,6 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
                 durations,
                 frames_for_t5,
                 frames_atts_for_t5,
-                audios_for_t5,
-                audios_atts_for_t5,
                 video_prompt_end,
                 query_prompt,
                 task_prompt,
@@ -1385,3 +1387,38 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
             proj.load_state_dict(loaded_state_dict, strict=False)
         
         return proj
+
+    def lcam_fusion(self, audio_features, vision_features, lambda1=1.0, lambda2=1.0):
+        """
+        Lightweight Cross-Modal Attention Mechanism (LCAM) using dot product.
+
+        Args:
+            vision_features (torch.Tensor): Video features of shape (b*t, #query_tokens, #features).
+            audio_features (torch.Tensor): Audio features of shape (b*t, #query_tokens, #features).
+            lambda1 (float): Weight for the linear term in the discriminant function.
+            lambda2 (float): Weight for the quadratic term in the discriminant function.
+
+        Returns:
+            torch.Tensor: The fused features of shape (b*t, #query_tokens, #features).
+        """
+        # Step 1: Compute dot product between video and audio features across the last dimension (#features)
+        dot_product = torch.sum(vision_features * audio_features, dim=-1,
+                                keepdim=True)  # Shape: (b*t, #query_tokens, 1)
+
+        # Step 2: Compute mean and variance of the dot product across the batch-temporal axis (b*t)
+        mean = torch.mean(dot_product, dim=0, keepdim=True)  # Shape: (1, #query_tokens, 1)
+        variance = torch.var(dot_product, dim=0, unbiased=True, keepdim=True)  # Shape: (1, #query_tokens, 1)
+
+        # Step 3: Compute the discriminant function
+        difference = dot_product - mean  # Shape: (b*t, #query_tokens, 1)
+        discriminant_function = (lambda1 * difference + lambda2 * difference ** 2) / (
+                    variance + 1e-6)  # Shape: (b*t, #query_tokens, 1)
+
+        # Step 4: Apply sigmoid to get gating weights
+        gating_weights = torch.sigmoid(discriminant_function)  # Shape: (b*t, #query_tokens, 1)
+
+        # Step 5: Compute the cross-modal fused features
+        fused_output = vision_features * gating_weights + audio_features * (
+                    1 - gating_weights)  # Shape: (b*t, #query_tokens, #features)
+
+        return fused_output
