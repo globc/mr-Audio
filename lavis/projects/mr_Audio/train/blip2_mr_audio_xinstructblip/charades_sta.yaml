@@ -69,7 +69,7 @@ datasets:
             - /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/Charades_STA_annotations/ablations_split/new_train.json
         val:
           url:
-            -/home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/Charades_STA_annotations/ablations_split/new_val.json
+            - /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/Charades_STA_annotations/ablations_split/new_val.json
           storage:
             - /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/Charades_STA_annotations/ablations_split/new_val.json
         test:

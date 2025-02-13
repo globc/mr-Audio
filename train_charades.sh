@@ -1,7 +1,7 @@
 #!/bin/bash -l
 #SBATCH --job-name=mr_audio_charades
-#SBATCH --time=24:00:00
-#SBATCH --gres=gpu:a100:4 -C a100_80
+#SBATCH --time=4:00:00
+#SBATCH --gres=gpu:a100:2 -C a100_80
 
 #SBATCH --output=logs/job_%j_%x.out
 #SBATCH --error=logs/job_%j_%x.err
@@ -23,6 +23,6 @@ export https_proxy=http://proxy:80
 ml gcc/11 cuda/12.1.1 cudnn/8.9.6.50-12.x
 #conda activate mrBlipAudio
 
-./run_scripts/mr_BLIP/train/q_former_charades.sh
+./run_scripts/mr_Audio/train/blip2_mr_audio_xinstructblip/charades_sta.sh
 #conda deactivate
 
