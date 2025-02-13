@@ -25,7 +25,7 @@ model:
   frame_token_aggregation: False # [mean | False]
 
 datasets:
-  qvh_audio: # name of the dataset builder
+  charades_sta: # name of the dataset builder
     data_type: [video, audio]
 
     video_processor:
