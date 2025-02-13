@@ -59,31 +59,6 @@ datasets:
             name: "blip_question"
             max_words: 50
 
-    build_info:
-      # Be careful not to append minus sign (-) before split to avoid itemizing
-      annotations:
-        train:
-          url:
-            - new_train.json
-          storage:
-            - /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/Charades_STA_annotations/ablations_split/new_train.json
-        val:
-          url:
-            - new_val.json
-          storage:
-            - /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/Charades_STA_annotations/ablations_split/new_val.json
-        test:
-          # url: Your/path/to/test_dummy.json
-          # storage: Your/path/to/test_dummy.json
-          url:
-            - test.json
-          storage:
-            - /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/Charades_STA_annotations/ablations_split/test.json
-      video:
-        storage: /home/atuin/g102ea/shared/videos/Charades_v1
-      audio:
-        storage: /home/atuin/g102ea/shared/videos/Charades_v1
-
 run:
   task: moment_retrieval
   # optimizer
