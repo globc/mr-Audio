@@ -122,5 +122,5 @@ run:
 
   wandb: True
   wandb_project: "mr_BLIP"
-  wandb_name: "Charades_qformer_fusion"
+  wandb_name: "Charades_qformer_audio_only"
 
