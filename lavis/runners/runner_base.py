@@ -582,15 +582,16 @@ class RunnerBase:
             k: v.requires_grad for (k, v) in model_no_ddp.named_parameters()
         }
         state_dict = model_no_ddp.state_dict()
-        for k in list(state_dict.keys()):
-            if k in param_grad_dic.keys() and not param_grad_dic[k]:
-                # delete parameters that do not require gradient
+        #for k in list(state_dict.keys()):
+        #    if k in param_grad_dic.keys() and not param_grad_dic[k]:
+        #        # delete parameters that do not require gradient
                 # if 't5_model' not in k and 'visual_encoder' not in k:
                 # print(k)
-                del state_dict[k]
+        #        del state_dict[k]
         save_obj = {
             "model": state_dict,
             "optimizer": self.optimizer.state_dict(),
+            "lr_scheduler": self.lr_scheduler.state_dict() if self.lr_scheduler else None,
             "config": self.config.to_dict(),
             "scaler": self.scaler.state_dict() if self.scaler else None,
             "epoch": cur_epoch,
@@ -642,6 +643,9 @@ class RunnerBase:
         self.optimizer.load_state_dict(checkpoint["optimizer"])
         if self.scaler and "scaler" in checkpoint:
             self.scaler.load_state_dict(checkpoint["scaler"])
+
+        if "lr_scheduler" in checkpoint and self.lr_scheduler:
+            self.lr_scheduler.load_state_dict(checkpoint["lr_scheduler"])
 
         self.start_epoch = checkpoint["epoch"] + 1
         logging.info("Resume checkpoint from {}".format(url_or_filename))

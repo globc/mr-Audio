@@ -460,9 +460,12 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
             if self.use_wandb and is_main_process():
                 log = {}
                 log["train/log_likelihood_loss"] = loss.item()
+                log["train/vision_mean_feature_norm"] = torch.mean(
+                    torch.linalg.norm(frames_for_projection.mean(dim=1), dim=-1), dim=-1).item()
                 log["train/proj_vision_mean_feature_norm"] = torch.mean(
                     torch.linalg.norm(video_frames_for_t5.mean(dim=1), dim=-1), dim=-1).item()
-                # log["train/audio_mean_feature_norm"] = mean_audio_norm.item()
+                log["train/audio_mean_feature_norm"] = torch.mean(
+                    torch.linalg.norm(audio_query_output.last_hidden_state, dim=-1), dim=-1).item()
                 log["train/proj_audio_mean_feature_norm"] = projected_mean_audio_norm.item()
                 # log["train/fused_mean_feature_norm"] = torch.mean(
                 #    torch.linalg.norm(combined_video_audio_frame.mean(dim=1), dim=-1), dim=-1).item()
