@@ -102,6 +102,29 @@ class LinearWarmupCosineLRScheduler:
                 min_lr=self.min_lr,
             )
 
+    def state_dict(self):
+        """Save scheduler state."""
+        return {
+            "max_epoch": self.max_epoch,
+            "min_lr": self.min_lr,
+            "init_lr": self.init_lr,
+            "warmup_steps": self.warmup_steps,
+            "warmup_start_lr": self.warmup_start_lr,
+            "max_iters_per_epoch": self.max_iters_per_epoch,
+            "last_epoch": self.last_epoch,
+
+        }
+
+    def load_state_dict(self, state_dict):
+        """Restore scheduler state."""
+        self.max_epoch = state_dict["max_epoch"]
+        self.min_lr = state_dict["min_lr"]
+        self.init_lr = state_dict["init_lr"]
+        self.warmup_steps = state_dict["warmup_steps"]
+        self.warmup_start_lr = state_dict["warmup_start_lr"]
+        self.max_iters_per_epoch = state_dict["max_iters_per_epoch"]
+        self.last_epoch = state_dict["last_epoch"]
+
 
 def cosine_lr_schedule(optimizer, epoch, max_epoch, init_lr, min_lr):
     """Decay the learning rate"""
