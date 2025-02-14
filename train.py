@@ -97,6 +97,7 @@ def main():
             name=cfg.run_cfg.wandb_name,
             config=cfg.to_dict(),
             job_type="train",
+            resume="allow",
         )
 
     # add number of occurance in log dir for same name cfg.run_cfg.wandb_name
