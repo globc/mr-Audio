@@ -461,8 +461,8 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
                 log = {}
                 log["train/log_likelihood_loss"] = loss.item()
                 log["train/audio_mean_feature_norm"] = torch.mean(
-                    torch.linalg.norm(audio_query_output.last_hidden_state[:,:audio_query_tokens.size(1),:].mean(), dim=-1), dim=-1).item()
-                log["train/proj_audio_mean_feature_norm"] = projected_mean_audio_norm.item()
+                    torch.linalg.norm(audio_query_output.last_hidden_state[:,:audio_query_tokens.size(1),:].mean(), dim=-1), dim=-1).detach().item()
+                log["train/proj_audio_mean_feature_norm"] = projected_mean_audio_norm.detach().item()
 
                 # Log images and predictions
                 if samples["iters"] % self.log_samples_every_n == 0:
