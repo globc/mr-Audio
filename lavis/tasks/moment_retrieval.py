@@ -241,9 +241,7 @@ class MomentRetrievalTask(BaseTask):
 
             with torch.cuda.amp.autocast(enabled=use_amp):
                 loss = self.train_step(model=model, samples=samples)
-            for name, param in model.named_parameters():
-                if param.grad is None:
-                    print(f"⚠️ Parameter {name} did not receive gradient!")
+
             # after_train_step()
             if use_amp:
                 scaler.scale(loss).backward()
