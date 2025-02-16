@@ -98,8 +98,8 @@ class Blip2Base(BaseModel):
         # print('state_dict',state_dict.keys())
         msg = self.load_state_dict(state_dict, strict=False)
 
-        logging.info("Missing keys {}".format(msg.missing_keys))
-        logging.info("load checkpoint from %s" % url_or_filename)
+        #logging.info("Missing keys {}".format(msg.missing_keys))
+        #logging.info("load checkpoint from %s" % url_or_filename)
 
         return msg
 

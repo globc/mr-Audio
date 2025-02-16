@@ -185,11 +185,11 @@ class BaseTask:
         metric_logger.add_meter("loss", SmoothedValue(window_size=1, fmt="{value:.4f}"))
 
         # if iter-based runner, schedule lr based on inner epoch.
-        logging.info(
-            "Start training epoch {}, {} iters per inner epoch.".format(
-                epoch, iters_per_epoch
-            )
-        )
+        #logging.info(
+        #    "Start training epoch {}, {} iters per inner epoch.".format(
+        #        epoch, iters_per_epoch
+        #    )
+        #)
         header = "Train: data epoch: [{}]".format(epoch)
         if start_iters is None:
             # epoch-based runner
