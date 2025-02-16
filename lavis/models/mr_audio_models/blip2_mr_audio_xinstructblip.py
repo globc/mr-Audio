@@ -354,7 +354,7 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
         audio = samples["audio"]
         audio_embeds, audio_atts, audio_query_tokens = self.get_audio_embeddings(audio)
 
-        print("audio_embeds.shape", audio_embeds.shape)
+        
 
         fused_output, attn_weights = self.fusion_stack(audio_embeds, frames_for_projection)  # or fusion_cat, fusion_x
 
