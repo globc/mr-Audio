@@ -45,7 +45,7 @@ pycocotools
 python-magic
 scikit-image
 sentencepiece
-spacy==3.7.6a
+spacy
 streamlit
 timm==0.4.12
 # torchvision
