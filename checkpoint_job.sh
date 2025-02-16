@@ -21,11 +21,11 @@ export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 conda init
 conda activate mrAudioConda
 
-export http_proxy=http://proxy/
-export https_proxy=http://proxy/
+export http_proxy=http://proxy:80
+export https_proxy=http://proxy:80
 
 ml gcc/11 cuda/12.1.1 cudnn/8.9.6.50-12.x
 #conda activate mrBlipAudio
 
-./run_scripts/mr_Audio/train/blip2_mr_audio_xinstructblip/charades_sta.sh
+./run_scripts/mr_BLIP/train/charades_sta.sh
 #conda deactivate
