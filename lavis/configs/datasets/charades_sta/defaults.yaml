@@ -11,15 +11,26 @@ datasets:
       # Be careful not to append minus sign (-) before split to avoid itemizing
       annotations:
         train:
-          url: Your/path/to/train.json
-          storage: Your/path/to/train.json
+          #url: /home/atuin/g102ea/shared/charades_sta_annotations/train.json
+          #storage: /home/atuin/g102ea/shared/charades_sta_annotations/train.json
+          #url: /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/Charades_STA_annotations/ablations_split/new_train.json
+          #storage: /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/Charades_STA_annotations/ablations_split/new_train.json
+
+          url: /home/atuin/g102ea/g102ea13/mr-Audio/mr_BLIP_data/Charades_STA_annotations/ablations_split/new_train.json
+          storage: /home/atuin/g102ea/g102ea13/mr-Audio/mr_BLIP_data/Charades_STA_annotations/ablations_split/new_train.json
         val:
-          url: Your/path/to/test_float.json
-          storage: Your/path/to/test_float.json
-          # url: Your/path/to/new_val_float.json
-          # storage: Your/path/to/new_val_float.json
+          #url: /home/atuin/g102ea/shared/charades_sta_annotations/test.json
+          #storage: /home/atuin/g102ea/shared/charades_sta_annotations/test.json
+          #url: /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/Charades_STA_annotations/ablations_split/new_val.json
+          #storage: /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/Charades_STA_annotations/ablations_split/new_val.json
+
+          url: /home/atuin/g102ea/g102ea13/mr-Audio/mr_BLIP_data/Charades_STA_annotations/ablations_split/new_val.json
+          storage: /home/atuin/g102ea/g102ea13/mr-Audio/mr_BLIP_data/Charades_STA_annotations/ablations_split/new_val.json
         test:
-          url: Your/path/to/test_float.json
-          storage: Your/path/to/test_float.json
+          #url: /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/Charades_STA_annotations/ablations_split/test.json
+          #storage: /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/Charades_STA_annotations/ablations_split/test.json
+
+          url: /home/atuin/g102ea/g102ea13/mr-Audio/mr_BLIP_data/Charades_STA_annotations/ablations_split/test.json
+          storage: /home/atuin/g102ea/g102ea13/mr-Audio/mr_BLIP_data/Charades_STA_annotations/ablations_split/test.json
       videos:
-        storage: Your/path/to/data/raw/Charades
+        storage: /home/atuin/g102ea/shared/videos/Charades_v1

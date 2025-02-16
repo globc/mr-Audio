@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 import seaborn as sns
 import wandb
+import logging
 
 class AudioImageFusion(nn.Module):
     def __init__(
@@ -53,22 +54,23 @@ class AudioImageFusion(nn.Module):
             Fused features: shape depends on the mode used.
         """
         if self.debug:
-            print(f"[DEBUG] mode: {self.mode}")
-            print(f"[DEBUG] audio_emb shape: {audio_emb.shape}")
-            print(f"[DEBUG] image_emb shape: {image_emb.shape}")
+            logging.info(f"audio_emb type: {type(audio_emb)}")
+            logging.info(f"image_emb type: {type(image_emb)}")
+
+
 
 
         # For batch_first usage, we want shapes like [batch_size, seq_len, embed_dim].
         if audio_emb.ndim == 2:
             audio_emb = audio_emb.unsqueeze(0)# -> [1, 32, 512]
 
-            if self.debug:
-                print(f"[DEBUG] Reshaped audio_emb to: {audio_emb.shape}")
+            #if self.debug:
+                #print(f"[DEBUG] Reshaped audio_emb to: {audio_emb.shape}")
         if image_emb.ndim == 2:
             image_emb = image_emb.unsqueeze(0) # -> [1, 32, 512] example
 
-            if self.debug:
-                print(f"[DEBUG] Reshaped image_emb to: {image_emb.shape}")
+            #if self.debug:
+                #print(f"[DEBUG] Reshaped image_emb to: {image_emb.shape}")
         # Now image_emb is [1, 32, 512], audio_emb is [1, 32, 512]
 
         if self.mode == 'stack_fusion':
@@ -79,8 +81,8 @@ class AudioImageFusion(nn.Module):
             # -------------------------------------------------------
             combined_seq = torch.cat([image_emb, audio_emb], dim=1)
 
-            if self.debug:
-                print(f"[DEBUG] combined_seq (stack) shape: {combined_seq.shape}")
+            #if self.debug:
+                #print(f"[DEBUG] combined_seq (stack) shape: {combined_seq.shape}")
 
             # Self-attention: Q=K=V= combined_seq
             attn_out, attn_weights = self.mha(

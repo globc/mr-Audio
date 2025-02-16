@@ -115,12 +115,12 @@ run:
   test_splits: ["test"]
 
   device: "cuda"
-  world_size: 4
+  world_size: 2 #######################################for debug
   dist_url: "env://"
   distributed: True
   find_unused_parameters: False
 
   wandb: True
   wandb_project: "mr_BLIP"
-  wandb_name: "Charades_mr_BLIP"
+  wandb_name: "Charades_mr_StackFusion"
 
