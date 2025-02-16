@@ -1,0 +1,31 @@
+#!/bin/bash -l
+#SBATCH --job-name=mr_audio_debug
+#SBATCH --time=4:00:00
+#SBATCH --gres=gpu:a100:2 -C a10080
+
+#SBATCH --output=logs/job%j%x.out
+#SBATCH --error=logs/job%j_%x.err
+#SBATCH --mail-user=minatocss@gmail.com
+#SBATCH --mail-type=END,FAIL                     # Options: BEGIN, END, FAIL, or ALL
+
+
+unset SLURM_EXPORT_ENV
+
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+#export CUDA_NUM_DEVICES=$SLURM_GPUS_ON_NODE
+
+#ml gcc/11 python/3.8 cuda/11.8
+#ml gcc/11 python/3.9-anaconda cuda/12.1
+
+#source $WORK/venvs/mrBlipAudio/bin/activate
+conda init
+conda activate mrAudioConda
+
+export http_proxy=http://proxy/
+export https_proxy=http://proxy/
+
+ml gcc/11 cuda/12.1.1 cudnn/8.9.6.50-12.x
+#conda activate mrBlipAudio
+
+./run_scripts/mr_Audio/train/blip2_mr_audio_xinstructblip/charades_sta.sh
+#conda deactivate
