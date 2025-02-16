@@ -17,6 +17,10 @@ export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 #ml gcc/11 python/3.8 cuda/11.8
 #ml gcc/11 python/3.9-anaconda cuda/12.1
 
+#source $WORK/venvs/mrBlipAudio/bin/activate
+conda init
+conda activate mrAudioConda
+
 export http_proxy=http://proxy:80
 export https_proxy=http://proxy:80
 
