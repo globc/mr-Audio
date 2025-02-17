@@ -424,8 +424,11 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
         audios_for_t5 = torch.ones(bs, num * self.num_query_token, hidden_size_t5).to(self.device)
         audios_atts_for_t5 = torch.ones(bs, num * self.num_query_token, dtype=torch.long).to(self.device)
 
-
-        fused_output = self.fusion_stack(audio_query_output.last_hidden_state[:, :audio_query_tokens.size(1), :],
+        audio_input_fusion = audio_query_output.last_hidden_state[:, :audio_query_tokens.size(1), :]
+        print("ATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTION")
+        print(f"Forward: Audio Input Fusion Shape: {audio_input_fusion.shape}")
+        print(f"Forward: Frames for Projection Shape: {frames_for_projection.shape}")
+        fused_output = self.fusion_stack(audio_input_fusion,
                                           frames_for_projection)
 
         if self.frame_token_aggregation:
@@ -900,8 +903,12 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
         audios_for_t5 = torch.ones(bs, num * self.num_query_token, hidden_size_t5).to(self.device)
         audios_atts_for_t5 = torch.ones(bs, num * self.num_query_token, dtype=torch.long).to(self.device)
 
-
-        fused_output = self.fusion_stack(audio_query_output.last_hidden_state[:, :audio_query_tokens.size(1), :],
+        audio_input_fusion = audio_query_output.last_hidden_state[:, :audio_query_tokens.size(1), :]
+        print(
+            "ATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTION")
+        print(f"Generate: Audio Input Fusion Shape: {audio_input_fusion.shape}")
+        print(f"Generate: Frames for Projection Shape: {frames_after_qformer.last_hidden_state.shape}")
+        fused_output = self.fusion_stack(audio_input_fusion,
                                          frames_after_qformer.last_hidden_state)
 
         # reshape the frames for t5 from (bt, n, c) to (b, t * n, c)
