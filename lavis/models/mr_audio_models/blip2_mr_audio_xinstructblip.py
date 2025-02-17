@@ -376,7 +376,7 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
 
         ### Audio Embeddings ####################################
         audio = samples["audio"]
-        audio_embeds, audio_atts, audio_query_tokens = self.get_audio_embeds(audio)
+        audio_embeds, audio_atts, audio_query_tokens = self.get_audio_embeddings(audio)
 
         num = len(audio_embeds)
         bs = audio_embeds[0].shape[0]
