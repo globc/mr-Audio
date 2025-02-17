@@ -6,4 +6,4 @@ export NUM_GPUS=${SLURM_GPUS_ON_NODE:-$(nvidia-smi -L | wc -l)}
 echo $NUM_GPUS
 
 
-python -m torch.distributed.run --nproc_per_node=$NUM_GPUS --master_port=$MASTER_PORT train.py --cfg-path lavis/projects/mr_Audio/train/xinstructblip/charades_sta.yaml
+python -m torch.distributed.run --nproc_per_node=$NUM_GPUS --master_port=$MASTER_PORT train.py --cfg-path lavis/projects/mr_Audio/train/blip2_mr_Audio_xinstructblip/charades_sta.yaml
