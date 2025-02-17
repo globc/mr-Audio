@@ -17,7 +17,7 @@ export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 module load gcc/11 cuda/12.1.1 cudnn/8.9.6.50-12.x
 
 # Activate Conda environment for your job
-source /home/hpc/g102ea/g102ea24/.conda/bin/activate mrAudioConda
+source /home/hpc/g102ea/g102ea24/.conda/envs/mrAudioConda/lib/python3.9/venv/scripts/common/activate
 
 # Set proxy environment variables if required (remove if not needed)
 export http_proxy=http://proxy:80

@@ -40,7 +40,7 @@ Notably, we attain over 9% (absolute) higher Recall (at 0.5 and 0.7 IoU) on the 
 1. (Optional) Creating conda environment
 
 ```bash
-conda create -n mrBlip python=3.8
+conda create --prefix $HOME/myenv python=3.9
 conda activate mrBlip
 ```
 
