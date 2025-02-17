@@ -9,7 +9,7 @@ import logging
 class AudioImageFusion(nn.Module):
     def __init__(
             self,
-            embed_dim=512, # or 768 for BEATS + QF for Audio, CLIP + QF for Image
+            embed_dim=768, # or 512 for CLAP
             n_heads=8,
             mode='cat_fusion'  # or 'stack_fusion', 'x-attention
     ):
