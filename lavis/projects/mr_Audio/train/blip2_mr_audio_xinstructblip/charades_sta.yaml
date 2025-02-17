@@ -59,21 +59,21 @@ datasets:
       annotations:
         train:
           url:
-            - /home/atuin/g102ea/g102ea15/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/new_train.json
+            - /home/atuin/g102ea/g102ea13/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/new_train.json
           storage:
-            - /home/atuin/g102ea/g102ea15/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/new_train.json
+            - /home/atuin/g102ea/g102ea13/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/new_train.json
         val:
           url:
-            - /home/atuin/g102ea/g102ea15/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/new_val.json
+            - /home/atuin/g102ea/g102ea13/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/new_val.json
           storage:
-            - /home/atuin/g102ea/g102ea15/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/new_val.json
+            - /home/atuin/g102ea/g102ea13/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/new_val.json
         test:
           # url: Your/path/to/test_dummy.json
           # storage: Your/path/to/test_dummy.json
           url:
-            - /home/atuin/g102ea/g102ea15/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/test.json
+            - /home/atuin/g102ea/g102ea13/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/test.json
           storage:
-            - /home/atuin/g102ea/g102ea15/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/test.json
+            - /home/atuin/g102ea/g102ea13/mr-Audio/mr_BLIP_data/charades_sta_annotations/lavis/test.json
       video:
         storage: /home/atuin/g102ea/shared/videos/Charades_v1
       audio:
@@ -117,5 +117,5 @@ run:
 
   wandb: True
   wandb_project: "mr_BLIP"
-  wandb_name: "Charades_AudioOnly_BEATS_QFormer"
+  wandb_name: "Charades_AudioOnly_BEATS_withoutQF"
 
