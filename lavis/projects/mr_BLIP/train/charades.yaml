@@ -10,6 +10,9 @@ model:
   #finetuned:
   use_grad_checkpoint: False
   freeze_vit: True
+  freeze_beats: True
+  freeze_vision_qformer: True
+  freeze_audio_qformer: True
   task: qformer_freeze_lora
   input_time_format: seconds_integers # [seconds_integers | seconds_floats | relative_integers | relative_floats | framenumbers | False]
   interleave_data: True
@@ -81,5 +84,5 @@ run:
 
   wandb: True
   wandb_project: "mr_BLIP"
-  wandb_name: "Charades_31_01_AudioOnly_CLAP"
+  wandb_name: "Charades_31_01_AudioOnly_BEATS"
 
