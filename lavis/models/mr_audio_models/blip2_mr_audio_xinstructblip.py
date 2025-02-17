@@ -389,7 +389,7 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
         )
 
         #audios_for_t5 = self.audio_t5_proj(audio_query_output.last_hidden_state[:,:audio_query_tokens.size(1),:]) # b, t, n, c
-        audios_for_t5 = self.audio_t5_proj(audio_embeds.last_hidden_state[:,:audio_embeds.size(1),:]) # b, t, n, c
+        audios_for_t5 = self.audio_t5_proj(reordered_embeds.last_hidden_state[:,:reordered_embeds.size(1),:]) # b, t, n, c
 
         audios_for_t5 = audios_for_t5.reshape(bs, num, self.num_query_token, -1).view(bs, num*self.num_query_token, -1) # b, t*n, c
         audios_atts_for_t5 =  torch.ones(audios_for_t5.size()[:-1], dtype=torch.long).to(self.device) # b, t*n
@@ -833,7 +833,7 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
 
         #audios_for_t5 = self.audio_t5_proj(audio_query_output.last_hidden_state[:,:audio_query_tokens.size(1),:]) # b, t, n, c
         audios_for_t5 = self.audio_t5_proj(
-            audio_embeds.last_hidden_state[:, :audio_embeds.size(1), :])  # b, t, n, c
+            reordered_embeds.last_hidden_state[:, :reordered_embeds.size(1), :])  # b, t, n, c
         audios_for_t5 = audios_for_t5.reshape(bs, num, self.num_query_token, -1).view(bs, num*self.num_query_token, -1) # b, t*n, c
         audios_atts_for_t5 =  torch.ones(audios_for_t5.size()[:-1], dtype=torch.long).to(self.device) # b, t*n
     
