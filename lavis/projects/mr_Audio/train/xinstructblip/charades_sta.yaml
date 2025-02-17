@@ -45,7 +45,7 @@ model:
   image_encoder_kwargs :  {"image_size": 224, "drop_path_rate": 0, "use_grad_checkpoint": False}
   pc_encoder_kwargs :  {}
   video_encoder_kwargs :   {"image_size": 224, "drop_path_rate": 0, "use_grad_checkpoint": False}
-  audio_encoder_kwargs :  {"checkpoint_path": "/home/atuin/g102ea/g102ea15/mr-Audio/checkpoints/X-InstructBLIP/BEATs_iter3_plus_AS2M.pt"}
+  audio_encoder_kwargs :  {"checkpoint_path": "/home/atuin/g102ea/g102ea13/mr-Audio/checkpoints/X-InstructBLIP/BEATs_iter3_plus_AS2M.pt"}
   image_precision: "fp16"
   pc_precision: "fp16"
   video_precision: "fp16"
