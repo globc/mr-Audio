@@ -430,13 +430,9 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
         print(f"Forward: Frames for Projection Shape: {frames_for_projection.shape}")
         fused_output, attn_weights = self.fusion_stack(audio_input_fusion,
                                           frames_for_projection)
+        print(f"Forward: Fused Output Shape: {fused_output.shape}")
 
-        if self.frame_token_aggregation:
-            assert self.frame_token_aggregation in [
-                "mean",
-                False,
-            ], "Invalid aggregation method, please choose from ['mean']"
-            fused_output = fused_output.mean(dim=1, keepdim=True)
+
 
         # reshape the frames for t5 from (bt, n, c) to (b, t * n, c)
         fused_output = fused_output.reshape(
@@ -654,6 +650,8 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
                     )
 
                     # frame i, audio i and corresponding timestamp
+                    print(f"Frame Emb Shape IN CURRENT BUG: {frame_emb.shape}")
+                    print(f"Timestamp Emb Shape IN CURRENT BUG: {timestamp_emb.shape}")
                     frame_audio_and_time = torch.cat(
                         [
                             frame_emb,
@@ -910,6 +908,9 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
         print(f"Generate: Frames for Projection Shape: {frames_after_qformer.last_hidden_state.shape}")
         fused_output, attn_weights = self.fusion_stack(audio_input_fusion,
                                          frames_after_qformer.last_hidden_state)
+
+        print(f"Generate: Fused Output Shape: {fused_output.shape}")
+
 
         # reshape the frames for t5 from (bt, n, c) to (b, t * n, c)
         fused_output = fused_output.reshape(

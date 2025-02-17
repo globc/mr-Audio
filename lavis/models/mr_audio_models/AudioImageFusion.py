@@ -97,6 +97,8 @@ class AudioImageFusion(nn.Module):
             out = self.dropout(attn_out) + combined_seq
             out = self.layernorm(out)
             fused_output = self.out_proj(out)
+
+
             return fused_output, attn_weights
 
         elif self.mode == 'cat_fusion':
