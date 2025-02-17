@@ -157,11 +157,11 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
             self.find_annoying_numbers_replacement_dict(self.annoying_numbers)
         )
 
-        logging.info(
-            "Annoying numbers and their replacement: {}".format(
-                self.annoying_numbers_replacement_dict
-            )
-        )
+        #logging.info(
+        #    "Annoying numbers and their replacement: {}".format(
+        #        self.annoying_numbers_replacement_dict
+        #    )
+        #)
 
         ### LORA ##########
 
@@ -355,14 +355,10 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
 
         ### Audio Embeddings ####################################
         audio = samples["audio"]
-        audio_embeds = []
-        audio_atts = []
-        for j in range(audio.size(1)):
-            this_frame = audio[:,j,:,:]
-            with self.maybe_autocast():
-                audio_embeds.append(self.ln_audio(self.audio_encoder(this_frame)))
-            audio_atts.append(torch.ones(audio_embeds[j].size()[:-1], dtype=torch.long).to(self.device))
-        audio_query_tokens = self.audio_query_tokens.expand(audio.size(0), -1, -1)
+
+        audio_embeds, audio_atts, audio_query_tokens = self.get_audio_from_BEATS(audio)
+
+
         
 
         text = self.Qformer_tokenizer(
@@ -392,7 +388,8 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
             return_dict=True,
         )
 
-        audios_for_t5 = self.audio_t5_proj(audio_query_output.last_hidden_state[:,:audio_query_tokens.size(1),:]) # b, t, n, c
+        #audios_for_t5 = self.audio_t5_proj(audio_query_output.last_hidden_state[:,:audio_query_tokens.size(1),:]) # b, t, n, c
+        audios_for_t5 = self.audio_t5_proj(audio_embeds.last_hidden_state[:,:audio_embeds.size(1),:]) # b, t, n, c
 
         audios_for_t5 = audios_for_t5.reshape(bs, num, self.num_query_token, -1).view(bs, num*self.num_query_token, -1) # b, t*n, c
         audios_atts_for_t5 =  torch.ones(audios_for_t5.size()[:-1], dtype=torch.long).to(self.device) # b, t*n
@@ -805,15 +802,7 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
 
         ### Audio Embeddings ####################################
         audio = samples["audio"]
-        audio_embeds = []
-        audio_atts = []
-        for j in range(audio.size(1)):
-            this_frame = audio[:,j,:,:]
-            with self.maybe_autocast():
-                audio_embeds.append(self.ln_audio(self.audio_encoder(this_frame)))
-            audio_atts.append(torch.ones(audio_embeds[j].size()[:-1], dtype=torch.long).to(self.device))
-        audio_query_tokens = self.audio_query_tokens.expand(audio.size(0), -1, -1)
-        
+        audio_embeds, audio_atts, audio_query_tokens = self.get_audio_from_BEATS(audio)
 
         text = self.Qformer_tokenizer(
             samples["query_prompt"],
@@ -842,8 +831,9 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
             return_dict=True,
         )
 
-        audios_for_t5 = self.audio_t5_proj(audio_query_output.last_hidden_state[:,:audio_query_tokens.size(1),:]) # b, t, n, c
-
+        #audios_for_t5 = self.audio_t5_proj(audio_query_output.last_hidden_state[:,:audio_query_tokens.size(1),:]) # b, t, n, c
+        audios_for_t5 = self.audio_t5_proj(
+            audio_embeds.last_hidden_state[:, :audio_embeds.size(1), :])  # b, t, n, c
         audios_for_t5 = audios_for_t5.reshape(bs, num, self.num_query_token, -1).view(bs, num*self.num_query_token, -1) # b, t*n, c
         audios_atts_for_t5 =  torch.ones(audios_for_t5.size()[:-1], dtype=torch.long).to(self.device) # b, t*n
     
@@ -1352,3 +1342,15 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
             proj.load_state_dict(reduced_state_dict, strict=False)
         
         return proj
+
+    def get_audio_from_BEATS(self, audio):
+        audio_embeds = []
+        audio_atts = []
+        for j in range(audio.size(1)):
+            this_frame = audio[:, j, :, :]
+            with self.maybe_autocast():
+                audio_embeds.append(self.ln_audio(self.audio_encoder(this_frame)))
+            audio_atts.append(torch.ones(audio_embeds[j].size()[:-1], dtype=torch.long).to(self.device))
+        audio_query_tokens = self.audio_query_tokens.expand(audio.size(0), -1, -1)
+
+        return audio_embeds, audio_atts, audio_query_tokens
