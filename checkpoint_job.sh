@@ -2,29 +2,22 @@
 #SBATCH --job-name=mr_audio_debug
 #SBATCH --time=4:00:00
 #SBATCH --gres=gpu:a100:2 -C a100_80
+#SBATCH --mem=32G
 #SBATCH --output=logs/job%j%x.out
 #SBATCH --error=logs/job%j_%x.err
 #SBATCH --mail-user=minatocss@gmail.com
-#SBATCH --mail-type=END,FAIL                     # Options: BEGIN, END, FAIL, or ALL
+#SBATCH --mail-type=END,FAIL
 
-# Unset SLURM_EXPORT_ENV to prevent automatic export of environment variables
 unset SLURM_EXPORT_ENV
 
-# Set OMP_NUM_THREADS based on SLURM_CPUS_PER_TASK
-export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+export OMP_NUM_THREADS=8  # Adjust this based on your CPU cores
+export OMP_STACKSIZE=512M  # Increase/decrease if necessary
+export CUDA_VISIBLE_DEVICES=$(nvidia-smi --query-gpu=index --format=csv,noheader | tr '\n' ',' | sed 's/,$//')
+export NUM_GPUS=${SLURM_GPUS_ON_NODE:-$(nvidia-smi -L | wc -l)}
 
-# Load required modules for the job (uncomment and modify if necessary)
-module load gcc/11 cuda/12.1.1 cudnn/8.9.6.50-12.x
+conda init bash
+conda activate mrAudioConda
 
-# Activate Conda environment for your job
-source /home/hpc/g102ea/g102ea24/.conda/envs/mrAudioConda/lib/python3.9/venv/scripts/common/activate
+ml gcc/11 cuda/12.1.1 cudnn/8.9.6.50-12.x
 
-# Set proxy environment variables if required (remove if not needed)
-export http_proxy=http://proxy:80
-export https_proxy=http://proxy:80
-
-# Run the training script
 ./run_scripts/mr_BLIP/train/charades.sh
-
-# Optionally deactivate conda at the end (if desired)
-# conda deactivate
