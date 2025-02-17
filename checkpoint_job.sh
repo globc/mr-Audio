@@ -2,7 +2,6 @@
 #SBATCH --job-name=mr_audio_debug
 #SBATCH --time=4:00:00
 #SBATCH --gres=gpu:a100:2 -C a100_80
-#SBATCH --mem=32G
 #SBATCH --output=logs/job%j%x.out
 #SBATCH --error=logs/job%j_%x.err
 #SBATCH --mail-user=minatocss@gmail.com
