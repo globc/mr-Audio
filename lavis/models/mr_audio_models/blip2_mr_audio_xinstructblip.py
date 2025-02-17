@@ -428,7 +428,7 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
         print("ATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTION")
         print(f"Forward: Audio Input Fusion Shape: {audio_input_fusion.shape}")
         print(f"Forward: Frames for Projection Shape: {frames_for_projection.shape}")
-        fused_output = self.fusion_stack(audio_input_fusion,
+        fused_output, attn_weights = self.fusion_stack(audio_input_fusion,
                                           frames_for_projection)
 
         if self.frame_token_aggregation:
@@ -908,7 +908,7 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
             "ATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTION")
         print(f"Generate: Audio Input Fusion Shape: {audio_input_fusion.shape}")
         print(f"Generate: Frames for Projection Shape: {frames_after_qformer.last_hidden_state.shape}")
-        fused_output = self.fusion_stack(audio_input_fusion,
+        fused_output, attn_weights = self.fusion_stack(audio_input_fusion,
                                          frames_after_qformer.last_hidden_state)
 
         # reshape the frames for t5 from (bt, n, c) to (b, t * n, c)
