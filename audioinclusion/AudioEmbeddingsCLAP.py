@@ -18,13 +18,12 @@ class CLAPAudioEmbeddings:
         self.eigendevice = torch.device('cpu' if (os.environ.get('USE_CPU_ONLY', '0') == '1')
                                         else 'cuda' if torch.cuda.is_available() else 'cpu')
 
-        self.clap_model = ClapModel.from_pretrained("laion/clap-htsat-unfused",
+        self.clap_model = ClapModel.from_pretrained("laion/clap-htsat-fused",
                                                     cache_dir=os.getcwd() + "/cache")
         self.clap_model.to(self.eigendevice)
-        #self.processor = ClapProcessor.from_pretrained("laion/clap-htsat-fused",
-        #                                            cache_dir=os.getcwd() + "/cache")
+        self.processor = ClapProcessor.from_pretrained("laion/clap-htsat-fused",
+                                                    cache_dir=os.getcwd() + "/cache")
         #self.processor.to(self.eigendevice)
-        self.processor = ClapProcessor.from_pretrained("laion/clap-htsat-unfused", cache_dir=os.getcwd() + "/cache")
 
         #self.to(self.eigendevice)
         #if not (os.environ.get('USE_CPU_ONLY', '0') == '0'):
