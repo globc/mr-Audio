@@ -374,11 +374,12 @@ class BLIP2_MR(Blip2Base):
                 return_dict=True,
                 labels=targets_mr,
             )
-            if self.use_rna_loss:
-                delta = 1
-                loss = outputs_loc.loss + delta * self.rna_loss(frames_for_projection, orig_shape_audio_embeddings)
-            else:
-                loss = outputs_loc.loss
+            #if self.use_rna_loss:
+            delta = 1
+            rna = delta * self.rna_loss(frames_for_projection, orig_shape_audio_embeddings)
+            loss = outputs_loc.loss + rna
+            #else:
+            #    loss = outputs_loc.loss
 
             # write the following to a wandb table
             if self.use_wandb and is_main_process():
