@@ -390,11 +390,11 @@ class BLIP2_MR(Blip2Base):
                 log = {}
                 log["train/log_likelihood_loss"] = loss.item()
                 log["train/rna_loss"] = rna.item()
-                if self.log_feature_means:
-                    log["train/vision_mean_feature_norm"] = torch.mean(
+                #if self.log_feature_means:
+                log["train/vision_mean_feature_norm"] = torch.mean(
                         torch.linalg.norm(frames_for_projection.mean(dim=1), dim=-1), dim=-1).item()
-                    log["train/audio_mean_feature_norm"] = mean_audio_norm.item()
-                    log["train/fused_mean_feature_norm"] = torch.mean(
+                log["train/audio_mean_feature_norm"] = mean_audio_norm.item()
+                log["train/fused_mean_feature_norm"] = torch.mean(
                         torch.linalg.norm(combined_video_audio_frame.mean(dim=1), dim=-1), dim=-1).item()
                 # Log images and predictions
                 if samples["iters"] % self.log_samples_every_n == 0:
