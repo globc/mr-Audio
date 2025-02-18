@@ -1336,5 +1336,6 @@ class BLIP2_MR(Blip2Base):
         """
         vision_norm = torch.linalg.norm(vision_features.mean(dim=1), dim=-1)
         audio_norm = torch.linalg.norm(audio_features, dim=-1)  # L2-norm along embed_length
-        return ((vision_norm.mean() / audio_norm.mean() + 1e-6) - 1) ** 2
+        #return ((vision_norm.mean() / audio_norm.mean() + 1e-6) - 1) ** 2
+        return ((audio_norm.mean() / vision_norm.mean() + 1e-6) - 1) ** 2
 
