@@ -385,6 +385,7 @@ class BLIP2_MR(Blip2Base):
             if self.use_wandb and is_main_process():
                 log = {}
                 log["train/log_likelihood_loss"] = loss.item()
+                log["train/rna_loss"] = rna.item()
                 log["train/proj_vision_mean_feature_norm"] = torch.mean(torch.linalg.norm(vision_for_t5.mean(dim=1), dim=-1), dim=-1).item()
                 #log["train/audio_mean_feature_norm"] = mean_audio_norm.item()
                 log["train/proj_audio_mean_feature_norm"] = projected_mean_audio_norm.item()

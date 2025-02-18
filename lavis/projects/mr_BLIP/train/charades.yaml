@@ -79,7 +79,7 @@ run:
 
   wandb: True
   wandb_project: "mr_BLIP"
-  wandb_name: "Charades_lcam"
+  wandb_name: "Charades_lcam_rna"
 
   fusion_method: "lcam"
   use_rna_loss: False
