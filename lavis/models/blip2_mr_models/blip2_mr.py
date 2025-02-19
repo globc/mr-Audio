@@ -1025,6 +1025,9 @@ class BLIP2_MR(Blip2Base):
         )
         model.load_checkpoint_from_config(cfg)
 
+        ## initialize audio projection with the linear layer of the vision t5 projection
+        model.init_audio_projection()
+
         return model
 
     def load_checkpoint_from_config(self, cfg, **kwargs):
@@ -1329,3 +1332,8 @@ class BLIP2_MR(Blip2Base):
         audio_norm = torch.linalg.norm(audio_features, dim=-1)  # L2-norm along embed_length
         return ((vision_norm.mean() / audio_norm.mean() + 1e-6) - 1) ** 2
 
+    def init_audio_projection(self):
+        vision_weights = self.t5_proj.weight.data.detach().copy()
+        audio_weights = vision_weights[:, :512]
+        audio_weights = audio_weights.reshape(-1, audio_weights.shape[0])
+        self.audio_t5_proj.weight.data = nn.Parameter(audio_weights)
