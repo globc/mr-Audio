@@ -375,17 +375,17 @@ class BLIP2_MR(Blip2Base):
                 labels=targets_mr,
             )
             #if self.use_rna_loss:
-            delta = 1
-            rna = delta * self.rna_loss(frames_for_projection, orig_shape_audio_embeddings)
-            loss = outputs_loc.loss + rna
+            #delta = 1
+            #rna = delta * self.rna_loss(frames_for_projection, orig_shape_audio_embeddings)
+            #loss = outputs_loc.loss + rna
             #else:
-            #    loss = outputs_loc.loss
+            loss = outputs_loc.loss
 
             # write the following to a wandb table
             if self.use_wandb and is_main_process():
                 log = {}
                 log["train/log_likelihood_loss"] = loss.item()
-                log["train/rna_loss"] = rna.item()
+                #log["train/rna_loss"] = rna.item()
                 log["train/proj_vision_mean_feature_norm"] = torch.mean(torch.linalg.norm(vision_for_t5.mean(dim=1), dim=-1), dim=-1).item()
                 #log["train/audio_mean_feature_norm"] = mean_audio_norm.item()
                 log["train/proj_audio_mean_feature_norm"] = projected_mean_audio_norm.item()
