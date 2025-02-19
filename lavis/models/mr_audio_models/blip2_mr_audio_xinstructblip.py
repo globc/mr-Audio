@@ -108,7 +108,7 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
         self.interleave_data = interleave_data
         self.frame_token_aggregation = frame_token_aggregation
 
-        print("self.frame_token_aggregation", self.frame_token_aggregation)
+        #print("self.frame_token_aggregation", self.frame_token_aggregation)
 
         self.vision_qformer_text_input = vision_qformer_text_input
         self.audio_qformer_text_input = audio_qformer_text_input
@@ -650,8 +650,8 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
                     )
 
                     # frame i, audio i and corresponding timestamp
-                    print(f"Frame Emb Shape IN CURRENT BUG: {frame_emb.shape}")
-                    print(f"Timestamp Emb Shape IN CURRENT BUG: {timestamp_emb.shape}")
+                    #print(f"Frame Emb Shape IN CURRENT BUG: {frame_emb.shape}")
+                    #print(f"Timestamp Emb Shape IN CURRENT BUG: {timestamp_emb.shape}")
                     frame_audio_and_time = torch.cat(
                         [
                             frame_emb,
@@ -902,10 +902,10 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
         audios_atts_for_t5 = torch.ones(bs, num * self.num_query_token, dtype=torch.long).to(self.device)
 
         audio_input_fusion = audio_query_output.last_hidden_state[:, :audio_query_tokens.size(1), :]
-        print(
-            "ATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTION")
-        print(f"Generate: Audio Input Fusion Shape: {audio_input_fusion.shape}")
-        print(f"Generate: Frames for Projection Shape: {frames_after_qformer.last_hidden_state.shape}")
+        #print(
+        #    "ATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTION")
+        #print(f"Generate: Audio Input Fusion Shape: {audio_input_fusion.shape}")
+        #print(f"Generate: Frames for Projection Shape: {frames_after_qformer.last_hidden_state.shape}")
         fused_output, attn_weights = self.fusion_stack(audio_input_fusion,
                                          frames_after_qformer.last_hidden_state)
 
