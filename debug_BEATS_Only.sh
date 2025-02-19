@@ -1,7 +1,7 @@
 #!/bin/bash -l
-#SBATCH --job-name=mr_audio_AudioOnly_BEATS
-#SBATCH --time=24:00:00
-#SBATCH --gres=gpu:a100:4 -C a100_80
+#SBATCH --job-name=debug_AudioOnly_BEATS
+#SBATCH --time=2:00:00
+#SBATCH --gres=gpu:a100:2 -C a100_80
 
 #SBATCH --output=logs/job_%j_%x.out
 #SBATCH --error=logs/job_%j_%x.err
@@ -28,3 +28,4 @@ ml gcc/11 cuda/12.1.1 cudnn/8.9.6.50-12.x
 ./run_scripts/mr_Audio/train/X-InstructBLIP/charades_sta.sh
 
 #conda deactivate
+

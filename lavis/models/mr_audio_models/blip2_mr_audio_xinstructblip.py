@@ -387,7 +387,8 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
             encoder_attention_mask=reordered_atts,
             return_dict=True,
         )
-
+        print(f"Type of reordered Embeds: {type(reordered_embeds)}")
+        print(f"reordered_embeds Shape: {reordered_embeds.shape}")
         #audios_for_t5 = self.audio_t5_proj(audio_query_output.last_hidden_state[:,:audio_query_tokens.size(1),:]) # b, t, n, c
         audios_for_t5 = self.audio_t5_proj(reordered_embeds.last_hidden_state[:,:reordered_embeds.size(1),:]) # b, t, n, c
 

@@ -110,7 +110,7 @@ run:
   test_splits: ["test"]
 
   device: "cuda"
-  world_size: 4
+  world_size: 2 # for Debug, original   4
   dist_url: "env://"
   distributed: True
   find_unused_parameters: False
