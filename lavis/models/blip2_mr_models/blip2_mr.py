@@ -1334,7 +1334,7 @@ class BLIP2_MR(Blip2Base):
 
     def init_audio_projection(self):
         logging.info("initializing audio projection...")
-        vision_weights = self.t5_proj.weight.data.detach().copy()
+        vision_weights = self.t5_proj.weight.data.detach().clone()
         audio_weights = vision_weights[:, :512]
         audio_weights = audio_weights.reshape(-1, audio_weights.shape[0])
         self.audio_t5_proj.weight.data = nn.Parameter(audio_weights)
