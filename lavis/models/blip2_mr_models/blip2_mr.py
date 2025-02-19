@@ -293,7 +293,7 @@ class BLIP2_MR(Blip2Base):
         audio = audio_clips.reshape(-1, audio_clips.shape[2])
         # audio shape [b*t,512]
         audio_embeddings = self.audio_embeddings_model.get_audio_embeddings(audio_clips=audio, sr=self.sampling_rate).to(self.device)
-        logging.info("audio embeddings shape " + str(audio_embeddings.shape) )
+
         orig_shape_audio_embeddings = audio_embeddings
         #if self.log_feature_means:
         #    audio_norm = torch.linalg.norm(audio_embeddings, dim=-1)  # L2-norm along embed_length
@@ -315,19 +315,16 @@ class BLIP2_MR(Blip2Base):
         else:
             frames_after_qformer, frames_for_projection = self.setup_unimodalQfomer(query_tokens=query_tokens, image_embeds=image_embeds, image_atts=image_atts)
 
-        logging.info("vision embeddings shape " + str(frames_for_projection.shape))
         # flatten audio embeddings like the image tensors
         #audio_embeddings = audio_embeddings.reshape(-1, audio_embeddings.shape[2]) # reshape to [b*t, embedd_len]
         audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frames_for_projection.shape[1], -1) # reshape to [b*t, query_tokens, embed_len]
-        logging.info("audio embeddings shape after reshape" + str(audio_embeddings.shape))
+
 
 
         audio_for_t5 = self.audio_t5_proj(audio_embeddings)
-        logging.info("projected audio embeddings shape " + str(audio_for_t5.shape))
-        audio_norm = torch.linalg.norm(audio_for_t5, dim=-1)  # L2-norm along embed_length
-        projected_mean_audio_norm = audio_norm.mean()
+        #audio_norm = torch.linalg.norm(audio_for_t5, dim=-1)  # L2-norm along embed_length
+        #projected_mean_audio_norm = audio_norm.mean()
         vision_for_t5 = self.t5_proj(frames_for_projection)
-        logging.info("projected vision embeddings shape " + str(vision_for_t5.shape))
 
         frames_for_t5 = self.lcam_fusion(audio_for_t5, vision_for_t5)
 
@@ -389,12 +386,15 @@ class BLIP2_MR(Blip2Base):
                 log = {}
                 log["train/log_likelihood_loss"] = loss.item()
                 #log["train/rna_loss"] = rna.item()
-                log["train/proj_vision_mean_feature_norm"] = torch.mean(torch.linalg.norm(vision_for_t5.mean(dim=1), dim=-1), dim=-1).item()
+                #log["train/proj_vision_mean_feature_norm"] = torch.mean(torch.linalg.norm(vision_for_t5.mean(dim=1), dim=-1), dim=-1).item()
+                log["train/proj_vision_mean_feature_norm"] = self.calculate_mean_feature_norm(vision_for_t5).item()
                 #log["train/audio_mean_feature_norm"] = mean_audio_norm.item()
-                log["train/proj_audio_mean_feature_norm"] = projected_mean_audio_norm.item()
+                #log["train/proj_audio_mean_feature_norm"] = projected_mean_audio_norm.item()
+                log["train/proj_audio_mean_feature_norm"] = self.calculate_mean_feature_norm(audio_for_t5).item()
                 #log["train/fused_mean_feature_norm"] = torch.mean(
                 #    torch.linalg.norm(combined_video_audio_frame.mean(dim=1), dim=-1), dim=-1).item()
-                log["train/latefused_mean_feature_norm"] = torch.mean(torch.linalg.norm(frames_for_t5.mean(dim=1), dim=-1), dim=-1).item()
+                #log["train/latefused_mean_feature_norm"] = torch.mean(torch.linalg.norm(frames_for_t5.mean(dim=1), dim=-1), dim=-1).item()
+                log["train/latefused_mean_feature_norm"] = self.calculate_mean_feature_norm(frames_for_t5).item()
                 # Log images and predictions
                 if samples["iters"] % self.log_samples_every_n == 0:
                     pred = self.t5_tokenizer.batch_decode(
@@ -1325,15 +1325,39 @@ class BLIP2_MR(Blip2Base):
         """
 
         Args:
-            vision_features:
-            audio_features:
+            vision_features: shape (batch_size, num_tokens, embedding_dim)
+            audio_features: shape (batch_size, num_tokens, embedding_dim)
 
         Returns:
-
+            loss: (float) loss averaged across batch
         """
-        vision_norm = torch.linalg.norm(vision_features.mean(dim=1), dim=-1)
-        audio_norm = torch.linalg.norm(audio_features, dim=-1)  # L2-norm along embed_length
-        return ((vision_norm.mean() / audio_norm.mean() + 1e-6) - 1) ** 2
+        # fv: visual features, shape (batch_size, num_tokens, embedding_dim)
+        # fa: audio features, shape (batch_size, num_tokens, embedding_dim)
+
+        # Calculate magnitudes for each token
+        v_query_norm = torch.linalg.norm(vision_features, dim=2)  # Shape: (batch_size, num_tokens)
+        a_query_norm = torch.linalg.norm(audio_features, dim=2)  # Shape: (batch_size, num_tokens)
+
+        # Calculate mean magnitude across all tokens
+        mean_v_norm = torch.mean(v_query_norm, dim=1)  # Shape: (batch_size,)
+        mean_a_norm = torch.mean(a_query_norm, dim=1)  # Shape: (batch_size,)
+
+        # Calculate RNA loss
+        loss = torch.mean(torch.pow((mean_v_norm / (mean_a_norm + 1e-6)) - 1, 2))  # Average loss across batch
+
+        return loss
+
+    def calculate_mean_feature_norm(self, features):
+        """
+        Calculate the mean feature norm of the given features
+        Args:
+              features: shape (batch_size, num_tokens, embedding_dim)
+        Returns:
+              mnv: (float) mean feature norm of the given features averaged across batch
+        """
+        query_norm = torch.linalg.norm(features, dim=2)
+        mean_norm = torch.mean(query_norm, dim=1)
+        return torch.mean(mean_norm)
 
     def init_audio_projection(self):
         logging.info("initializing audio projection...")
