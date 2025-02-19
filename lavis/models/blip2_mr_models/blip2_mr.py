@@ -293,7 +293,7 @@ class BLIP2_MR(Blip2Base):
         audio = audio_clips.reshape(-1, audio_clips.shape[2])
         # audio shape [b*t,512]
         audio_embeddings = self.audio_embeddings_model.get_audio_embeddings(audio_clips=audio, sr=self.sampling_rate).to(self.device)
-
+        logging.info("audio embeddings shape " + str(audio_embeddings.shape) )
         orig_shape_audio_embeddings = audio_embeddings
         #if self.log_feature_means:
         #    audio_norm = torch.linalg.norm(audio_embeddings, dim=-1)  # L2-norm along embed_length
@@ -315,16 +315,19 @@ class BLIP2_MR(Blip2Base):
         else:
             frames_after_qformer, frames_for_projection = self.setup_unimodalQfomer(query_tokens=query_tokens, image_embeds=image_embeds, image_atts=image_atts)
 
+        logging.info("vision embeddings shape " + str(frames_for_projection.shape))
         # flatten audio embeddings like the image tensors
         #audio_embeddings = audio_embeddings.reshape(-1, audio_embeddings.shape[2]) # reshape to [b*t, embedd_len]
         audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frames_for_projection.shape[1], -1) # reshape to [b*t, query_tokens, embed_len]
-
+        logging.info("audio embeddings shape after reshape" + str(audio_embeddings.shape))
 
 
         audio_for_t5 = self.audio_t5_proj(audio_embeddings)
+        logging.info("projected audio embeddings shape " + str(audio_for_t5.shape))
         audio_norm = torch.linalg.norm(audio_for_t5, dim=-1)  # L2-norm along embed_length
         projected_mean_audio_norm = audio_norm.mean()
         vision_for_t5 = self.t5_proj(frames_for_projection)
+        logging.info("projected vision embeddings shape " + str(vision_for_t5.shape))
 
         frames_for_t5 = self.lcam_fusion(audio_for_t5, vision_for_t5)
 
