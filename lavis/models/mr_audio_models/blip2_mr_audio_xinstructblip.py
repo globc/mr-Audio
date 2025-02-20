@@ -652,8 +652,8 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
                     # frame i, audio i and corresponding timestamp
                     #print(f"Frame Emb Shape IN CURRENT BUG: {frame_emb.shape}")
                     #print(f"Timestamp Emb Shape IN CURRENT BUG: {timestamp_emb.shape}")
-                    print(f"audio_emb shape: {audio_emb.shape}")
-                    print(f"timestamp_emb shape: {timestamp_emb.shape}")
+                    #print(f"audio_emb shape: {audio_emb.shape}")
+                    #print(f"timestamp_emb shape: {timestamp_emb.shape}")
                     frame_audio_and_time = torch.cat(
                         [
                             frame_emb,
