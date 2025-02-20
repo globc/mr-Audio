@@ -43,12 +43,12 @@ datasets:
           name: beats_audio
           sampling_rate: 16000
           n_frames: 20
-          frame_length: 150 # Equals 1.5s
+          frame_length: 512 # Equals 1.5s
         eval:
           name: beats_audio
           sampling_rate: 16000
           n_frames: 20
-          frame_length: 150 # Equals 1.5s
+          frame_length: 512 # Equals 1.5s
           is_eval: False
 
     text_processor:
@@ -115,7 +115,7 @@ run:
   test_splits: ["test"]
 
   device: "cuda"
-  world_size: 2 #######################################for debug
+  world_size: 4 #######################################for debug
   dist_url: "env://"
   distributed: True
   find_unused_parameters: False
