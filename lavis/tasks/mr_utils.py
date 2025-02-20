@@ -139,8 +139,6 @@ def compute_average_precision_detection(
             ]
         )
         _gt = np.array([[gt["t-start"], gt["t-end"]] for gt in gts])
-        print(f"spans1 dtype: {_pred.dtype}, spans1 values: {_pred}")
-        print(f"spans2 dtype: {_gt.dtype}, spans2 values: {_gt}")
         tiou_arr = compute_temporal_iou_batch_cross(_pred, _gt)[0]
 
         tiou_arr = tiou_arr.reshape(-1)

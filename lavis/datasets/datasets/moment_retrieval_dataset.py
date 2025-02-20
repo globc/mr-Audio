@@ -54,7 +54,6 @@ class MomentRetrievalDataset(BaseDataset):
         # modify samples here
 
         # Check if the sample is None or an empty tensor
-        print(f"current video: {vname}. index: {index}, query_idx: {ann['qid']}.")
         if isinstance(frms, torch.Tensor) and frms.numel() == 0:
             raise ValueError(f"Empty frames tensor found at index {index}, key: {vname}")
         if isinstance(audio, torch.Tensor) and frms.numel() == 0:
