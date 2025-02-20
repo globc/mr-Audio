@@ -33,7 +33,7 @@ class AudioImageFusion(nn.Module):
         self.cat_proj = nn.Linear(2 * embed_dim, embed_dim)
 
         # Projection Layer
-        self.out_proj = nn.Linear(embed_dim, embed_dim)
+        self.out_proj = nn.Linear(embed_dim, 2048)
 
         # Residual connections often come with a LayerNorm
         self.layernorm = nn.LayerNorm(embed_dim)
@@ -88,11 +88,15 @@ class AudioImageFusion(nn.Module):
                 value=combined_seq
             )
             # attn_out => [B, (A+I), embed_dim]
-
             # Residual & projection
             # ((typical Transformer block is attn_out + input, then norm))
             out = self.dropout(attn_out) + combined_seq
             out = self.layernorm(out)
+
+
+            B, S, E = out.shape
+            out = out.view(B, 2, S//2, E)
+            out = out.mean(dim=1)
             fused_output = self.out_proj(out)
 
 

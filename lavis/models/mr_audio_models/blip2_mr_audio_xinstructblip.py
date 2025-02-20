@@ -418,19 +418,21 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
         #audios_for_t5 = audios_for_t5.reshape(bs, num, self.num_query_token, -1).view(bs, num * self.num_query_token,
         #                                                                              -1)  # b, t*n, c
         #audios_atts_for_t5 = torch.ones(audios_for_t5.size()[:-1], dtype=torch.long).to(self.device)  # b, t*n
-        bs = audio.shape[0]  # Assuming 'audio' has shape [B, num, ...]
-        num = audio.shape[1]  # Number of audio frames or tokens
+        bs = audio.shape[0]
+        num = audio.shape[1]
         hidden_size_t5 = self.t5_model.config.hidden_size
         audios_for_t5 = torch.ones(bs, num * self.num_query_token, hidden_size_t5).to(self.device)
         audios_atts_for_t5 = torch.ones(bs, num * self.num_query_token, dtype=torch.long).to(self.device)
 
         audio_input_fusion = audio_query_output.last_hidden_state[:, :audio_query_tokens.size(1), :]
-        #print("ATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTION")
-        #print(f"Forward: Audio Input Fusion Shape: {audio_input_fusion.shape}")
-        #print(f"Forward: Frames for Projection Shape: {frames_for_projection.shape}")
+        print("ATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTION")
+        print(f"Forward: Audio Input Fusion Shape: {audio_input_fusion.shape}")
+        print(f"Forward: Frames for Projection Shape (image input in fusion): {frames_for_projection.shape}")
         fused_output, attn_weights = self.fusion_stack(audio_input_fusion,
                                           frames_for_projection)
-        #print(f"Forward: Fused Output Shape: {fused_output.shape}")
+
+        print(f"audios_for_t5 shape: {audios_for_t5.shape}")
+        print(f"Forward: Fused Output Shape before reshape: {fused_output.shape}")
 
 
 
@@ -445,6 +447,14 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
             b, -1, fused_output.shape[-1]
         )  # b, t * n, c
         frames_atts_for_t5 = frames_atts_for_t5.reshape(b, -1)  # b, t * n
+
+        print(f"Forward: Fused Output Shape after Reshape: {fused_output.shape}")
+
+        if isinstance(timestamps, list):
+            print(f"timestamps len {len(timestamps)}")
+
+        if isinstance(timestamps[0], torch.Tensor):
+            print(f"timestamps first element shape: {timestamps[0].shape}")
 
         ##########################################################################
 
@@ -652,8 +662,9 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
                     # frame i, audio i and corresponding timestamp
                     #print(f"Frame Emb Shape IN CURRENT BUG: {frame_emb.shape}")
                     #print(f"Timestamp Emb Shape IN CURRENT BUG: {timestamp_emb.shape}")
-                    #print(f"audio_emb shape: {audio_emb.shape}")
-                    #print(f"timestamp_emb shape: {timestamp_emb.shape}")
+                    print(f"frame_emb shape: {frame_emb.shape}")
+                    print(f"audio_emb shape: {audio_emb.shape}")
+                    print(f"timestamp_emb shape: {timestamp_emb.shape}")
                     frame_audio_and_time = torch.cat(
                         [
                             frame_emb,
