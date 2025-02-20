@@ -168,7 +168,7 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
         if self.use_lora:
             from lavis.models.mr_audio_models.utils import get_peft_config
             self.peft_config = get_peft_config(self.t5_model, rank=8)
-            self.t5_model.gradient_checkpointing_enable()
+            #self.t5_model.gradient_checkpointing_enable()
             self.t5_model.enable_input_require_grads()
             self.t5_model.config.use_cache = False
             self.t5_model = get_peft_model(self.t5_model, self.peft_config)
@@ -346,14 +346,14 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
         )  # b, t * n, c
         frames_atts_for_t5 = frames_atts_for_t5.reshape(b, -1)  # b, t * n
 
-        print(f" Frames for T5 Shape NonZero: {frames_for_t5.shape}")
+        #print(f" Frames for T5 Shape NonZero: {frames_for_t5.shape}")
 
         ##########################################################################
 
         # Small hack for zeroing out vision
         frames_for_t5 = torch.zeros_like(frames_for_t5).to(image.device)
         frames_atts_for_t5 = torch.zeros_like(frames_for_t5).to(image.device)
-        print(f" Frames for T5 Shape Zero: {frames_for_t5.shape}")
+        #print(f" Frames for T5 Shape Zero: {frames_for_t5.shape}")
 
         ### Audio Embeddings ####################################
         audio = samples["audio"]
@@ -398,7 +398,12 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
         #print(f"Type of reordered Embeds: {type(reordered_embeds)}")
         #print(f"reordered_embeds Shape: {reordered_embeds.shape}")
         #audios_for_t5 = self.audio_t5_proj(audio_query_output.last_hidden_state[:,:audio_query_tokens.size(1),:]) # b, t, n, c
-        audios_for_t5 = self.audio_t5_proj(reordered_embeds) # b, t, n, c
+        #print(f"reordered_embeds[:,:audio_query_tokens.size(1),:]: {reordered_embeds[:,:audio_query_tokens.size(1),:].shape}")
+        #print(f"audio_query_output.last_hidden_state.shape: {audio_query_output.last_hidden_state.shape}")
+        #print(f"audio_query_output.last_hidden_state[:,:audio_query_tokens.size(1),:].shape: {audio_query_output.last_hidden_state[:,:audio_query_tokens.size(1),:].shape}")
+
+        #audios_for_t5 = self.audio_t5_proj(reordered_embeds) # b, t, n, c
+        audios_for_t5 = self.audio_t5_proj(reordered_embeds[:, :audio_query_tokens.size(1), :])
 
         audios_for_t5 = audios_for_t5.reshape(bs, num, self.num_query_token, -1).view(bs, num*self.num_query_token, -1) # b, t*n, c
         audios_atts_for_t5 =  torch.ones(audios_for_t5.size()[:-1], dtype=torch.long).to(self.device) # b, t*n
@@ -608,8 +613,8 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
                     )
 
                     # frame i, audio i and corresponding timestamp
-                    print(f"audio_emb shape: {audio_emb.shape}")
-                    print(f"timestamp_emb shape: {timestamp_emb.shape}")
+                    #print(f"audio_emb shape: {audio_emb.shape}")
+                    #print(f"timestamp_emb shape: {timestamp_emb.shape}")
                     frame_audio_and_time = torch.cat(
                         [
                             #frame_emb,
