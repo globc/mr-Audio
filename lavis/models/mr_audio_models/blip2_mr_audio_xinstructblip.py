@@ -350,7 +350,7 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
             )
             frames_for_projection = frames_after_qformer.last_hidden_state
 
-        #frames_for_t5 = self.t5_proj(frames_for_projection)
+        #frames_for_t5 = self.t5_proj(frames_for_projection) #not used but needed for torch distributed
 
         # TODO: Use average pooling to aggregate the 32 embeddings of one frame
         #if self.frame_token_aggregation:
@@ -412,17 +412,28 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
                 return_dict=True,
             )
 
-        #audios_for_t5 = self.audio_t5_proj(
-        #    audio_query_output.last_hidden_state[:, :audio_query_tokens.size(1), :])  # b, t, n, c
+        print(f" Entering the Fusion Stack in Forward")
+        audios_for_t5 = self.audio_t5_proj(
+            audio_query_output.last_hidden_state[:, :audio_query_tokens.size(1), :])  # b, t, n, c
+        print(f"audios_for_t5 shape Original before reshaping: {audios_for_t5.shape}")
 
-        #audios_for_t5 = audios_for_t5.reshape(bs, num, self.num_query_token, -1).view(bs, num * self.num_query_token,
-        #                                                                              -1)  # b, t*n, c
-        #audios_atts_for_t5 = torch.ones(audios_for_t5.size()[:-1], dtype=torch.long).to(self.device)  # b, t*n
+        audios_for_t5 = audios_for_t5.reshape(bs, num, self.num_query_token, -1).view(bs, num * self.num_query_token,
+                                                                                      -1)  # b, t*n, c
+        print(f"audios_for_t5 shape Original after reshaping : {audios_for_t5.shape}")
+
+        audios_atts_for_t5 = torch.ones(audios_for_t5.size()[:-1], dtype=torch.long).to(self.device)  # b, t*n
+        print(f"audios_atts_for_t5 shape Original: {audios_atts_for_t5.shape}")
+
+
         bs = audio.shape[0]
         num = audio.shape[1]
         hidden_size_t5 = self.t5_model.config.hidden_size
         audios_for_t5 = torch.ones(bs, num * self.num_query_token, hidden_size_t5).to(self.device)
+        print(f"audios_for_t5 shape my version: {audios_for_t5.shape}")
+
+
         audios_atts_for_t5 = torch.ones(bs, num * self.num_query_token, dtype=torch.long).to(self.device)
+        print(f"audios_atts_for_t5 shape my version: {audios_atts_for_t5.shape}")
 
         audio_input_fusion = audio_query_output.last_hidden_state[:, :audio_query_tokens.size(1), :]
         print("ATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTIONATTENTION ATTENTION")
@@ -434,6 +445,7 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
         print(f"audios_for_t5 shape: {audios_for_t5.shape}")
         print(f"Forward: Fused Output Shape before reshape: {fused_output.shape}")
 
+        print(f"Exiting the Fusion Stack in Forward")
 
 
         # reshape the frames for t5 from (bt, n, c) to (b, t * n, c)
