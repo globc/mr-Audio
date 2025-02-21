@@ -1,7 +1,7 @@
 export CUDA_VISIBLE_DEVICES=$(nvidia-smi --query-gpu=index --format=csv,noheader | tr '\n' ',' | sed 's/,$//')
 echo $CUDA_VISIBLE_DEVICES
 
-export MASTER_PORT=29511
+export MASTER_PORT=29512
 export NUM_GPUS=${SLURM_GPUS_ON_NODE:-$(nvidia-smi -L | wc -l)}
 echo $NUM_GPUS
 
