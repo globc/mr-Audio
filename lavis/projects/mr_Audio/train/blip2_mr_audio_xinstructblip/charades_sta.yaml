@@ -118,7 +118,7 @@ run:
   world_size: 4 #######################################for debug
   dist_url: "env://"
   distributed: True
-  find_unused_parameters: True
+  find_unused_parameters: False
 
   wandb: True
   wandb_project: "mr_BLIP"
