@@ -6,6 +6,7 @@
 #SBATCH --output=logs/job_%j_%x.out
 #SBATCH --error=logs/job_%j_%x.err
 
+export WANDB_API_KEY="583800620afaac0805f6834f2f3aae74aec29ad0"
 
 unset SLURM_EXPORT_ENV
 
