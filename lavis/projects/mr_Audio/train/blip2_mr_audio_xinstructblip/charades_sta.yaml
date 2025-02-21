@@ -89,7 +89,7 @@ run:
   warmup_steps: 1745 # 10% * 50 epochs * 349 steps/epoch = 1745
   weight_decay: 0.05
   max_epoch: 50
-  batch_size_train: 16
+  batch_size_train: 8
   batch_size_eval: 8
   num_workers: 2
   accum_grad_iters: 1
@@ -113,7 +113,7 @@ run:
   world_size: 4 # for Debug, original   4
   dist_url: "env://"
   distributed: True
-  find_unused_parameters: True
+  find_unused_parameters: False
 
   wandb: True
   wandb_project: "mr_BLIP"

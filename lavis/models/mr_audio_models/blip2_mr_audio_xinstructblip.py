@@ -168,7 +168,7 @@ class BLIP2_MR_AUDIO_XINSTRUCTBLIP(Blip2Base):
         if self.use_lora:
             from lavis.models.mr_audio_models.utils import get_peft_config
             self.peft_config = get_peft_config(self.t5_model, rank=8)
-            #self.t5_model.gradient_checkpointing_enable()
+            self.t5_model.gradient_checkpointing_enable()
             self.t5_model.enable_input_require_grads()
             self.t5_model.config.use_cache = False
             self.t5_model = get_peft_model(self.t5_model, self.peft_config)
