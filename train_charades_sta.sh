@@ -1,6 +1,6 @@
 #!/bin/bash -l
 #SBATCH --job-name=mr_audio_charades
-#SBATCH --time=24:00:00
+#SBATCH --time=4:00:00
 #SBATCH --gres=gpu:a100:4 -C a100_80
 
 #SBATCH --output=logs/job_%j_%x.out

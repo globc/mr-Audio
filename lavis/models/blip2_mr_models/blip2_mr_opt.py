@@ -1132,7 +1132,7 @@ class Blip2_OPT_MR(Blip2Base):
 
     def find_annoying_numbers(
         self,
-        tokenizer=AutoTokenizer.from_pretrained("facebook/opt-2.7b", use_fast=False),
+        tokenizer=AutoTokenizer.from_pretrained("facebook/opt-2.7b", use_fast=False, timeout=600),
         range_end=300,
     ):
         """
