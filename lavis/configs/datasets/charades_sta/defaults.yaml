@@ -27,4 +27,4 @@ datasets:
         storage: /home/atuin/g102ea/shared/videos/Charades_v1
 run:
   warmup_steps: 0
-  resume_ckpt_path: "/home/atuin/g102ea/g102ea24/mr-Audio/checkpoint/checkpoint_best.pth"
+  #resume_ckpt_path: "/home/atuin/g102ea/g102ea24/mr-Audio/checkpoint/checkpoint_best.pth" #add this if you already have a checkpoint with the right url
