@@ -80,5 +80,5 @@ run:
 
   wandb: True
   wandb_project: "mr_BLIP"
-  wandb_name: "Charades_BEATS"
+  wandb_name: "Charades_atn_fsn_stackfsn"
 

@@ -34,13 +34,11 @@ from lavis.models.blip2_mr_models.utils import (
     get_timestamps_as_relative_floats,
     get_timestamps_as_framenumbers,
 )
-from lavis.models.beats.BEATS import BEATs, BEATsConfig
 from lavis.models.blip2_mr_models.model_helpers import *
 
 
 from audioinclusion.AudioEmbeddingsCLAP import CLAPAudioEmbeddings
-from audioinclusion.MiniTransformer import ImageAudioFusion
-
+from lavis.models.blip2_mr_models.AudioImageFusion import AudioImageFusion
 
 # set the environment variable TOKENIZERS_PARALLELISM = false
 # to disable tokenizers parallelism
@@ -278,7 +276,6 @@ class BLIP2_MR(Blip2Base):
             self.Qformer.config.hidden_size, self.audio_feature_dim
         ).to(self.device)
 
-        self.fusion_attention = ImageAudioFusion()
 
         if self.fusion_method == "concat":
             self.fusion_layer = nn.Linear(
@@ -294,7 +291,7 @@ class BLIP2_MR(Blip2Base):
             ).to(self.device)
 
 
-
+        self.fusion_stack = AudioImageFusion(embed_dim=self.audio_feature_dim, n_heads=8, mode='stack_fusion')
 
         ##########################################################################
 
@@ -366,12 +363,28 @@ class BLIP2_MR(Blip2Base):
         audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frames_for_projection.shape[1], -1) # reshape to [b*t, query_tokens, embed_len]
 
         # Forward our Stuff for Fusion here
+        #print("--------------------------------------------------------------------------------------------------------")
+        #print(" Entering Forward: Fusion Pass")
         frame_down_proj = self.frame_down_proj(frames_for_projection)
-        combined_video_audio_frame = torch.cat([frame_down_proj, audio_embeddings], dim=-1)
-        fused_data = self.fusion_layer(combined_video_audio_frame)
-        #fused_data = self.secondMLPLayer(fused_data)
-        #fused_data = self.fusion_attention(fused_data)
-        frames_for_t5 = self.t5_proj(fused_data)
+        #print(f"frame_down_proj: {frame_down_proj.shape}") #frame_down_proj: torch.Size([160, 32, 512]) original
+        #print(f"audio_embeddings: {audio_embeddings.shape}") #audio_embeddings: torch.Size([160, 32, 512]) original
+
+
+
+        #combined_video_audio_frame = torch.cat([frame_down_proj, audio_embeddings], dim=-1)
+        #print(f"combined_video_audio_frame: {combined_video_audio_frame.shape}") #combined_video_audio_frame: torch.Size([160, 32, 1024]) original
+
+        fused_output, attn_weights = self.fusion_stack(audio_embeddings, frame_down_proj)
+        #print(f"fused_output: {fused_output.shape}") # torch.Size([160, 32, 1024]) ours bzw [160, 32, 768] (CURRENT)
+
+        #fused_data = self.fusion_layer(fused_output)
+        #print(f"fused_data: {fused_data.shape}") #fused_data: torch.Size([160, 32, 768]) original
+
+        frames_for_t5 = self.t5_proj(fused_output)
+        #print(f"frames_for_t5: {frames_for_t5.shape}") #frames_for_t5: torch.Size([160, 32, 2048]) original
+
+        #print("Leaving Forward: Fusion Pass")
+
 
         # TODO: Use average pooling to aggregate the 32 embeddings of one frame
         if self.frame_token_aggregation:
@@ -800,13 +813,16 @@ class BLIP2_MR(Blip2Base):
 
         audio_embeddings = audio_embeddings.reshape(-1, audio_embeddings.shape[2])
         audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frame_down_proj.shape[1], -1)
-        # print(f"emb shaoe: {audio_embeddings.shape}")
 
-        combined_video_audio_frame = torch.cat([frame_down_proj, audio_embeddings], dim=-1)
-        # print(f"combined_video_audio_frame: {combined_video_audio_frame.shape}")
-        fused_data = self.fusion_layer(combined_video_audio_frame)
-        # print(f"fused_data: {fused_data.shape}")
-        frames_for_t5 = self.t5_proj(fused_data)
+        fused_output, attn_weights = self.fusion_stack(audio_embeddings, frame_down_proj)
+
+
+        #combined_video_audio_frame = torch.cat([frame_down_proj, audio_embeddings], dim=-1)
+
+        #fused_data = self.fusion_layer(combined_video_audio_frame)
+
+
+        frames_for_t5 = self.t5_proj(fused_output)
 
         #frames_for_t5 = self.t5_proj(frames_after_qformer.last_hidden_state)
 
