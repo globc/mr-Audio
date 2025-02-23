@@ -56,7 +56,7 @@ run:
   accum_grad_iters: 1
 
   max_len: 200
-  min_len: 8
+  min_len: 4
   num_beams: 5
 
   seed: 42
@@ -75,7 +75,7 @@ run:
   world_size: 8
   dist_url: "env://"
   distributed: True
-  find_unused_parameters: True
+  find_unused_parameters: False
 
   wandb: True
   wandb_project: "mr_BLIP"

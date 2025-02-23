@@ -194,7 +194,9 @@ class BLIP2_MR(Blip2Base):
                 bias="none",
                 task_type="CAUSAL_LM",
             )
-
+            self.t5_model.gradient_checkpointing_enable()
+            self.t5_model.enable_input_require_grads()
+            self.t5_model.config.use_cache = False
             self.t5_model = get_peft_model(self.t5_model, lora_config)
             #self.t5_model.print_trainable_parameters()
         else:
@@ -240,8 +242,8 @@ class BLIP2_MR(Blip2Base):
         self.late_fusion = late_fusion
 
         self.audio_t5_proj = nn.Linear(
-                self.audio_feature_dim, self.t5_model.config.hidden_size
-            ).to(self.device)
+            self.audio_feature_dim, self.Qformer.config.hidden_size
+        ).to(self.device)
 
         if self.fusion_method == "interleave":
             self.audio_t5_proj = nn.Linear(
@@ -321,12 +323,10 @@ class BLIP2_MR(Blip2Base):
 
 
 
-        audio_for_t5 = self.audio_t5_proj(audio_embeddings)
+        audios_for_t5 = self.t5_proj(self.audio_t5_proj(audio_embeddings))
         #audio_norm = torch.linalg.norm(audio_for_t5, dim=-1)  # L2-norm along embed_length
         #projected_mean_audio_norm = audio_norm.mean()
-        vision_for_t5 = self.t5_proj(frames_for_projection)
-
-        frames_for_t5 = self.lcam_fusion(audio_for_t5, vision_for_t5)
+        frames_for_t5 = self.t5_proj(frames_for_projection)
 
         # TODO: Use average pooling to aggregate the 32 embeddings of one frame
         if self.frame_token_aggregation:
@@ -338,6 +338,9 @@ class BLIP2_MR(Blip2Base):
 
         frames_for_t5, frames_atts_for_t5 = self.reshape_frames_for_t5(frames_for_t5= frames_for_t5, b=b, t=t, image=image)
 
+        audios_for_t5 = audios_for_t5.reshape(b, t, self.num_query_token, -1).view(b, t*self.num_query_token, -1) # b, t*n, c
+        audios_atts_for_t5 =  torch.ones(audios_for_t5.size()[:-1], dtype=torch.long).to(self.device) # b, t*n
+
 
         with (torch.cuda.amp.autocast(dtype=torch.float32)):
             #print(f"Starting Prompt Concat")
@@ -346,6 +349,8 @@ class BLIP2_MR(Blip2Base):
                 durations=durations,
                 frames_for_t5=frames_for_t5,
                 frames_atts_for_t5=frames_atts_for_t5,
+                audios_for_t5=audios_for_t5,
+                audios_atts_for_t5=audios_atts_for_t5,
                 video_prompt_end=video_prompt_end,
                 query_prompt=query_prompt,
                 task_prompt=task_prompt,
@@ -387,14 +392,14 @@ class BLIP2_MR(Blip2Base):
                 log["train/log_likelihood_loss"] = loss.item()
                 #log["train/rna_loss"] = rna.item()
                 #log["train/proj_vision_mean_feature_norm"] = torch.mean(torch.linalg.norm(vision_for_t5.mean(dim=1), dim=-1), dim=-1).item()
-                log["train/proj_vision_mean_feature_norm"] = self.calculate_mean_feature_norm(vision_for_t5).item()
+                log["train/proj_vision_mean_feature_norm"] = self.calculate_mean_feature_norm(frames_for_t5).item()
                 #log["train/audio_mean_feature_norm"] = mean_audio_norm.item()
                 #log["train/proj_audio_mean_feature_norm"] = projected_mean_audio_norm.item()
-                log["train/proj_audio_mean_feature_norm"] = self.calculate_mean_feature_norm(audio_for_t5).item()
+                log["train/proj_audio_mean_feature_norm"] = self.calculate_mean_feature_norm(audios_for_t5).item()
                 #log["train/fused_mean_feature_norm"] = torch.mean(
                 #    torch.linalg.norm(combined_video_audio_frame.mean(dim=1), dim=-1), dim=-1).item()
                 #log["train/latefused_mean_feature_norm"] = torch.mean(torch.linalg.norm(frames_for_t5.mean(dim=1), dim=-1), dim=-1).item()
-                log["train/latefused_mean_feature_norm"] = self.calculate_mean_feature_norm(frames_for_t5).item()
+                # log["train/latefused_mean_feature_norm"] = self.calculate_mean_feature_norm(frames_for_t5).item()
                 # Log images and predictions
                 if samples["iters"] % self.log_samples_every_n == 0:
                     pred = self.t5_tokenizer.batch_decode(
@@ -425,13 +430,11 @@ class BLIP2_MR(Blip2Base):
         durations,
         frames_for_t5,
         frames_atts_for_t5,
-        #audio_for_t5,  # TODO
-        #audio_atts_t5, #TODO
+        audios_for_t5,
+        audios_atts_for_t5,
         video_prompt_end,
         query_prompt,
         task_prompt,
-        #audio_embeddings=None,
-        #audio_atts=None
     ):
 
         ### video prompt
@@ -540,8 +543,8 @@ class BLIP2_MR(Blip2Base):
             t = t_n // n
 
             # iterate over the batch
-            for j, (timestamp_embs, frame_embs) in enumerate(
-                zip(batch_timestamps_embs, frames_for_t5)
+            for j, (timestamp_embs, frame_embs, audio_embs) in enumerate(
+                zip(batch_timestamps_embs, frames_for_t5, audios_for_t5)
             ):
                 interleaved_prompt = torch.tensor([]).to(frames_for_t5.device)
                 _video_prompt = []
@@ -549,7 +552,7 @@ class BLIP2_MR(Blip2Base):
                 for i in range(t):
                     # each frame has n tokens -> shape (t*n, c)
                     frame_emb = frame_embs[i * n : i * n + n]
-
+                    audio_emb = audio_embs[i * n : i * n + n]
                     timestamp_emb = timestamp_embs[i]
 
                     # for logging of input design
@@ -559,17 +562,16 @@ class BLIP2_MR(Blip2Base):
                         + ">"
                     )
 
-                    # frame i and corresponding timestamp
-                    #timestamp_emb = timestamp_emb.unsqueeze(1)
-                    #timestamp_emb = timestamp_emb.expand(-1, frame_emb.shape[1], -1)
-                    frame_and_time = torch.cat(
+                    # frame i, audio i and corresponding timestamp
+                    frame_audio_and_time = torch.cat(
                         [
                             frame_emb,
+                            audio_emb,
                             timestamp_emb,
                         ]
                     )
-                    # add frame and timestamp "pair" to the interleaved prompt
-                    interleaved_prompt = torch.cat([interleaved_prompt, frame_and_time])
+                    # add frame, audio and timestamp tuple to the interleaved prompt
+                    interleaved_prompt = torch.cat([interleaved_prompt, frame_audio_and_time])
 
                 # add one more seperator and the duration tokens to the interleaved prompt
                 seperator_emb = self.t5_model.encoder.embed_tokens(
@@ -579,12 +581,6 @@ class BLIP2_MR(Blip2Base):
                 )
 
                 duration_emb = batch_duration_embs[j]
-
-                #seperator_emb = seperator_emb.unsqueeze(1)
-                #duration_emb = duration_emb.unsqueeze(1)
-
-                #seperator_emb = seperator_emb.expand(-1, interleaved_prompt.shape[1], -1)
-                #duration_emb = duration_emb.expand(-1, interleaved_prompt.shape[1], -1)
                 interleaved_prompt = torch.cat(
                     [interleaved_prompt, seperator_emb, duration_emb]
                 )
@@ -617,20 +613,6 @@ class BLIP2_MR(Blip2Base):
             ).to(frames_for_t5.device)
 
             ### Concatenate interleaved_video_prompt, video_prompt_end, text_prompt
-
-            #TODO: Check if Data is used correctly
-
-            #print(f"video_prompt_embs Shape: {interleaved_video_prompt_embs.shape}")
-            #print(f"text_prompt_embs Shape: {text_prompt_embs.shape}")
-            #print(f"interleaved_video_prompt_embs Shape: {interleaved_video_prompt_embs.shape}")
-            #video_prompt_end_embs = video_prompt_end_embs.unsqueeze(1)
-            #text_prompt_embs = text_prompt_embs.unsqueeze(1)
-
-            #video_prompt_end_embs = video_prompt_end_embs.expand(-1, -1, interleaved_video_prompt_embs.shape[2], -1) # interleaved_video_prompt_embs.shape[1]
-            #####text_prompt_embs = text_prompt_embs.expand(-1, -1 , -1, -1) #interleaved_video_prompt_embs.shape[1]
-            #print(f"After reshaping, video_prompt_embs Shape: {interleaved_video_prompt_embs.shape}")
-            #print(f"After reshaping, text_prompt_embs Shape: {text_prompt_embs.shape}")
-            #print(f"After reshaping, interleaved_video_prompt_embs Shape: {interleaved_video_prompt_embs.shape}")
             inputs_embs_mr = torch.cat(
                 [
                     interleaved_video_prompt_embs,
@@ -674,6 +656,7 @@ class BLIP2_MR(Blip2Base):
                 [
                     video_prompt_embs,
                     frames_for_t5,
+                    audios_for_t5,
                     video_prompt_end_embs,
                     text_prompt_embs,
                 ],
@@ -684,6 +667,7 @@ class BLIP2_MR(Blip2Base):
                 [
                     video_prompt_tokens.attention_mask,
                     frames_atts_for_t5,
+                    audios_atts_for_t5,
                     video_prompt_end_tokens.attention_mask,
                     text_prompt_tokens.attention_mask,
                 ],
@@ -691,7 +675,7 @@ class BLIP2_MR(Blip2Base):
             )
 
             video_prompt = [
-                p + "frames with audio" + end_p   #TODO: specify the prompt more precisely
+                p + "frames" + end_p
                 for (p, end_p) in zip(video_prompt, video_prompt_end)
             ]
 
@@ -765,11 +749,9 @@ class BLIP2_MR(Blip2Base):
         #audio_embeddings = audio_embeddings.reshape(-1, audio_embeddings.shape[2])
         audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frames_after_qformer.last_hidden_state.shape[1], -1)
 
-        audio_for_t5 = self.audio_t5_proj(audio_embeddings)
+        audios_for_t5 = self.t5_proj(self.audio_t5_proj(audio_embeddings))
 
-        vision_for_t5 = self.t5_proj(frames_after_qformer.last_hidden_state)
-
-        frames_for_t5 = self.lcam_fusion(audio_for_t5, vision_for_t5)
+        frames_for_t5 = self.t5_proj(frames_after_qformer.last_hidden_state)
 
         if self.frame_token_aggregation:
             assert self.frame_token_aggregation in [
@@ -789,12 +771,17 @@ class BLIP2_MR(Blip2Base):
         )  # b, t * n, c
         frames_atts_for_t5 = frames_atts_for_t5.reshape(b, -1)  # b, t * n
 
+        audios_for_t5 = audios_for_t5.reshape(b, t, self.num_query_token, -1).view(b, t*self.num_query_token, -1) # b, t*n, c
+        audios_atts_for_t5 =  torch.ones(audios_for_t5.size()[:-1], dtype=torch.long).to(self.device) # b, t*n
+
         with torch.cuda.amp.autocast(dtype=torch.bfloat16):
             inputs_embs_mr, inputs_atts_mr, video_prompt = self.prompt_concatenation(
                 timestamps,
                 durations,
                 frames_for_t5,
                 frames_atts_for_t5,
+                audios_for_t5,
+                audios_atts_for_t5,
                 video_prompt_end,
                 query_prompt,
                 task_prompt,
@@ -1029,7 +1016,7 @@ class BLIP2_MR(Blip2Base):
         model.load_checkpoint_from_config(cfg)
 
         ## initialize audio projection with the linear layer of the vision t5 projection
-        model.init_audio_projection()
+        # model.init_audio_projection()
 
         return model
 
