@@ -49,11 +49,6 @@ class BaseDataset(Dataset):
         return len(self.annotation)
 
     def collater(self, samples):
-        print("Batch Size:", len(samples))
-        for i, sample in enumerate(samples):
-            for key, value in sample.items():
-                if isinstance(value, torch.Tensor):
-                    print(f"Sample {i}, Key: {key}, Shape: {value.shape}")
         return default_collate(samples)
 
     def set_processors(self, vis_processor, text_processor):

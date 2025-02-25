@@ -653,6 +653,7 @@ class RunnerBase:
 
         logging.info("Loading checkpoint from {}.".format(checkpoint_path))
         checkpoint = torch.load(checkpoint_path, map_location="cpu")
+        
         try:
             model.load_state_dict(checkpoint["model"])
         except RuntimeError as e:

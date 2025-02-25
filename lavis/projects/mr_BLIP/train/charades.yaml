@@ -48,6 +48,7 @@ run:
   # warmup_steps: 1396 # 10% * 40 epochs * 349 steps/epoch = 1396
   warmup_steps: 1745 # 10% * 50 epochs * 349 steps/epoch = 1745
   # warmup_steps: 965 # 10% * 50 epochs * 193 steps/epoch = 965
+  #warmup_steps: 0
   weight_decay: 0.05
   max_epoch: 50
   batch_size_train: 8
@@ -63,6 +64,7 @@ run:
   output_dir: "result/mr_BLIP/Charades/"
 
   amp: True
+  #  resume_ckpt_path: "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/result/mr_BLIP/Charades/Charades_gattedXAtt-1/checkpoint_27.pth"
   resume_ckpt_path: null
   save_after_epoch: True
 
@@ -79,7 +81,7 @@ run:
 
   wandb: True
   wandb_project: "mr_BLIP"
-  wandb_name: "Charades_lcam_a_prj"
+  wandb_name: "Charades_Late_GattedXAtt"
 
   fusion_method: "lcam"
   use_rna_loss: False
