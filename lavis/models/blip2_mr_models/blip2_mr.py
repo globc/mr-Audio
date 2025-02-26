@@ -250,9 +250,9 @@ class BLIP2_MR(Blip2Base):
                 self.audio_feature_dim, self.t5_model.config.hidden_size
             ).to(self.device)
 
-        #self.gatedCrossAttention = GatedCrossAttention()#hidden_dim
+        self.gatedCrossAttention = GatedCrossAttention()#hidden_dim
         #for late fusion after projecting in space of T5
-        self.gatedCrossAttention = GatedCrossAttention(hidden_dim=2048)
+        #self.gatedCrossAttention = GatedCrossAttention(hidden_dim=2048)
         #self.gatedCrossAttention = BiGatedCrossAttention()
         #self.multimodalTransformer = MultimodalTransformer(use_visual_enc=True)
         #self.multimodalTransformer = MultimodalTransformer(hidden_dim=768)
@@ -331,18 +331,18 @@ class BLIP2_MR(Blip2Base):
         #logging.info("audio embeddings shape after reshape" + str(audio_embeddings.shape))
 
 
-        audio_for_t5 = self.audio_t5_proj(audio_embeddings)
+        #audio_for_t5 = self.audio_t5_proj(audio_embeddings)
         #logging.info("projected audio embeddings shape " + str(audio_for_t5.shape))
         #audio_norm = torch.linalg.norm(audio_for_t5, dim=-1)  # L2-norm along embed_length
         #rojected_mean_audio_norm = audio_norm.mean()
-        vision_for_t5 = self.t5_proj(frames_for_projection)
+        #vision_for_t5 = self.t5_proj(frames_for_projection)
         #logging.info("projected vision embeddings shape " + str(vision_for_t5.shape))
 
         #frames_for_t5 = self.lcam_fusion(audio_for_t5, vision_for_t5)
-        # fused_frames = self.gatedCrossAttention(frames_for_projection, audio_embeddings)
-        frames_for_t5 = self.gatedCrossAttention(vision_for_t5, audio_for_t5)
+        fused_frames = self.gatedCrossAttention(frames_for_projection, audio_embeddings)
+        #frames_for_t5 = self.gatedCrossAttention(vision_for_t5, audio_for_t5)
         #fused_frames = self.multimodalTransformer(audio_embeddings, frames_for_projection)
-        #frames_for_t5 = self.t5_proj(fused_frames)
+        frames_for_t5 = self.t5_proj(fused_frames)
 
         # TODO: Use average pooling to aggregate the 32 embeddings of one frame
         if self.frame_token_aggregation:

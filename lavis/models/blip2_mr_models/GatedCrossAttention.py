@@ -16,20 +16,20 @@ class GatedCrossAttention(nn.Module):
 
     def forward(self, vision_emb, audio_emb):
         """
-        vision_emb: [batch_size, seq_len, vision_dim]  -> (160, 32, 768)
-        audio_emb:  [batch_size, seq_len, audio_dim]   -> (160, 32, 512)
+        vision_emb: [batch_size, seq_len, vision_dim]
+        audio_emb:  [batch_size, seq_len, audio_dim]
         """
         # Project audio features to match vision feature size
-        #audio_emb = self.audio_proj(audio_emb)  # Shape: (160, 32, 768)
-        # comment in line in for fusion before projection
+        # comment line out for fusion before projection
+        audio_emb = self.audio_proj(audio_emb)
 
         # Compute cross-attention (audio attending to video)
-        attended_audio, _ = self.cross_attn(audio_emb, vision_emb, vision_emb)  # Shape: (160, 32, 768)
+        attended_audio, _ = self.cross_attn(audio_emb, vision_emb, vision_emb)
 
         # Compute gating scores (importance of each token)
-        gate_values = torch.sigmoid(self.gate(audio_emb))  # Shape: (160, 32, 1)
+        gate_values = torch.sigmoid(self.gate(audio_emb))
 
         # Apply gating mechanism
         fused_representation = gate_values * attended_audio + (1 - gate_values) * vision_emb  # Selectively fuse
 
-        return fused_representation  # Shape: (160, 32, 768)
+        return fused_representation
