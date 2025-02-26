@@ -195,11 +195,11 @@ def format_wandb_log_images_and_predictions(
         frame = frame.cpu().numpy().transpose(1, 2, 0)
         frame = wandb.Image(frame)
         frames.append(frame)
-    audio_frames = []
-    for frame in audio[idx]:
-        frame = frame.cpu().numpy()
-        frame = wandb.Audio(frame, sample_rate=48000)
-        audio_frames.append(frame)
+    #audio_frames = []
+    #for frame in audio[idx]:
+    #    frame = frame.cpu().numpy()
+    #    frame = wandb.Audio(frame, sample_rate=48000)
+    #    audio_frames.append(frame)
     if interleave_data:
         query = video_prompt[idx] + "</vid>" + query_prompt[idx]
     else:
@@ -223,7 +223,7 @@ def format_wandb_log_images_and_predictions(
         [
             qid,
             frames,
-            audio_frames,
+    #        audio_frames,
             query,
             pred,
             processed_pred,
@@ -237,7 +237,7 @@ def format_wandb_log_images_and_predictions(
         columns=[
             "qid",
             "frames",
-            "audio_frames",
+    #        "audio_frames",
             "query",
             "pred",
             "processed_pred",
