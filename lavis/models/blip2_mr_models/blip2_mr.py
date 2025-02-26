@@ -402,7 +402,7 @@ class BLIP2_MR(Blip2Base):
                 log = {}
                 log["train/log_likelihood_loss"] = loss.item()
                 #log["train/normalized_proj_vision_mean_feature_norm"] = self.calculate_mean_feature_norm(vision_for_t5).item()
-                log["train/normalized_proj_audio_mean_feature_norm"] = self.calculate_mean_feature_norm(audio_for_t5).item()
+                #log["train/normalized_proj_audio_mean_feature_norm"] = self.calculate_mean_feature_norm(audio_for_t5).item()
                 log["train/normalized_latefused_mean_feature_norm"] = self.calculate_mean_feature_norm(frames_for_t5).item()
                 #log["train/fused_mean_feature_norm"] = self.calculate_mean_feature_norm(fused_frames).item()
                 #log["train/rna_loss"] = rna.item()
@@ -782,15 +782,15 @@ class BLIP2_MR(Blip2Base):
         #audio_embeddings = audio_embeddings.reshape(-1, audio_embeddings.shape[2])
         audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frames_after_qformer.last_hidden_state.shape[1], -1)
 
-        audio_for_t5 = self.audio_t5_proj(audio_embeddings)
+        #audio_for_t5 = self.audio_t5_proj(audio_embeddings)
 
-        vision_for_t5 = self.t5_proj(frames_after_qformer.last_hidden_state)
+        #vision_for_t5 = self.t5_proj(frames_after_qformer.last_hidden_state)
 
         #frames_for_t5 = self.lcam_fusion(audio_for_t5, vision_for_t5)
-        #fused_frames = self.gatedCrossAttention(frames_after_qformer.last_hidden_state, audio_embeddings)
-        frames_for_t5 = self.gatedCrossAttention(vision_for_t5, audio_for_t5)
+        fused_frames = self.gatedCrossAttention(frames_after_qformer.last_hidden_state, audio_embeddings)
+        #frames_for_t5 = self.gatedCrossAttention(vision_for_t5, audio_for_t5)
         #fused_frames = self.multimodalTransformer(audio_embeddings, frames_after_qformer.last_hidden_state)
-        #frames_for_t5 = self.t5_proj(fused_frames)
+        frames_for_t5 = self.t5_proj(fused_frames)
 
         if self.frame_token_aggregation:
             assert self.frame_token_aggregation in [
