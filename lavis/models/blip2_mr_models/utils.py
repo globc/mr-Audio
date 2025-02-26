@@ -197,7 +197,7 @@ def format_wandb_log_images_and_predictions(
         frames.append(frame)
     audio_frames = []
     for frame in audio[idx]:
-        frame = frame.cpu().numpy().transpose(1, 2, 0)
+        frame = frame.cpu().numpy()
         frame = wandb.Audio(frame, sample_rate=48000)
         audio_frames.append(frame)
     if interleave_data:
