@@ -20,15 +20,15 @@ datasets:
     vis_processor:
         train:
           name: "blip2_video_train"
-          n_frms: 20
+          n_frms: 60
           image_size: 224
-          audio_clip_len: 1.5 # length of the extracted audio clips in seconds
+          audio_clip_len: 2.5 # length of the extracted audio clips in seconds
           target_sr: 48000 # target audio sampling rate
         eval:
           name: "blip_video_eval"
-          n_frms: 20
+          n_frms: 60
           image_size: 224
-          audio_clip_len: 1.5 # length of the extracted audio clips in seconds
+          audio_clip_len: 2.5 # length of the extracted audio clips in seconds
           target_sr: 48000 # target audio sampling rate
     text_processor:
         train:
@@ -52,7 +52,7 @@ run:
   batch_size_train: 2
   batch_size_eval: 2
   num_workers: 8
-  accum_grad_iters: 2
+  accum_grad_iters: 4
 
   max_len: 200
   min_len: 8
@@ -77,4 +77,4 @@ run:
 
   wandb: True
   wandb_project: "mr_BLIP"
-  wandb_name: "QVH_GatedXAttention_audio_1.5"
+  wandb_name: "QVH_GatedXAttention_audio_2.5_60frms"
