@@ -120,10 +120,16 @@ class AudioImageFusion(nn.Module):
             )
             # attn_out => [B, seq_len, embed_dim]
 
+
             out = self.dropout(attn_out) + combined_seq_proj
             out = self.layernorm(out)
 
+            B, S, E = out.shape
+            out = out.view(B, 2, S // 2, E)
+            out = out.mean(dim=-1)
             fused_output = self.out_proj(out)
+            print(f"[DEBUG] fused_output shape: {fused_output.shape}")
+
             return fused_output, attn_weights
 
         elif self.mode == 'x-attention': #TODO: Test this mode
@@ -131,6 +137,7 @@ class AudioImageFusion(nn.Module):
             # shapes: Q => [B, I, embed_dim], K=> [B, A, embed_dim], V=> [B, A, embed_dim]
 
             if self.debug:
+                print("--------------------------------------------------------------------------------------------------")
                 print(f"[DEBUG] x-attention => Q=image, K/V=audio")
 
             attn_out, attn_weights = self.mha(

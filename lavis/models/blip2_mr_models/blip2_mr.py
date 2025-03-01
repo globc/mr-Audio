@@ -291,7 +291,7 @@ class BLIP2_MR(Blip2Base):
             ).to(self.device)
 
 
-        self.fusion_stack = AudioImageFusion(embed_dim=self.audio_feature_dim, n_heads=8, mode='stack_fusion')
+        self.attn_fusion = AudioImageFusion(embed_dim=self.audio_feature_dim, n_heads=8, mode='stack_fusion')
 
         ##########################################################################
 
@@ -374,7 +374,7 @@ class BLIP2_MR(Blip2Base):
         #combined_video_audio_frame = torch.cat([frame_down_proj, audio_embeddings], dim=-1)
         #print(f"combined_video_audio_frame: {combined_video_audio_frame.shape}") #combined_video_audio_frame: torch.Size([160, 32, 1024]) original
 
-        fused_output, attn_weights = self.fusion_stack(audio_embeddings, frame_down_proj)
+        fused_output, attn_weights = self.attn_fusion(audio_embeddings, frame_down_proj)
         #print(f"fused_output: {fused_output.shape}") # torch.Size([160, 32, 1024]) ours bzw [160, 32, 768] (CURRENT)
 
         #fused_data = self.fusion_layer(fused_output)
@@ -814,7 +814,7 @@ class BLIP2_MR(Blip2Base):
         audio_embeddings = audio_embeddings.reshape(-1, audio_embeddings.shape[2])
         audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frame_down_proj.shape[1], -1)
 
-        fused_output, attn_weights = self.fusion_stack(audio_embeddings, frame_down_proj)
+        fused_output, attn_weights = self.attn_fusion(audio_embeddings, frame_down_proj)
 
 
         #combined_video_audio_frame = torch.cat([frame_down_proj, audio_embeddings], dim=-1)
