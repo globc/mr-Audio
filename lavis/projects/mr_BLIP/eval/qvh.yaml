@@ -20,7 +20,9 @@ datasets:
     vis_processor:
         eval:
           name: "blip_video_eval"
-          n_frms: 20
+          n_frms: 60
+          audio_clip_len: 2.5 # length of the extracted audio clips in seconds
+          target_sr: 48000 # target audio sampling rate
           image_size: 224
     text_processor:
         eval:
