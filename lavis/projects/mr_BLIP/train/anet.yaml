@@ -21,10 +21,14 @@ datasets:
           name: "blip2_video_train"
           n_frms: 60
           image_size: 224
+          audio_clip_len: 2.0 # length of the extracted audio clips in seconds
+          target_sr: 48000 # target audio sampling rate
         eval:
           name: "blip_video_eval"
           n_frms: 60
           image_size: 224
+          audio_clip_len: 2.0 # length of the extracted audio clips in seconds
+          target_sr: 48000 # target audio sampling rate
     text_processor:
         train:
           name: "blip_question"
@@ -73,4 +77,4 @@ run:
 
   wandb: True
   wandb_project: "mr_BLIP"
-  wandb_name: "ANet_60"
+  wandb_name: "ANet_60_"
