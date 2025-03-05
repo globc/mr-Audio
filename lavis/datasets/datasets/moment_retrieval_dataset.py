@@ -26,7 +26,10 @@ class MomentRetrievalDataset(BaseDataset):
             clip = None
 
         vname = ann["video"]
-        video_path = os.path.join(self.vis_root, vname + ".mp4")
+        if 'filename' in ann:
+            video_path = os.path.join(self.vis_root, ann["filename"])
+        else:
+            video_path = os.path.join(self.vis_root, vname + ".mp4")
 
         frms, indices, fps, audio = self.vis_processor(video_path, clip_proposal=clip)
         query = ann["query"]
