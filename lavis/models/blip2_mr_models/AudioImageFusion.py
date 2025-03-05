@@ -80,18 +80,21 @@ class AudioImageFusion(nn.Module):
             # ((typical Transformer block is attn_out + input, then norm))
             out = self.dropout(attn_out) + combined_seq
             out = self.layernorm(out)
-
-
+            print("--------------------------------------------------------------------------------------------------")
+            print("We are in Stack Fusion")
+            print(f"[DEBUG] out shape: {out.shape}") #torch.Size([160, 64, 512])
             B, S, E = out.shape
+            print(f"[DEBUG] B: {B}, S: {S}, E: {E}") #B: 160, S: 64, E: 512
             out = out.view(B, 2, S//2, E)
             out = out.mean(dim=1)
+            print(f"[DEBUG] out shape after mean: {out.shape}") #torch.Size([160, 32, 512])
             fused_output = self.out_proj(out)
-
-
+            print("--------------------------------------------------------------------------------------------------")
+            print(f"[DEBUG] fused_output shape Stack Attn: {fused_output.shape}") #torch.Size([160, 32, 768])
             return fused_output, attn_weights
 
         elif self.mode == 'cat_fusion': #TODO: Test this mode
-            # Feature-level concatenation along the embedding dimension
+            # Feature-level (embedding dim) concatenation along the embedding dimension
             # shape [B, seq_len, 2*embed_dim]
             # Then project down to [B, seq_len, embed_dim]
             #do self-attention on that (still seq_len = 32).
@@ -123,17 +126,17 @@ class AudioImageFusion(nn.Module):
 
             out = self.dropout(attn_out) + combined_seq_proj
             out = self.layernorm(out)
-
-            B, S, E = out.shape
-            out = out.view(B, 2, S // 2, E)
-            out = out.mean(dim=-1)
+            #print("--------------------------------------------------------------------------------------------------")
+            #print("We are in Cat Fusion")
+            #print(f"[DEBUG] out shape: {out.shape}") #out shape: torch.Size([160, 32, 512])
             fused_output = self.out_proj(out)
-            print(f"[DEBUG] fused_output shape: {fused_output.shape}")
+            #print("--------------------------------------------------------------------------------------------------")
+            #print(f"[DEBUG] fused_output shape Cat Attn: {fused_output.shape}") #torch.Size([160, 32, 768])
 
             return fused_output, attn_weights
 
-        elif self.mode == 'x-attention': #TODO: Test this mode
-            # Cross-attention: we use image as Query, audio as Key/Value
+        elif self.mode == 'x-attention':
+            # Cross-attention: image as Query, audio as Key/Value
             # shapes: Q => [B, I, embed_dim], K=> [B, A, embed_dim], V=> [B, A, embed_dim]
 
             if self.debug:
@@ -149,10 +152,13 @@ class AudioImageFusion(nn.Module):
 
             out = self.dropout(attn_out) + image_emb
             out = self.layernorm(out)
+            #print("--------------------------------------------------------------------------------------------------")
+            #print("We are in X Fusion")
+            #print(f"[DEBUG] out shape: {out.shape}") #torch.Size([160, 32, 512])
 
             fused_output = self.out_proj(out)
-            if self.plot:
-                self.visualize_attention_wandb(attn_weights)
+            #print("--------------------------------------------------------------------------------------------------")
+            #print(f"[DEBUG] fused_output shape X Attn: {fused_output.shape}") #torch.Size([160, 32, 768])
 
             return fused_output, attn_weights
 
