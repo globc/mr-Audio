@@ -51,7 +51,7 @@ class BaseDataset(Dataset):
     def collater(self, samples):
         for sample in samples:
             for key, value in sample.items():
-                print(f"Key: {key}, Type: {type(value)}, Tensor dtype: {value.dtype if isinstance(value, torch.Tensor) else 'N/A'}")
+                print(f"Key: {key}, Length: {value.shape}, Type: {type(value)}, Tensor dtype: {value.dtype if isinstance(value, torch.Tensor) else 'N/A'}")
         return default_collate(samples)
 
     def set_processors(self, vis_processor, text_processor):
