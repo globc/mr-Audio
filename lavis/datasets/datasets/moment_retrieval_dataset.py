@@ -27,7 +27,7 @@ class MomentRetrievalDataset(BaseDataset):
 
         vname = ann["video"]
         if 'file_name' in ann:
-            video_path = os.path.join(self.vis_root, ann["filename"])
+            video_path = os.path.join(self.vis_root, ann["file_name"])
         else:
             video_path = os.path.join(self.vis_root, vname + ".mp4")
 
