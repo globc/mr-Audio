@@ -21,13 +21,13 @@ datasets:
           name: "blip2_video_train"
           n_frms: 25
           image_size: 224
-          audio_clip_len: 2 # length of the extracted audio clips in seconds
+          audio_clip_len: 1.7 # length of the extracted audio clips in seconds
           target_sr: 48000 # target audio sampling rate
         eval:
           name: "blip_video_eval"
           n_frms: 25
           image_size: 224
-          audio_clip_len: 2 # length of the extracted audio clips in seconds
+          audio_clip_len: 1.7 # length of the extracted audio clips in seconds
           target_sr: 48000 # target audio sampling rate
     text_processor:
         train:
@@ -46,7 +46,7 @@ run:
   warmup_lr: 1e-8
   # warmup_steps: 1074 # 10% * 30 epochs * 349 steps/epoch = 1047
   # warmup_steps: 1396 # 10% * 40 epochs * 349 steps/epoch = 1396
-  warmup_steps: 1745 # 10% * 50 epochs * 349 steps/epoch = 1745
+  warmup_steps: 1095 # 10% * 50 epochs * 219 steps/epoch = 1095
   # warmup_steps: 965 # 10% * 50 epochs * 193 steps/epoch = 965
   #warmup_steps: 0
   weight_decay: 0.05
