@@ -40,12 +40,16 @@ def load_video_frames_with_audio(video_path,
     """
 
     video, audio, info = torchvision.io.read_video(video_path, pts_unit="sec")
-    sample_rate = info["audio_fps"]
-    if audio.shape[0] > 1:
-        audio = torch.mean(audio, dim=0, keepdim=True)
-    if sample_rate != target_sr:
-        audio = resample_audio(audio, sample_rate, target_sr)
+    if audio.numel() != 0:
+        sample_rate = info["audio_fps"]
+        if audio.shape[0] > 1:
+            audio = torch.mean(audio, dim=0, keepdim=True)
+        if sample_rate != target_sr:
+            audio = resample_audio(audio, sample_rate, target_sr)
+            sample_rate = target_sr
+    else:
         sample_rate = target_sr
+        audio = torch.zeros((1,int(target_sr * n_frms * audio_clip_len)))
 
     fps = info["video_fps"]
     num_frames = video.shape[0]
@@ -72,7 +76,7 @@ def load_video_frames_with_audio(video_path,
     if height > 0 and width > 0:
         frms = torch.nn.functional.interpolate(frms, size=(height, width), mode='bilinear', align_corners=False)
 
-    return frms, indices.tolist(), fps, torch.stack(audio_segments, dim=1).squeeze(0)
+    return frms.to(torch.float32), indices.tolist(), fps, torch.stack(audio_segments, dim=1).squeeze(0).to(torch.float32)
 
 def thwc_to_cthw(data: torch.Tensor) -> torch.Tensor:
     """
