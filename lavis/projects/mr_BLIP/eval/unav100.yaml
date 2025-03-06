@@ -16,7 +16,7 @@ model:
   frame_token_aggregation: False # [mean | False]
 
 datasets:
-  charades_sta:
+  unav100:
     vis_processor:
         eval:
           name: "blip_video_eval"

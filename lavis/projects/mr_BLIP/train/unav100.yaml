@@ -15,7 +15,7 @@ model:
   frame_token_aggregation: False # [mean | False]
 
 datasets:
-  charades_sta: # name of the dataset builder
+  unav100: # name of the dataset builder
     vis_processor:
         train:
           name: "blip2_video_train"
@@ -61,7 +61,7 @@ run:
   num_beams: 5
 
   seed: 42
-  output_dir: "result/mr_BLIP/Charades/"
+  output_dir: "result/mr_BLIP/Unav100/"
 
   amp: True
   #  resume_ckpt_path: "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/result/mr_BLIP/Charades/Charades_gattedXAtt-1/checkpoint_27.pth"
