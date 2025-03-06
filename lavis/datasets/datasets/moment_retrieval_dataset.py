@@ -66,7 +66,7 @@ class MomentRetrievalDataset(BaseDataset):
 
         return {
             "video": frms.to(torch.float32),
-            "duration": duration,
+            "duration": duration.to(torch.float32),
             "query_id": ann["qid"],
             "timestamps": timestamps,
             "video_prompt_end": video_prompt_end,
