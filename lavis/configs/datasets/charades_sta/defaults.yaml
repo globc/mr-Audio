@@ -34,3 +34,6 @@ datasets:
           storage: /home/atuin/g102ea/g102ea13/mr-Audio/mr_BLIP_data/Charades_STA_annotations/ablations_split/test.json
       videos:
         storage: /home/atuin/g102ea/shared/videos/Charades_v1
+run:
+  warmup_steps: 0
+  resume_chpt_path: "/home/atuin/g102ea/g102ea13/mr-audio/checkpoint/checkpoint_best.pth"
