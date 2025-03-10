@@ -291,7 +291,7 @@ class BLIP2_MR(Blip2Base):
             ).to(self.device)
 
 
-        self.attn_fusion = AudioImageFusion(embed_dim=self.audio_feature_dim, n_heads=8, mode='stack_fusion')
+        self.attn_fusion = AudioImageFusion(embed_dim=self.audio_feature_dim, n_heads=8, mode='x-attention')
 
         ##########################################################################
 
