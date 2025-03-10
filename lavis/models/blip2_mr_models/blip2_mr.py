@@ -157,22 +157,22 @@ class BLIP2_MR(Blip2Base):
 
 
         # Force use of only these Characters:
-        use_numbers = [chr(i) for i in range(0,9)]
-        decoder_input_ids = [
-            [self.t5_tokenizer.convert_tokens_to_ids('[')],
-            [self.t5_tokenizer.convert_tokens_to_ids('[')],
-            [[self.t5_tokenizer.convert_tokens_to_ids(_number)] for _number in use_numbers],
-            [self.t5_tokenizer.convert_tokens_to_ids(']')],
-            [self.t5_tokenizer.convert_tokens_to_ids(']')],
-            [self.t5_tokenizer.convert_tokens_to_ids(',')],
-            [self.t5_tokenizer.convert_tokens_to_ids('-')],
-        ]
+        #use_numbers = [chr(i) for i in range(0,9)]
+        #decoder_input_ids = [
+        #    [self.t5_tokenizer.convert_tokens_to_ids('[')],
+        #    [self.t5_tokenizer.convert_tokens_to_ids('[')],
+        #    [[self.t5_tokenizer.convert_tokens_to_ids(_number)] for _number in use_numbers],
+        #    [self.t5_tokenizer.convert_tokens_to_ids(']')],
+        #    [self.t5_tokenizer.convert_tokens_to_ids(']')],
+        #    [self.t5_tokenizer.convert_tokens_to_ids(',')],
+        #    [self.t5_tokenizer.convert_tokens_to_ids('-')],
+        #]
 
         t5_config = T5Config.from_pretrained(t5_model, cache_dir=os.getcwd() + "/cache")
         t5_config.dense_act_fn = "gelu"
         t5_config.use_cache = True
         t5_config.min_length = 7
-        t5_config.decoder_input_ids = decoder_input_ids
+        #t5_config.decoder_input_ids = decoder_input_ids
 
         self.t5_model = T5ForConditionalGeneration.from_pretrained(
             t5_model, config=t5_config, cache_dir=curr_path

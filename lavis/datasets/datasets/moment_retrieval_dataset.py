@@ -33,7 +33,7 @@ class MomentRetrievalDataset(BaseDataset):
         relevant_windows = str(ann["relevant_windows"])
 
         query_prompt = "Query: " + query + "\n"
-        task_prompt = "Given the video and the query, find the relevant windows.\nRelevant windows: "
+        task_prompt = "Given the multimodal information from video (which integrates both visual features and audio cues), and the query, find the relevant windows.\nRelevant windows: "
 
         # generate video prompt in the following format:
         # <vid><t><t+1><t+2>…<duration>[frame embeddings]</vid>
