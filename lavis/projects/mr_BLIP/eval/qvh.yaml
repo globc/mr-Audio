@@ -7,7 +7,7 @@ model:
   arch: blip2_mr
   model_type: pretrain_flant5xl
   load_finetuned: True
-  finetuned: "mr_BLIP_checkpoints/mr-blip/QVH/checkpoint_best.pth"
+  finetuned: "mr_BLIP_checkpoints/QVH/checkpoint_best.pth"
   use_grad_checkpoint: False
   freeze_vit: True
   task: qformer_freeze_lora
@@ -38,7 +38,7 @@ run:
 
   # inference-specific
   max_len: 200
-  min_len: 5
+  min_len: 8
   num_beams: 5
   inference_method: "generate"
 
@@ -46,7 +46,7 @@ run:
   output_dir: "result/mr_BLIP/QVH/eval"
 
   evaluate: True
-  test_splits: ["val"]
+  test_splits: ["test"]
 
   # distribution-specific
   device: "cuda"
@@ -55,6 +55,6 @@ run:
   distributed: True
   find_unused_parameters: False
 
-  wandb: False
-  wandb_project: "mr_BLIP2"
+  wandb: True
+  wandb_project: "mr_BLIP_eval"
   wandb_name: "QVH_eval"

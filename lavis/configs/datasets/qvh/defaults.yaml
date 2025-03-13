@@ -11,20 +11,22 @@ datasets:
       annotations:
         train:
           #url: /home/atuin/g102ea/shared/qvh/lavis/train.json
-          url: /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/QVH_annotations/train.json
+          url: /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/QVH_annotations/new/train.json
           #storage: /home/atuin/g102ea/shared/qvh/lavis/train.json
-          storage: /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/QVH_annotations/train.json
+          storage: /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/QVH_annotations/new/train.json
         val:
           #url: /home/atuin/g102ea/shared/qvh/lavis/val.json
           #storage: /home/atuin/g102ea/shared/qvh/lavis/val.json
-          url: /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/QVH_annotations/val.json
-          storage: /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/QVH_annotations/val.json
+          url: /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/QVH_annotations/new/val.json
+          storage: /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/QVH_annotations/new/val.json
         test:
           # url: Your/path/to/test_dummy.json
           # storage: Your/path/to/test_dummy.json
           #url: /home/atuin/g102ea/shared/qvh/lavis/val.json
           #storage: /home/atuin/g102ea/shared/qvh/lavis/val.json
-          url: /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/QVH_annotations/test_dummy.json
-          storage: /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/QVH_annotations/test_dummy.json
+          #url: /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/QVH_annotations/new/test_dummy.json
+          #storage: /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/QVH_annotations/new/test_dummy.json
+          url: /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/QVH_annotations/new/val.json
+          storage: /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/QVH_annotations/new/val.json
       videos:
         storage: /home/atuin/g102ea/shared/qvh/qvh/videos
