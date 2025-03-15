@@ -6,7 +6,7 @@ import seaborn as sns
 import wandb
 import logging
 
-class AudioImageFusion(nn.Module):
+class MultimodalSequenceFusion(nn.Module):
     def __init__(
             self,
             embed_dim_audio=512, # 512 for CLAP
@@ -96,7 +96,7 @@ class AudioImageFusion(nn.Module):
             return fused_output, attn_weights #problem with shapes afterwards since 33 tokens
 
 
-        elif self.mode == 'stack_fusion':
+        elif self.mode == 'stack_fusion': #This is Multimodal Sequence Fusion
             if self.debug:
                 print("-------------------------------------------------------------------------------------------------------", flush=True)
                 print("We are in Stack Fusion", flush=True)

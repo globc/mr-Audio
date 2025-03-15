@@ -38,7 +38,7 @@ from lavis.models.blip2_mr_models.model_helpers import *
 
 
 from audioinclusion.AudioEmbeddingsCLAP import CLAPAudioEmbeddings
-from lavis.models.blip2_mr_models.AudioImageFusion import AudioImageFusion
+from lavis.models.blip2_mr_models.MultimodalSequenceFusion import MultimodalSequenceFusion
 
 # set the environment variable TOKENIZERS_PARALLELISM = false
 # to disable tokenizers parallelism
@@ -291,7 +291,7 @@ class BLIP2_MR(Blip2Base):
             ).to(self.device)
 
 
-        self.attn_fusion = AudioImageFusion(embed_dim_audio=self.audio_feature_dim,embed_dim_image=768 ,n_heads=8, mode='mlp_fusion')
+        self.attn_fusion = MultimodalSequenceFusion(embed_dim_audio=self.audio_feature_dim, embed_dim_image=768, n_heads=8, mode='mlp_fusion')
 
         ##########################################################################
 
