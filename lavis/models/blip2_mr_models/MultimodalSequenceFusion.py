@@ -43,6 +43,9 @@ class MultimodalSequenceFusion(nn.Module):
         if self.mode == 'stack_fusion':
             self.additional_weights = nn.Linear(embed_dim_audio, 1)
 
+        if self.mode == 'audio_up_proj': #do fusion in image space
+            self.image_space_linear = nn.Linear(embed_dim_image, embed_dim_image)
+            self.additional_weights = nn.Linear(embed_dim_image, 1)
 
 
 
@@ -125,6 +128,38 @@ class MultimodalSequenceFusion(nn.Module):
             weighted_sum = (out * weights).sum(dim=1)
 
             fused_output = self.out_proj(weighted_sum)
+
+            return fused_output, attn_weights #torch.Size([160, 32, 768]), something
+
+        elif self.mode == 'audio_up_proj': #do fusion in image space
+            if self.debug:
+                print("-------------------------------------------------------------------------------------------------------", flush=True)
+                print("We are in Stack Fusion", flush=True)
+            # Token-level concatenation along seq_len dimension
+            # Result: shape [B, (A+I), embed_dim], Example [B, 64, 512]
+            # Then standard self-attention over all tokens
+            combined_seq = torch.cat([image_emb, audio_emb], dim=1)
+
+
+            attn_out, attn_weights = self.mha(
+                query=combined_seq,
+                key=combined_seq,
+                value=combined_seq
+            )
+
+            #out = self.dropout(attn_out) + combined_seq
+            out = attn_out + combined_seq
+            out = self.layernorm(out)
+
+            B, S, E = out.shape
+            out = out.view(B, 2, S // 2, E)
+
+            #out = out.mean(dim=1)
+            weights = self.additional_weights(out)
+            weights = F.softmax(weights, dim=1)
+            weighted_sum = (out * weights).sum(dim=1)
+
+            fused_output = self.image_space_linear(weighted_sum)
 
             return fused_output, attn_weights #torch.Size([160, 32, 768]), something
 

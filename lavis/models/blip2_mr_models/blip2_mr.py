@@ -272,9 +272,15 @@ class BLIP2_MR(Blip2Base):
             self.Qformer.config.hidden_size, self.t5_model.config.hidden_size
         ).to(self.device)
 
+        #Project Frames down to audio
         self.frame_down_proj = nn.Linear(
             self.Qformer.config.hidden_size, self.audio_feature_dim
         ).to(self.device)
+
+        #Project Audio up to image
+        #self.audio_up_proj = nn.Linear(
+        #    self.audio_feature_dim, self.Qformer.config.hidden_size
+        #).to(self.device)
 
 
         if self.fusion_method == "concat":
@@ -291,7 +297,8 @@ class BLIP2_MR(Blip2Base):
             ).to(self.device)
 
 
-        self.attn_fusion = MultimodalSequenceFusion(embed_dim_audio=self.audio_feature_dim, embed_dim_image=768, n_heads=8, mode='mlp_fusion')
+        #self.attn_fusion = MultimodalSequenceFusion(embed_dim_audio=self.audio_feature_dim, embed_dim_image=768, n_heads=8, mode='audio_up_proj')
+        self.attn_fusion = MultimodalSequenceFusion(embed_dim_audio=512, embed_dim_image=768, n_heads=8, mode='weighted_sum_only')
 
         ##########################################################################
 
@@ -365,7 +372,12 @@ class BLIP2_MR(Blip2Base):
         # Forward our Stuff for Fusion here
         #print("--------------------------------------------------------------------------------------------------------")
         #print(" Entering Forward: Fusion Pass")
+
+
+
+        #Here we test projecting audio up instead of images down.
         frame_down_proj = self.frame_down_proj(frames_for_projection)
+        #audio_embeddings = self.audio_up_proj(audio_embeddings)
         #print(f"frame_down_proj: {frame_down_proj.shape}") #frame_down_proj: torch.Size([160, 32, 512]) original
         #print(f"audio_embeddings: {audio_embeddings.shape}") #audio_embeddings: torch.Size([160, 32, 512]) original
 
@@ -810,10 +822,9 @@ class BLIP2_MR(Blip2Base):
 
         ## Add audio
         frame_down_proj = self.frame_down_proj(frames_after_qformer.last_hidden_state)
-
         audio_embeddings = audio_embeddings.reshape(-1, audio_embeddings.shape[2])
         audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frame_down_proj.shape[1], -1)
-
+        #audio_embeddings = self.audio_up_proj(audio_embeddings)
         fused_output, attn_weights = self.attn_fusion(audio_embeddings, frame_down_proj)
 
 
