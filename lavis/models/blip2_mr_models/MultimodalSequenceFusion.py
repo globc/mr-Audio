@@ -43,6 +43,10 @@ class MultimodalSequenceFusion(nn.Module):
         if self.mode == 'stack_fusion':
             self.additional_weights = nn.Linear(embed_dim_audio, 1)
 
+        if self.mode == 'weighted_sum_No_Paramsharing':
+            self.additional_weights_audio = nn.Linear(embed_dim_audio, 1)
+            self.additional_weights_image = nn.Linear(embed_dim_image, 1)
+
         if self.mode == 'audio_up_proj': #do fusion in image space
             self.image_space_linear = nn.Linear(embed_dim_image, embed_dim_image)
             self.additional_weights = nn.Linear(embed_dim_image, 1)
@@ -125,6 +129,44 @@ class MultimodalSequenceFusion(nn.Module):
             #out = out.mean(dim=1)
             weights = self.additional_weights(out)
             weights = F.softmax(weights, dim=1)
+            weighted_sum = (out * weights).sum(dim=1)
+
+            fused_output = self.out_proj(weighted_sum)
+
+            return fused_output, attn_weights #torch.Size([160, 32, 768]), something
+
+        elif self.mode == 'weighted_sum_No_Paramsharing': #This is Multimodal Sequence Fusion
+            if self.debug:
+                print("-------------------------------------------------------------------------------------------------------", flush=True)
+                print("We are in weighted_sum_No_Paramsharing", flush=True)
+            # Token-level concatenation along seq_len dimension
+            # Result: shape [B, (A+I), embed_dim], Example [B, 64, 512]
+            # Then standard self-attention over all tokens
+            combined_seq = torch.cat([image_emb, audio_emb], dim=1)
+
+
+            attn_out, attn_weights = self.mha(
+                query=combined_seq,
+                key=combined_seq,
+                value=combined_seq
+            )
+
+            #out = self.dropout(attn_out) + combined_seq
+            out = attn_out + combined_seq
+            out = self.layernorm(out)
+
+            B, S, E = out.shape
+            out = out.view(B, 2, S // 2, E)
+            audio = out[:, 0, :, :]
+            image = out[:, 1, :, :]
+            #out = out.mean(dim=1)
+            weights_audio = self.additional_weights_audio(audio)
+            weights_image = self.additional_weights_image(image)
+
+            weights_audio = F.softmax(weights_audio, dim=1)
+            weights_image = F.softmax(weights_image, dim=1)
+            weights = torch.stack([weights_audio, weights_image], dim=1)
+
             weighted_sum = (out * weights).sum(dim=1)
 
             fused_output = self.out_proj(weighted_sum)

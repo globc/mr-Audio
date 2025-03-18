@@ -298,7 +298,7 @@ class BLIP2_MR(Blip2Base):
 
 
         #self.attn_fusion = MultimodalSequenceFusion(embed_dim_audio=self.audio_feature_dim, embed_dim_image=768, n_heads=8, mode='audio_up_proj')
-        self.attn_fusion = MultimodalSequenceFusion(embed_dim_audio=512, embed_dim_image=768, n_heads=8, mode='weighted_sum_only')
+        self.attn_fusion = MultimodalSequenceFusion(embed_dim_audio=512, embed_dim_image=768, n_heads=8, mode='weighted_sum_No_Paramsharing')
 
         ##########################################################################
 
