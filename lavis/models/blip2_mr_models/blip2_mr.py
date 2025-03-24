@@ -300,8 +300,6 @@ class BLIP2_MR(Blip2Base):
             self.Qformer.config.hidden_size, self.audio_feature_dim
         ).to(self.device)
 
-        #Experimental, dont use, TODO
-        #self.fusion_attention = ImageAudioFusion()
 
 
 
@@ -319,9 +317,6 @@ class BLIP2_MR(Blip2Base):
         #     self.fusion_layer = nn.Linear(
         #        self.audio_feature_dim * 2, self.Qformer.config.hidden_size
         #     ).to(self.device)
-
-
-
 
 
         ##########################################################################
@@ -394,18 +389,6 @@ class BLIP2_MR(Blip2Base):
         #audio_embeddings = self.audio_embeddings_model.get_audio_embeddings(audio_clips=audio_clips, sr=self.sampling_rate).to(self.device)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
         ### Apply Q-Former for Image Embeddings and Fusionate with Audio Embeddings ####################################
         #query_tokens = self.query_tokens.expand(image_embeds.shape[0], -1, -1)
 
@@ -417,10 +400,6 @@ class BLIP2_MR(Blip2Base):
 
         #alternative to downsampling layers
         #audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frames_for_projection.size(1), -1)
-
-        #TODO: Downsample frame token embeddings from 32x768 to 32x512 w/ nn.Linear
-        #TODO: torch. cat --> [1, 32, 512+512], hälfte audio, hälfte frame embedding, 32 mal selbes audio embedding, 32 unterschiedloche frame embeddings
-        #TODO: Idee ist gemeinsamen Embeddingspace für Audio und Frame zu haben
 
 
         ####CLAP
