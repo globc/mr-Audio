@@ -846,7 +846,6 @@ class BLIP2_MR(Blip2Base):
 
         #audio_embeddings = audio_embeddings.reshape(-1, audio_embeddings.shape[2])
         #audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frame_down_proj.shape[1], -1)
-        # print(f"emb shaoe: {audio_embeddings.shape}")
 
         #combined_video_audio_frame = torch.cat([frame_down_proj, audio_embeddings], dim=-1)
         #fused_data = self.fusion_layer(combined_video_audio_frame)
