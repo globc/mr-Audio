@@ -693,19 +693,6 @@ class BLIP2_MR(Blip2Base):
 
             ### Concatenate interleaved_video_prompt, video_prompt_end, text_prompt
 
-            #TODO: Check if Data is used correctly
-
-            #print(f"video_prompt_embs Shape: {interleaved_video_prompt_embs.shape}")
-            #print(f"text_prompt_embs Shape: {text_prompt_embs.shape}")
-            #print(f"interleaved_video_prompt_embs Shape: {interleaved_video_prompt_embs.shape}")
-            #video_prompt_end_embs = video_prompt_end_embs.unsqueeze(1)
-            #text_prompt_embs = text_prompt_embs.unsqueeze(1)
-
-            #video_prompt_end_embs = video_prompt_end_embs.expand(-1, -1, interleaved_video_prompt_embs.shape[2], -1) # interleaved_video_prompt_embs.shape[1]
-            #####text_prompt_embs = text_prompt_embs.expand(-1, -1 , -1, -1) #interleaved_video_prompt_embs.shape[1]
-            #print(f"After reshaping, video_prompt_embs Shape: {interleaved_video_prompt_embs.shape}")
-            #print(f"After reshaping, text_prompt_embs Shape: {text_prompt_embs.shape}")
-            #print(f"After reshaping, interleaved_video_prompt_embs Shape: {interleaved_video_prompt_embs.shape}")
             inputs_embs_mr = torch.cat(
                 [
                     interleaved_video_prompt_embs,
