@@ -26,7 +26,7 @@ ml gcc/11 cuda
 source ~/miniconda3/bin/activate
 conda activate mraudio
 # pip install git+https://github.com/salesforce/LAVIS --no-deps
-# pip install -r requirements_xinstructblip.txt
+pip install -r requirements.txt
 
 ./run_scripts/mr_BLIP/train/charades.sh
 conda deactivate

@@ -297,9 +297,6 @@ class BLIP2_MR(Blip2Base):
         audio_embeddings = self.audio_embeddings_model.get_audio_embeddings(audio_clips=audio, sr=self.sampling_rate).to(self.device)
 
         orig_shape_audio_embeddings = audio_embeddings
-        #if self.log_feature_means:
-        #    audio_norm = torch.linalg.norm(audio_embeddings, dim=-1)  # L2-norm along embed_length
-        #    mean_audio_norm = audio_norm.mean()
 
         #Image
         b, t, c, w, h = image.shape
@@ -318,17 +315,14 @@ class BLIP2_MR(Blip2Base):
             frames_after_qformer, frames_for_projection = self.setup_unimodalQfomer(query_tokens=query_tokens, image_embeds=image_embeds, image_atts=image_atts)
 
         # flatten audio embeddings like the image tensors
-        #audio_embeddings = audio_embeddings.reshape(-1, audio_embeddings.shape[2]) # reshape to [b*t, embedd_len]
         audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frames_for_projection.shape[1], -1) # reshape to [b*t, query_tokens, embed_len]
 
 
 
         audios_for_t5 = self.t5_proj(self.audio_t5_proj(audio_embeddings))
-        #audio_norm = torch.linalg.norm(audio_for_t5, dim=-1)  # L2-norm along embed_length
-        #projected_mean_audio_norm = audio_norm.mean()
+
         frames_for_t5 = self.t5_proj(frames_for_projection)
 
-        # TODO: Use average pooling to aggregate the 32 embeddings of one frame
         if self.frame_token_aggregation:
             assert self.frame_token_aggregation in [
                 "mean",
@@ -379,28 +373,14 @@ class BLIP2_MR(Blip2Base):
                 return_dict=True,
                 labels=targets_mr,
             )
-            #if self.use_rna_loss:
-            #delta = 1
-            #rna = delta * self.rna_loss(frames_for_projection, orig_shape_audio_embeddings)
-            #loss = outputs_loc.loss + rna
-            #else:
+
             loss = outputs_loc.loss
 
-            # write the following to a wandb table
             if self.use_wandb and is_main_process():
                 log = {}
                 log["train/log_likelihood_loss"] = loss.item()
-                #log["train/rna_loss"] = rna.item()
-                #log["train/proj_vision_mean_feature_norm"] = torch.mean(torch.linalg.norm(vision_for_t5.mean(dim=1), dim=-1), dim=-1).item()
                 log["train/proj_vision_mean_feature_norm"] = self.calculate_mean_feature_norm(frames_for_t5).item()
-                #log["train/audio_mean_feature_norm"] = mean_audio_norm.item()
-                #log["train/proj_audio_mean_feature_norm"] = projected_mean_audio_norm.item()
                 log["train/proj_audio_mean_feature_norm"] = self.calculate_mean_feature_norm(audios_for_t5).item()
-                #log["train/fused_mean_feature_norm"] = torch.mean(
-                #    torch.linalg.norm(combined_video_audio_frame.mean(dim=1), dim=-1), dim=-1).item()
-                #log["train/latefused_mean_feature_norm"] = torch.mean(torch.linalg.norm(frames_for_t5.mean(dim=1), dim=-1), dim=-1).item()
-                # log["train/latefused_mean_feature_norm"] = self.calculate_mean_feature_norm(frames_for_t5).item()
-                # Log images and predictions
                 if samples["iters"] % self.log_samples_every_n == 0:
                     pred = self.t5_tokenizer.batch_decode(
                         torch.argmax(outputs_loc.logits, dim=-1)
@@ -423,7 +403,6 @@ class BLIP2_MR(Blip2Base):
 
             return {"loss": loss}
 
-    #TODO: add audio embeddings here
     def prompt_concatenation(
         self,
         timestamps,
