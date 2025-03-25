@@ -14,6 +14,10 @@ model:
   input_time_format: seconds_integers # [seconds_integers | seconds_floats | relative_integers | relative_floats | framenumbers]
   interleave_data: True
   frame_token_aggregation: False # [mean | False]
+  fusion_method: "gca" # [gca | bigca | avde | lcam]
+  use_rna_loss: False
+  log_feature_means: True
+  late_fusion: False
 
 datasets:
   qvh: # name of the dataset builder

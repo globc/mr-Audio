@@ -86,6 +86,18 @@ def thwc_to_cthw(data: torch.Tensor) -> torch.Tensor:
     return data.permute(3, 0, 1, 2)
 
 def sample_audio_fixed_center(audio, frame_indices, fps, sr, desired_length):
+    """
+        Audio frames are sampled so that their centre is in the middle of the video frame interval.
+
+        Args:
+            audio (torch.Tensor): Audio tensor
+            frame_indices (list[int]): List of frame indices.
+            fps (float): Frames per second of the audio.
+            sr (int): Sample rate of the audio.
+            desired_length (int): Desired length of the audio.
+        Returns:
+            torch.Tensor: Audio tensor of the audio clip
+    """
     # Convert frame time stamps to audio fram time stamps => [0, 30] -> [0, 48000] if sr = 48000
     start_times= ((frame_indices[:,0]/fps) * sr).int()
     end_times= ((frame_indices[:,1]/fps) * sr).int()
@@ -126,6 +138,9 @@ def sample_audio_fixed_center(audio, frame_indices, fps, sr, desired_length):
     
 
 def resample_audio(waveform, orig_sr, target_sr):
+    """
+        Resample the audio according to the given sampling rate.
+    """
     resampler = torchaudio.transforms.Resample(orig_freq=orig_sr, new_freq=target_sr)
     audio_waveform = resampler(waveform)  # Shape: [1, Resampled Samples]
     return audio_waveform
