@@ -93,7 +93,7 @@ sh run_scripts/mr_BLIP/train/charades.sh
 Should roughly return:
 |               | R1@0.5        | R1@0.7   | mIoU       | mAP@0.5  | mAP@0.75  |
 | ------------- |:-------------:| :-----:  | :--------: | :-----:  | --------: |
-| *Mr. BLIP*    | **76.16**     | **62.63**| **70.32**  | **68.50**| **55.06** |
+| *SMS*    | **76.16**     | **62.63**| **70.32**  | **68.50**| **55.06** |
 
 ```bash
 sh run_scripts/mr_BLIP/eval/qvh.sh
