@@ -11,7 +11,7 @@ We achieve new state-of-the-art results on the challenging Charades-STA benchmar
 </p>
 
 <p align="center">
-  <img src="assets/model_2.web" alt="architecture image" width="600"/>
+  <img src="assets/model_2.webp" alt="architecture image" width="600"/>
 </p>
 
 # Code structure
