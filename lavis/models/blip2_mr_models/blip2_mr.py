@@ -97,11 +97,6 @@ class BLIP2_MR(Blip2Base):
         """
         super().__init__()
 
-        #self.eigendevice = torch.device('cpu' if (os.environ.get('USE_CPU_ONLY', '0') == '1')
-        #                                else 'cuda' if torch.cuda.is_available() else 'cpu')
-        #self.device = device
-        #self.to(self.device)
-
         self.task = task
         if "TAL" in task:
             self.post_process = post_process_TAL
@@ -170,13 +165,6 @@ class BLIP2_MR(Blip2Base):
         curr_path = os.getcwd() + '/cache'
         #example: '/work/scratch/kurse/kurs00079/hm66ryjy/mr-Audio/cache'
         self.t5_tokenizer = T5TokenizerFast.from_pretrained(t5_model, cache_dir=os.getcwd() + "/cache")
-
-        #letters = [chr(i) for i in range(ord('a'), ord('z') + 1)] + [chr(i) for i in range(ord('A'), ord('Z') + 1)]
-        #bad_words_ids = [[self.t5_tokenizer.convert_tokens_to_ids(letter)] for letter in letters]
-        #force_words_ids = [[self.t5_tokenizer.convert_tokens_to_ids('[')],
-        #                   [self.t5_tokenizer.convert_tokens_to_ids(']')],
-        #                   [self.t5_tokenizer.convert_tokens_to_ids(',')]
-        #                   ]
 
 
         # Force use of only these Characters:
@@ -309,7 +297,7 @@ class BLIP2_MR(Blip2Base):
         #        self.audio_feature_dim * 2,self.Qformer.config.hidden_size
         #     ).to(self.device)
 
-        #elif self.fusion_method == "interleave":  # TODO: make coherent if used
+        #elif self.fusion_method == "interleave":
         #    self.audio_t5_proj = nn.Linear(
         #        self.audio_feature_dim, self.t5_model.config.hidden_size
         #    ).to(self.device)
