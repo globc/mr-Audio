@@ -21,6 +21,8 @@ datasets:
         eval:
           name: "blip_video_eval"
           n_frms: 60
+          audio_clip_len: 2.5 # length of the extracted audio clips in seconds
+          target_sr: 48000 # target audio sampling rate
           image_size: 224
     text_processor:
         eval:
@@ -36,7 +38,7 @@ run:
 
   # inference-specific
   max_len: 200
-  min_len: 5
+  min_len: 8
   num_beams: 5
   inference_method: "generate"
 
@@ -44,7 +46,7 @@ run:
   output_dir: "result/mr_BLIP/QVH/eval"
 
   evaluate: True
-  test_splits: ["val"]
+  test_splits: ["test"]
 
   # distribution-specific
   device: "cuda"
@@ -53,6 +55,6 @@ run:
   distributed: True
   find_unused_parameters: False
 
-  wandb: False
-  wandb_project: "mr_BLIP2"
+  wandb: True
+  wandb_project: "mr_BLIP_eval"
   wandb_name: "QVH_eval"

@@ -11,13 +11,13 @@ datasets:
       # Be careful not to append minus sign (-) before split to avoid itemizing
       annotations:
         train:
-          url: Your/path/to/train.json
-          storage: Your/path/to/train.json
+          url: /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/aNet/train.json
+          storage: /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/aNet/train.json
         val:
-          url: Your/path/to/val_float.json
-          storage: Your/path/to/val_float.json
+          url: /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/aNet/val.json
+          storage: /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/aNet/val.json
         test:
-          url: Your/path/to/test_float.json
-          storage: Your/path/to/test_float.json
+          url: /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/aNet/test.json
+          storage: /home/atuin/g102ea/g102ea22/mr-Audio/mr_BLIP_data/aNet/test.json
       videos:
-        storage: Your/path/to/data/raw/ANet/Anet_videos_15fps_short256
+        storage: /home/atuin/g102ea/shared/activitynet/ANet/Anet_videos_15fps_short256

@@ -13,6 +13,10 @@ model:
   input_time_format: seconds_integers # [seconds_integers | seconds_floats | relative_integers | relative_floats | framenumbers | False]
   interleave_data: True
   frame_token_aggregation: False # [mean | False]
+  fusion_method: "gca" # [gca | bigca | avde | lcam]
+  use_rna_loss: False
+  log_feature_means: True
+  late_fusion: False
 
 datasets:
   charades_sta: # name of the dataset builder
@@ -21,10 +25,14 @@ datasets:
           name: "blip2_video_train"
           n_frms: 20
           image_size: 224
+          audio_clip_len: 1.5 # length of the extracted audio clips in seconds
+          target_sr: 48000 # target audio sampling rate
         eval:
           name: "blip_video_eval"
           n_frms: 20
           image_size: 224
+          audio_clip_len: 1.5 # length of the extracted audio clips in seconds
+          target_sr: 48000 # target audio sampling rate
     text_processor:
         train:
           name: "blip_question"
@@ -44,10 +52,11 @@ run:
   # warmup_steps: 1396 # 10% * 40 epochs * 349 steps/epoch = 1396
   warmup_steps: 1745 # 10% * 50 epochs * 349 steps/epoch = 1745
   # warmup_steps: 965 # 10% * 50 epochs * 193 steps/epoch = 965
+  #warmup_steps: 0
   weight_decay: 0.05
   max_epoch: 50
-  batch_size_train: 4
-  batch_size_eval: 4
+  batch_size_train: 8
+  batch_size_eval: 8
   num_workers: 8
   accum_grad_iters: 1
 
@@ -59,7 +68,9 @@ run:
   output_dir: "result/mr_BLIP/Charades/"
 
   amp: True
+  #  resume_ckpt_path: "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/result/mr_BLIP/Charades/Charades_gattedXAtt-1/checkpoint_27.pth"
   resume_ckpt_path: null
+  save_after_epoch: True
 
   evaluate: False
   train_splits: ["train"]
@@ -74,4 +85,4 @@ run:
 
   wandb: True
   wandb_project: "mr_BLIP"
-  wandb_name: "Charades_20"
+  wandb_name: "Charades_Late_GattedXAtt"

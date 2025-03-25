@@ -33,6 +33,8 @@ from lavis.runners.runner_base import RunnerBase
 from lavis.tasks import *
 
 
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Evaluating")
 
@@ -43,6 +45,11 @@ def parse_args():
         help="override some settings in the used config, the key-value pair "
         "in xxx=yyy format will be merged into config file (deprecate), "
         "change to --cfg-options instead.",
+    )
+    parser.add_argument(
+        "--cpu_only",
+        action="store_true",
+        help="Force the evaluation to run on the CPU only."
     )
 
     args = parser.parse_args()
@@ -62,14 +69,20 @@ def setup_seeds(config):
     cudnn.benchmark = False
     cudnn.deterministic = True
 
-
 def main():
-    # allow auto-dl completes on main process without timeout when using NCCL backend.
-    # os.environ["NCCL_BLOCKING_WAIT"] = "1"
+    args = parse_args()
+    device = torch.device("cpu" if args.cpu_only else "cuda" if torch.cuda.is_available() else "cpu")
+    os.environ['USE_CPU_ONLY'] = '1' if args.cpu_only else '0'
+
+    #if args.cpu_only:
+    #    torch.cuda.is_available = lambda: False #TODO: alternative approach, but need to exclude all cuda hardcoded args in pipeline
+
+
 
     # set before init_distributed_mode() to ensure the same job_id shared across all ranks.
     job_id = now()
 
+    #cfg = Config(parse_args())
     cfg = Config(parse_args())
 
     init_distributed_mode(cfg.run_cfg)
@@ -113,7 +126,7 @@ def main():
     task = tasks.setup_task(cfg)
     datasets = task.build_datasets(cfg)
     model = task.build_model(cfg)
-
+    model.to(device)
     runner = RunnerBase(
         cfg=cfg, job_id=job_id, task=task, model=model, datasets=datasets
     )

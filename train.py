@@ -33,6 +33,15 @@ from lavis.models import *
 from lavis.processors import *
 from lavis.runners import *
 from lavis.tasks import *
+import urllib3, socket
+from urllib3.connection import HTTPConnection
+
+HTTPConnection.default_socket_options = ( 
+    HTTPConnection.default_socket_options + [
+    (socket.SOL_SOCKET, socket.SO_SNDBUF, 2000000), 
+    (socket.SOL_SOCKET, socket.SO_RCVBUF, 2000000)
+    ])
+
 
 
 def parse_args():
@@ -45,6 +54,11 @@ def parse_args():
         help="override some settings in the used config, the key-value pair "
         "in xxx=yyy format will be merged into config file (deprecate), "
         "change to --cfg-options instead.",
+    )
+    parser.add_argument(
+        "--cpu_only",
+        action="store_true",
+        help="Force the evaluation to run on the CPU only."
     )
 
     args = parser.parse_args()
@@ -77,6 +91,11 @@ def get_runner_class(cfg):
 def main():
     # allow auto-dl completes on main process without timeout when using NCCL backend.
     # os.environ["NCCL_BLOCKING_WAIT"] = "1"
+
+    args = parse_args()
+    device = torch.device("cpu" if args.cpu_only else "cuda" if torch.cuda.is_available() else "cpu")
+    os.environ['USE_CPU_ONLY'] = '1' if args.cpu_only else '0'
+
 
     # set before init_distributed_mode() to ensure the same job_id shared across all ranks.
     job_id = now()
@@ -123,7 +142,8 @@ def main():
     task = tasks.setup_task(cfg)
     datasets = task.build_datasets(cfg)
     model = task.build_model(cfg)
-
+    #cfg.config.model["vit_precision"] = "fp32"
+    model.to(device)
     runner = get_runner_class(cfg)(
         cfg=cfg, job_id=job_id, task=task, model=model, datasets=datasets
     )

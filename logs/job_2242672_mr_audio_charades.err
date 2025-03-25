@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlipAudio/lib/python3.9/runpy.py", line 188, in _run_module_as_main
+    mod_name, mod_spec, code = _get_module_details(mod_name, _Error)
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlipAudio/lib/python3.9/runpy.py", line 111, in _get_module_details
+    __import__(pkg_name)
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlipAudio/lib/python3.9/site-packages/torch/__init__.py", line 367, in <module>
+    from torch._C import *  # noqa: F403
+ImportError: /home/atuin/g102ea/g102ea22/software/private/conda/envs/mrBlipAudio/lib/python3.9/site-packages/torch/lib/../../nvidia/cusparse/lib/libcusparse.so.12: undefined symbol: __nvJitLinkComplete_12_4, version libnvJitLink.so.12

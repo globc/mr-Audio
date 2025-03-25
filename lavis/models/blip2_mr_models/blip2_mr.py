@@ -13,14 +13,17 @@ import re
 
 import torch
 import torch.nn as nn
+from accelerate.commands.config.config_args import cache_dir
 from torch.cuda.amp import autocast as autocast
 from transformers import T5TokenizerFast
 from peft import LoraConfig, get_peft_model
 import wandb
 
+from lavis.models.beats.BEATs import BEATs
+
 sys.path.append(sys.path[0] + "/..")
 from lavis.common.registry import registry
-from lavis.models.blip2_models.blip2 import Blip2Base, disabled_train
+from lavis.models.blip2_models.blip2 import Blip2Base, disabled_train, LayerNorm
 from lavis.models.blip2_models.modeling_t5 import T5Config, T5ForConditionalGeneration
 from lavis.common.dist_utils import is_main_process
 from lavis.models.blip2_mr_models.utils import (
@@ -33,6 +36,15 @@ from lavis.models.blip2_mr_models.utils import (
     get_timestamps_as_relative_floats,
     get_timestamps_as_framenumbers,
 )
+
+from lavis.models.blip2_mr_models.model_helpers import *
+
+
+from audioinclusion.AudioEmbeddingsCLAP import CLAPAudioEmbeddings
+from lavis.models.blip2_mr_models.GatedCrossAttention import GatedCrossAttention
+from lavis.models.blip2_mr_models.BiGatedCrossAttention import BiGatedCrossAttention
+from lavis.models.blip2_mr_models.MultiomodalTransformer import MultimodalTransformer
+
 
 # set the environment variable TOKENIZERS_PARALLELISM = false
 # to disable tokenizers parallelism
@@ -63,7 +75,7 @@ class BLIP2_MR(Blip2Base):
         img_size=224,
         drop_path_rate=0,
         use_grad_checkpoint=False,
-        vit_precision="fp16",
+        vit_precision="fp32", #"fp16",
         freeze_vit=True,
         num_query_token=32,
         t5_model="google/flan-t5-xl",
@@ -75,6 +87,13 @@ class BLIP2_MR(Blip2Base):
         interleave_data=False,
         frame_token_aggregation=None,
         task="lora",
+        device= torch.device("cuda" if torch.cuda.is_available() else "cpu"),
+        sampling_rate=48000,
+        fusion_method="concat",
+        audio_encoder_type="clap",
+        use_rna_loss=False,
+        log_feature_means=False,
+        late_fusion=False
     ):
         """
         apply_lemmatizer: when set to True, postprocess predict_answers() result with lemmas.
@@ -95,17 +114,25 @@ class BLIP2_MR(Blip2Base):
         self.interleave_data = interleave_data
         self.frame_token_aggregation = frame_token_aggregation
 
+        self.audio_embeddings_model = CLAPAudioEmbeddings()
+        self.audio_feature_dim = 512
+        self.sampling_rate = sampling_rate
+
+
         if self.use_wandb and is_main_process():
             self.wandb_table_data = []
             self.wandb_table_data_eval = []
 
         ### Vision backbone ######################################################
         (
-            self.visual_encoder,
-            self.ln_vision,
+            self.visual_encoder, self.ln_vision,
         ) = self.init_vision_encoder(
             img_size, drop_path_rate, use_grad_checkpoint, vit_precision
         )
+
+        #Move Vision Encoder to device
+        #self.visual_encoder = self.visual_encoder
+        #self.ln_vision = self.ln_vision
 
         # freeze ViT
         if freeze_vit:
@@ -117,13 +144,18 @@ class BLIP2_MR(Blip2Base):
 
         ##########################################################################
 
-        ### Text backbone ########################################################
-        self.t5_tokenizer = T5TokenizerFast.from_pretrained(t5_model)
-        t5_config = T5Config.from_pretrained(t5_model)
+        ### Text backbone ######################c##################################
+        curr_path = os.getcwd() + '/cache'
+        #example: '/work/scratch/kurse/kurs00079/hm66ryjy/mr-Audio/cache'
+        self.t5_tokenizer = T5TokenizerFast.from_pretrained(t5_model, cache_dir=os.getcwd() + "/cache")
+        t5_config = T5Config.from_pretrained(t5_model, cache_dir=os.getcwd() + "/cache")
         t5_config.dense_act_fn = "gelu"
         self.t5_model = T5ForConditionalGeneration.from_pretrained(
-            t5_model, config=t5_config
+            t5_model, config=t5_config, cache_dir= curr_path
         )
+
+        #Move T5 to device
+        self.t5_model = self.t5_model.to(self.device)
 
         # Depending on the tokenizer, some numbers are represented as 2 tokens
         # this is annoying and needs to be fixed
@@ -141,7 +173,7 @@ class BLIP2_MR(Blip2Base):
 
         ### LORA ##########
 
-        if self.use_lora:
+        if self.use_lora: # Currently trains only the linear layers of T5
             # If only targeting attention blocks of the model
             # target_modules = ["q", "v"]
 
@@ -166,7 +198,7 @@ class BLIP2_MR(Blip2Base):
             )
 
             self.t5_model = get_peft_model(self.t5_model, lora_config)
-            self.t5_model.print_trainable_parameters()
+            #self.t5_model.print_trainable_parameters()
         else:
             # freeze T5
             for name, param in self.t5_model.named_parameters():
@@ -182,6 +214,12 @@ class BLIP2_MR(Blip2Base):
             num_query_token, self.visual_encoder.num_features
         )
 
+        #Move to device
+        self.query_tokens = torch.nn.Parameter(
+            self.query_tokens.to(self.device)
+        )
+        self.Qformer = self.Qformer.to(self.device)
+
         if not self.multimodal_Qformer:
             self.Qformer.cls = None
             self.Qformer.bert.embeddings.word_embeddings = None
@@ -193,9 +231,35 @@ class BLIP2_MR(Blip2Base):
             self.Qformer_tokenizer = self.init_tokenizer()
 
         self.num_query_token = num_query_token
+
+        #Original:
         self.t5_proj = nn.Linear(
-            self.Qformer.config.hidden_size, self.t5_model.config.hidden_size
-        )
+            self.Qformer.config.hidden_size, self.t5_model.config.hidden_size).to(self.device)
+
+        self.fusion_method = fusion_method
+        self.use_rna_loss = use_rna_loss
+        self.log_feature_means = log_feature_means
+        self.late_fusion = late_fusion
+
+        self.audio_t5_proj = nn.Linear(
+                self.audio_feature_dim, self.t5_model.config.hidden_size
+            ).to(self.device)
+
+        if self.fusion_method == "interleave":
+            self.audio_t5_proj = nn.Linear(
+                self.audio_feature_dim, self.t5_model.config.hidden_size
+            ).to(self.device)
+
+        if self.fusion_method == "gca" and not self.late_fusion:
+            self.gatedCrossAttention = GatedCrossAttention()#hidden_dim
+        #for late fusion after projecting in space of T5
+        if self.fusion_method == "gca" and self.late_fusion:
+            self.gatedCrossAttention = GatedCrossAttention(hidden_dim=2048)
+        if self.fusion_method == "bigca":
+            self.gatedCrossAttention = BiGatedCrossAttention()
+        #self.multimodalTransformer = MultimodalTransformer(use_visual_enc=True)
+        if self.fusion_method == "avde":
+            self.multimodalTransformer = MultimodalTransformer(hidden_dim=768)
 
         ##########################################################################
 
@@ -227,64 +291,54 @@ class BLIP2_MR(Blip2Base):
         self,
         samples,
     ):
+        #Sample
         image = samples["video"]
-        timestamps, durations = (
-            samples["timestamps"],
-            samples["duration"],
-        )
         video_prompt_end = samples["video_prompt_end"]
         query_prompt, task_prompt = samples["query_prompt"], samples["task_prompt"]
         answer = samples["relevant_windows"]
+        timestamps, durations = (samples["timestamps"],samples["duration"])
 
-        # uniform sampling
+        #Audio
+        audio_clips = samples["audio"]
+
+        # flatten audio shape b,t,features to [b*t, features]
+        audio = audio_clips.reshape(-1, audio_clips.shape[2])
+        # audio shape [b*t,512]
+        audio_embeddings = self.audio_embeddings_model.get_audio_embeddings(audio_clips=audio, sr=self.sampling_rate).to(self.device)
+
+        #Image
         b, t, c, w, h = image.shape
-        image = image.reshape(-1, c, w, h)
-        with torch.cuda.amp.autocast(enabled=(self.device != torch.device("cpu"))):
-            image_embeds = self.ln_vision(self.visual_encoder(image))  # bt, n, c
-        image_atts = torch.ones(image_embeds.size()[:-1], dtype=torch.long).to(
-            image.device
-        )  # bt n c
+        image_embeds, image_atts = self.uniform_sampling(image=image, c=c, w=w, h=h)
+
 
         ### Apply Q-Former for Image Embeddings ####################################
         query_tokens = self.query_tokens.expand(image_embeds.shape[0], -1, -1)
 
         if self.multimodal_Qformer:
-            query_atts = torch.ones(query_tokens.size()[:-1], dtype=torch.long).to(
-                self.device
-            )
-
-            text = self.Qformer_tokenizer(
-                [
-                    q for q in query_prompt for _ in range(t)
-                ],  # apply query to each frame
-                return_tensors="pt",
-                padding=True,
-            ).to(self.device)
-
-            attention_mask = torch.cat([query_atts, text.attention_mask], dim=1)
-
-            output = self.Qformer.bert(
-                text.input_ids,
-                query_embeds=query_tokens,
-                attention_mask=attention_mask,
-                encoder_hidden_states=image_embeds,
-                encoder_attention_mask=image_atts,
-                return_dict=True,
-            )
-
-            frames_for_projection = output.last_hidden_state[
-                :, : query_tokens.size(1), :
-            ]
+            query_atts, attention_mask, text, output = self.setup_multimodalQformer(query_tokens=query_tokens, query_prompt=query_prompt, image_embeds=image_embeds, image_atts=image_atts, t=t)
         else:
-            frames_after_qformer = self.Qformer.bert(
-                query_embeds=query_tokens,
-                encoder_hidden_states=image_embeds,
-                encoder_attention_mask=image_atts,
-                return_dict=True,
-            )
-            frames_for_projection = frames_after_qformer.last_hidden_state
+            frames_after_qformer, frames_for_projection = self.setup_unimodalQfomer(query_tokens=query_tokens, image_embeds=image_embeds, image_atts=image_atts)
 
-        frames_for_t5 = self.t5_proj(frames_for_projection)
+        # flatten audio embeddings like the image tensors
+        audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frames_for_projection.shape[1], -1) # reshape to [b*t, query_tokens, embed_len]
+
+        if self.late_fusion:
+            audio_for_t5 = self.audio_t5_proj(audio_embeddings)
+            vision_for_t5 = self.t5_proj(frames_for_projection)
+
+        if self.late_fusion:
+            if self.fusion_method == "lcam":
+                frames_for_t5 = self.lcam_fusion(audio_for_t5, vision_for_t5)
+            if self.fusion_method == "interleave":
+                frames_for_t5 = self.gatedCrossAttention(vision_for_t5, audio_for_t5)
+        else:
+            if self.fusion_method == "lcam":
+                fused_frames = self.lcam_fusion(audio_embeddings, frames_for_projection)
+            if self.fusion_method == "gca" or self.fusion_method == "bigca":
+                fused_frames = self.gatedCrossAttention(frames_for_projection, audio_embeddings)
+            if self.fusion_method == "avde":
+                fused_frames = self.multimodalTransformer(audio_embeddings, frames_for_projection)
+            frames_for_t5 = self.t5_proj(fused_frames)
 
         # TODO: Use average pooling to aggregate the 32 embeddings of one frame
         if self.frame_token_aggregation:
@@ -294,28 +348,22 @@ class BLIP2_MR(Blip2Base):
             ], "Invalid aggregation method, please choose from ['mean']"
             frames_for_t5 = frames_for_t5.mean(dim=1, keepdim=True)
 
-        # reshape the frames for t5 from (bt, n, c) to (b, t * n, c)
-        frames_for_t5 = frames_for_t5.reshape(
-            b, t, frames_for_t5.shape[-2], -1
-        )  # b, t, n, c
-        frames_atts_for_t5 = torch.ones(frames_for_t5.size()[:-1], dtype=torch.long).to(
-            image.device
-        )  # b, t, n
-        frames_for_t5 = frames_for_t5.reshape(
-            b, -1, frames_for_t5.shape[-1]
-        )  # b, t * n, c
-        frames_atts_for_t5 = frames_atts_for_t5.reshape(b, -1)  # b, t * n
+        frames_for_t5, frames_atts_for_t5 = self.reshape_frames_for_t5(frames_for_t5= frames_for_t5, b=b, t=t, image=image)
 
-        with torch.cuda.amp.autocast(dtype=torch.bfloat16):
+
+        with (torch.cuda.amp.autocast(dtype=torch.float32)):
+            #print(f"Starting Prompt Concat")
             inputs_embs_mr, inputs_atts_mr, video_prompt = self.prompt_concatenation(
-                timestamps,
-                durations,
-                frames_for_t5,
-                frames_atts_for_t5,
-                video_prompt_end,
-                query_prompt,
-                task_prompt,
+                timestamps=timestamps,
+                durations=durations,
+                frames_for_t5=frames_for_t5,
+                frames_atts_for_t5=frames_atts_for_t5,
+                video_prompt_end=video_prompt_end,
+                query_prompt=query_prompt,
+                task_prompt=task_prompt,
             )
+
+
 
             ### Encode answer ################################################
             output_tokens_mr = self.t5_tokenizer(
@@ -338,12 +386,19 @@ class BLIP2_MR(Blip2Base):
                 return_dict=True,
                 labels=targets_mr,
             )
+
             loss = outputs_loc.loss
 
             # write the following to a wandb table
             if self.use_wandb and is_main_process():
                 log = {}
                 log["train/log_likelihood_loss"] = loss.item()
+                if self.log_feature_means:
+                    log["train/normalized_mean_fused_norm"] = self.calculate_mean_feature_norm(frames_for_t5).item()
+                    log["train/vision_mean_feature_norm"] = torch.mean(torch.linalg.norm(vision_for_t5.mean(dim=1), dim=-1), dim=-1).item()
+                    log["train/audio_mean_feature_norm"] = self.calculate_mean_feature_norm(audio_embeddings).item()
+
+                    log["train/projectedfused_mean_fused_norm"] = torch.mean(torch.linalg.norm(frames_for_t5.mean(dim=1), dim=-1), dim=-1).item()
                 # Log images and predictions
                 if samples["iters"] % self.log_samples_every_n == 0:
                     pred = self.t5_tokenizer.batch_decode(
@@ -365,8 +420,9 @@ class BLIP2_MR(Blip2Base):
                 # Log iteration
                 wandb.log(log)
 
-        return {"loss": loss}
+            return {"loss": loss}
 
+    #TODO: add audio embeddings here
     def prompt_concatenation(
         self,
         timestamps,
@@ -521,6 +577,7 @@ class BLIP2_MR(Blip2Base):
                 )
 
                 duration_emb = batch_duration_embs[j]
+
                 interleaved_prompt = torch.cat(
                     [interleaved_prompt, seperator_emb, duration_emb]
                 )
@@ -553,6 +610,7 @@ class BLIP2_MR(Blip2Base):
             ).to(frames_for_t5.device)
 
             ### Concatenate interleaved_video_prompt, video_prompt_end, text_prompt
+
             inputs_embs_mr = torch.cat(
                 [
                     interleaved_video_prompt_embs,
@@ -613,7 +671,7 @@ class BLIP2_MR(Blip2Base):
             )
 
             video_prompt = [
-                p + "frames" + end_p
+                p + "frames with audio" + end_p   #TODO: specify the prompt more precisely
                 for (p, end_p) in zip(video_prompt, video_prompt_end)
             ]
 
@@ -626,7 +684,7 @@ class BLIP2_MR(Blip2Base):
         use_nucleus_sampling=False,
         num_beams=5,
         max_length=50,
-        min_length=8,
+        min_length=1,
         top_p=0.9,
         repetition_penalty=1.0,
         length_penalty=1.0,
@@ -659,6 +717,10 @@ class BLIP2_MR(Blip2Base):
         query_prompt, task_prompt = samples["query_prompt"], samples["task_prompt"]
         answer = samples["relevant_windows"]
 
+        audio_clips = samples["audio"]
+        audio = audio_clips.reshape(-1, audio_clips.shape[2])
+        audio_embeddings = self.audio_embeddings_model.get_audio_embeddings(audio_clips=audio, sr=48000)
+
         # uniform sampling
         b, t, c, w, h = image.shape
         image = image.reshape(-1, c, w, h)
@@ -677,7 +739,29 @@ class BLIP2_MR(Blip2Base):
             encoder_attention_mask=image_atts,
             return_dict=True,
         )
-        frames_for_t5 = self.t5_proj(frames_after_qformer.last_hidden_state)
+
+
+        ## Add audio
+        #audio_embeddings = audio_embeddings.reshape(-1, audio_embeddings.shape[2])
+        audio_embeddings = audio_embeddings.unsqueeze(1).expand(-1, frames_after_qformer.last_hidden_state.shape[1], -1)
+
+        if self.late_fusion:
+            audio_for_t5 = self.audio_t5_proj(audio_embeddings)
+            vision_for_t5 = self.t5_proj(frames_after_qformer.last_hidden_state)
+
+        if self.late_fusion:
+            if self.fusion_method == "lcam":
+                frames_for_t5 = self.lcam_fusion(audio_for_t5, vision_for_t5)
+            if self.fusion_method == "interleave":
+                frames_for_t5 = self.gatedCrossAttention(vision_for_t5, audio_for_t5)
+        else:
+            if self.fusion_method == "lcam":
+                fused_frames = self.lcam_fusion(audio_embeddings, frames_after_qformer.last_hidden_state)
+            if self.fusion_method == "gca" or self.fusion_method == "bigca":
+                fused_frames = self.gatedCrossAttention(frames_after_qformer.last_hidden_state, audio_embeddings)
+            if self.fusion_method == "avde":
+                fused_frames = self.multimodalTransformer(audio_embeddings, frames_after_qformer.last_hidden_state)
+            frames_for_t5 = self.t5_proj(fused_frames)
 
         if self.frame_token_aggregation:
             assert self.frame_token_aggregation in [
@@ -879,7 +963,11 @@ class BLIP2_MR(Blip2Base):
         return self._lemmatizer
 
     @classmethod
-    def from_config(cls, cfg):
+    def from_config(
+            cls,
+            cfg,
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    ):
         img_size = cfg.get("image_size")
         num_query_token = cfg.get("num_query_token")
         t5_model = cfg.get("t5_model")
@@ -898,6 +986,15 @@ class BLIP2_MR(Blip2Base):
         apply_lemmatizer = cfg.get("apply_lemmatizer", False)
         task = cfg.get("task", "qformer_freeze_lora")
 
+        sampling_rate = cfg.get("target_sr", 48000)
+
+        fusion_method = cfg.get("fusion_method", "gca")
+        audio_encoder = cfg.get("audio_encoder", "clap")
+        use_rna_loss = cfg.get("use_rna_loss", False)
+        log_feature_means = cfg.get("log_feature_means", False)
+        late_fusion = cfg.get("late_fusion", False)
+        init_audio_projection = cfg.get("init_audio_projection", False)
+
         model = cls(
             img_size=img_size,
             drop_path_rate=drop_path_rate,
@@ -914,8 +1011,19 @@ class BLIP2_MR(Blip2Base):
             interleave_data=interleave_data,
             frame_token_aggregation=frame_token_aggregation,
             task=task,
+            device=device,
+            sampling_rate=sampling_rate,
+            fusion_method=fusion_method,
+            audio_encoder_type=audio_encoder,
+            use_rna_loss=use_rna_loss,
+            log_feature_means=log_feature_means,
+            late_fusion=late_fusion
         )
         model.load_checkpoint_from_config(cfg)
+
+        ## initialize audio projection with the linear layer of the vision t5 projection
+        if init_audio_projection and late_fusion:
+            model.init_audio_projection()
 
         return model
 
@@ -951,7 +1059,7 @@ class BLIP2_MR(Blip2Base):
 
     def find_annoying_numbers(
         self,
-        tokenizer=T5TokenizerFast.from_pretrained("google/flan-t5-xl"),
+        tokenizer=T5TokenizerFast.from_pretrained("google/flan-t5-xl", cache_dir=os.getcwd() + "/cache"),
         range_end=300,
     ):
         """
@@ -1061,3 +1169,192 @@ class BLIP2_MR(Blip2Base):
                 )
 
         return tokens, token_embs
+
+    def uniform_sampling(
+            self,
+            image: torch.Tensor,
+            c: int,
+            w: int,
+            h: int,
+    ):
+        # uniform sampling
+        image = image.reshape(-1, c, w, h) # reshape to (b*t, c, w, h)
+        with torch.cuda.amp.autocast(enabled=(self.device != torch.device("cpu"))): #switch to self.device for original
+            image_embeds = self.ln_vision(self.visual_encoder(image))  # bt, n, c
+        image_atts = torch.ones(image_embeds.size()[:-1], dtype=torch.long).to(
+            self.device
+            #self.device #maybe set back for training
+            # image.device
+        )  # bt n c
+
+        return image_embeds, image_atts
+
+    def setup_multimodalQformer(
+            self,
+            query_tokens,
+            query_prompt,
+            image_embeds,
+            image_atts,
+            t
+    ):
+        query_atts = torch.ones(query_tokens.size()[:-1], dtype=torch.long).to(self.device)
+        text = self.Qformer_tokenizer(
+            [
+                q for q in query_prompt for _ in range(t)
+            ],  # apply query to each frame
+            return_tensors="pt",
+            padding=True,
+        ).to(self.device)
+
+        attention_mask = torch.cat([query_atts, text.attention_mask], dim=1)
+
+        output = self.Qformer.bert(
+            text.input_ids,
+            query_embeds=query_tokens,
+            attention_mask=attention_mask,
+            encoder_hidden_states=image_embeds,
+            encoder_attention_mask=image_atts,
+            return_dict=True,
+        )
+
+        frames_for_projection = output.last_hidden_state[
+                                :, : query_tokens.size(1), :
+                                ]
+        return query_atts, attention_mask, text, output
+
+    def setup_unimodalQfomer(
+            self,
+            query_tokens: torch.Tensor,
+            image_embeds: torch.Tensor,
+            image_atts: torch.Tensor,
+    ):
+
+        frames_after_qformer = self.Qformer.bert(
+            query_embeds=query_tokens,
+            encoder_hidden_states=image_embeds,
+            encoder_attention_mask=image_atts,
+            return_dict=True,
+        )
+        frames_for_projection = frames_after_qformer.last_hidden_state
+
+        return frames_after_qformer, frames_for_projection
+
+    def reshape_frames_for_t5(
+            self,
+            frames_for_t5: torch.Tensor,
+            b: int,
+            t: int,
+            image,
+    ):
+        # Reshape the frames for t5 from (bt, n, c) to (b, t * n, c)
+        frames_for_t5 = frames_for_t5.reshape(
+            b, t, frames_for_t5.shape[-2], -1
+        )  # b, t, n, c
+        frames_atts_for_t5 = torch.ones(frames_for_t5.size()[:-1], dtype=torch.long).to(
+            image.device
+        )  # b, t, n
+        frames_for_t5 = frames_for_t5.reshape(
+            b, -1, frames_for_t5.shape[-1]
+        )  # b, t * n, c
+        frames_atts_for_t5 = frames_atts_for_t5.reshape(b, -1)  # b, t * n
+
+        return frames_for_t5, frames_atts_for_t5
+
+
+    def reshape_audio_frames_for_t5(
+            self,
+            audio_frames_for_t5: torch.Tensor,
+            b: int,
+            t: int,
+            audio,
+    ):
+        # Reshape the audio frames for t5 from (bt, n) to (b, t * n)
+        frames_for_t5 = audio_frames_for_t5.reshape(
+            b, t, audio_frames_for_t5.shape[-2], -1
+
+        )  # b, t, n, c
+        frames_atts_for_t5 = torch.ones(frames_for_t5.size()[:-1], dtype=torch.long).to(
+            audio.device
+        )  # b, t, n
+        frames_for_t5 = frames_for_t5.reshape(
+            b, -1, frames_for_t5.shape[-1]
+        )  # b, t * n, c
+        frames_atts_for_t5 = frames_atts_for_t5.reshape(b, -1)  # b, t * n
+
+        return frames_for_t5, frames_atts_for_t5
+
+    def lcam_fusion(self, audio_features, vision_features, lambda1=1.0, lambda2=1.0):
+        """
+        Lightweight Cross-Modal Attention Mechanism (LCAM) using dot product.
+
+        Args:
+            vision_features (torch.Tensor): Video features of shape (b*t, #query_tokens, #features).
+            audio_features (torch.Tensor): Audio features of shape (b*t, #query_tokens, #features).
+            lambda1 (float): Weight for the linear term in the discriminant function.
+            lambda2 (float): Weight for the quadratic term in the discriminant function.
+
+        Returns:
+            torch.Tensor: The fused features of shape (b*t, #query_tokens, #features).
+        """
+        # Step 1: Compute dot product between video and audio features across the last dimension (#features)
+        dot_product = torch.sum(vision_features * audio_features, dim=-1, keepdim=True)  # Shape: (b*t, #query_tokens, 1)
+
+        # Step 2: Compute mean and variance of the dot product across the batch-temporal axis (b*t)
+        mean = torch.mean(dot_product, dim=0, keepdim=True)  # Shape: (1, #query_tokens, 1)
+        variance = torch.var(dot_product, dim=0, unbiased=True, keepdim=True)  # Shape: (1, #query_tokens, 1)
+
+        # Step 3: Compute the discriminant function
+        difference = dot_product - mean  # Shape: (b*t, #query_tokens, 1)
+        discriminant_function = (lambda1 * difference + lambda2 * difference**2) / (variance + 1e-6)  # Shape: (b*t, #query_tokens, 1)
+
+        # Step 4: Apply sigmoid to get gating weights
+        gating_weights = torch.sigmoid(discriminant_function)  # Shape: (b*t, #query_tokens, 1)
+
+        # Step 5: Compute the cross-modal fused features
+        fused_output = vision_features * gating_weights + audio_features * (1 - gating_weights)  # Shape: (b*t, #query_tokens, #features)
+
+        return fused_output
+
+    def rna_loss(self, vision_features, audio_features):
+        """
+        Computes the RNA loss from the paper
+        "Domain Generalization through Audio-Visual Relative Norm Alignment in
+        First Person Action Recognition" by Planamente et al.
+        Args:
+            vision_features (torch.Tensor)
+            audio_features (torch.Tensor)
+
+        Returns:
+            float: RNA loss
+        """
+        v_query_norm = torch.norm(vision_features, dim=2)  # Shape: (batch_size, num_tokens)
+        a_query_norm = torch.norm(audio_features, dim=2)  # Shape: (batch_size, num_tokens)
+
+        # Calculate mean magnitude across all tokens
+        mean_v_norm = torch.mean(v_query_norm, dim=1)  # Shape: (batch_size,)
+        mean_a_norm = torch.mean(a_query_norm, dim=1)  # Shape: (batch_size,)
+
+        # Calculate RNA loss
+        loss = torch.mean(torch.pow((mean_v_norm / (mean_a_norm + 1e-6)) - 1, 2))  # Average loss across batch
+
+        return loss
+
+    def init_audio_projection(self):
+        """
+        Initializes the audio projection with the first 512 dimensions of the pre-trained t5 projection-
+        """
+        logging.info("initializing audio projection...")
+        vision_weights = self.t5_proj.weight
+        self.audio_t5_proj.weight.data = torch.nn.Parameter(vision_weights[:, :512].detach().clone())
+
+    def calculate_mean_feature_norm(self, features):
+        """
+        Calculate the mean feature norm of the given features
+        Args:
+              features: shape (batch_size, num_tokens, embedding_dim)
+        Returns:
+              mnv: (float) mean feature norm of the given features averaged across batch
+        """
+        query_norm = torch.norm(features, dim=2)
+        mean_norm = torch.mean(query_norm, dim=1)
+        return torch.mean(mean_norm)

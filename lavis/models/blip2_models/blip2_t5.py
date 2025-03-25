@@ -40,7 +40,7 @@ class Blip2T5(Blip2Base):
         img_size=224,
         drop_path_rate=0,
         use_grad_checkpoint=False,
-        vit_precision="fp16",
+        vit_precision="fp32", #"fp16",
         freeze_vit=True,
         num_query_token=32,
         t5_model="google/flan-t5-xl",

@@ -15,6 +15,8 @@ from lavis.processors.randaugment import RandomAugment
 from omegaconf import OmegaConf
 from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
+from audioinclusion.intervals import *
+from audioinclusion.AudioEmbeddingsCLAP import CLAPAudioEmbeddings
 
 MAX_INT = registry.get("MAX_INT")
 
@@ -294,6 +296,8 @@ class Blip2VideoTrainProcessor(BlipVideoBaseProcessor):
         min_scale=0.5,
         max_scale=1.0,
         n_frms=MAX_INT,
+        audio_clip_length=1.0,
+        target_sr=44100,
     ):
         super().__init__(mean=mean, std=std, n_frms=n_frms)
 
@@ -313,10 +317,12 @@ class Blip2VideoTrainProcessor(BlipVideoBaseProcessor):
                 self.normalize,
             ]
         )
+        self.audio_clip_length = audio_clip_length
+        self.target_sr = target_sr
 
     def __call__(self, vpath, clip_proposal=None):
 
-        clip, indices, fps = load_video(
+        clip, indices, fps, audio = load_video_frames_with_audio(
             video_path=vpath,
             n_frms=self.n_frms,
             height=self.image_size,
@@ -324,9 +330,11 @@ class Blip2VideoTrainProcessor(BlipVideoBaseProcessor):
             sampling="random",
             # sampling="uniform",
             clip_proposal=clip_proposal,
+            target_sr=self.target_sr,
+            audio_clip_len=self.audio_clip_length
         )
 
-        return self.transform(clip), indices, fps
+        return self.transform(clip), indices, fps, audio
 
     @classmethod
     def from_config(cls, cfg=None):
@@ -341,6 +349,8 @@ class Blip2VideoTrainProcessor(BlipVideoBaseProcessor):
         min_scale = cfg.get("min_scale", 0.5)
         max_scale = cfg.get("max_scale", 1.0)
         n_frms = cfg.get("n_frms", MAX_INT)
+        audio_clip_length = cfg.get("audio_clip_len", 1.0)
+        target_sr = cfg.get("target_sr", 44100)
 
         return cls(
             image_size=image_size,
@@ -349,12 +359,14 @@ class Blip2VideoTrainProcessor(BlipVideoBaseProcessor):
             min_scale=min_scale,
             max_scale=max_scale,
             n_frms=n_frms,
+            audio_clip_length=audio_clip_length,
+            target_sr=target_sr
         )
 
 
 @registry.register_processor("blip_video_eval")
 class BlipVideoEvalProcessor(BlipVideoBaseProcessor):
-    def __init__(self, image_size=384, mean=None, std=None, n_frms=MAX_INT):
+    def __init__(self, image_size=384, mean=None, std=None, n_frms=MAX_INT, audio_clip_length=1.0, target_sr=44100):
         super().__init__(mean=mean, std=std, n_frms=n_frms)
 
         self.image_size = image_size
@@ -367,18 +379,22 @@ class BlipVideoEvalProcessor(BlipVideoBaseProcessor):
             ]
         )
         self.n_frms = n_frms
+        self.audio_clip_length = audio_clip_length
+        self.target_sr = target_sr
 
     def __call__(self, vpath, clip_proposal=None):
-        clip, indices, fps = load_video(
+        clip, indices, fps, audio = load_video_frames_with_audio(
             video_path=vpath,
             n_frms=self.n_frms,
             height=self.image_size,
             width=self.image_size,
             sampling="uniform",
             clip_proposal=clip_proposal,
+            target_sr=self.target_sr,
+            audio_clip_len=self.audio_clip_length
         )
 
-        return self.transform(clip), indices, fps
+        return self.transform(clip), indices, fps, audio
 
     @classmethod
     def from_config(cls, cfg=None):
@@ -391,5 +407,7 @@ class BlipVideoEvalProcessor(BlipVideoBaseProcessor):
         std = cfg.get("std", None)
 
         n_frms = cfg.get("n_frms", MAX_INT)
+        audio_clip_length = cfg.get("audio_clip_len", 1.0)
+        target_sr = cfg.get("target_sr", 44100)
 
-        return cls(image_size=image_size, mean=mean, std=std, n_frms=n_frms)
+        return cls(image_size=image_size, mean=mean, std=std, n_frms=n_frms, audio_clip_length=audio_clip_length, target_sr=target_sr)

@@ -34,6 +34,11 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data import DataLoader, DistributedSampler
 from torch.utils.data.dataset import ChainDataset
 
+import collections
+import copy
+import re
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+
 
 @registry.register_runner("runner_base")
 class RunnerBase:
@@ -45,6 +50,8 @@ class RunnerBase:
     """
 
     def __init__(self, cfg, task, model, datasets, job_id):
+        self.eigendevice = torch.device('cpu' if (os.environ.get('USE_CPU_ONLY', '0') == '1')
+                                        else 'cuda' if torch.cuda.is_available() else 'cpu')
         self.config = cfg
         self.job_id = job_id
 
@@ -83,7 +90,7 @@ class RunnerBase:
         """
         # move model to device
         if self._model.device != self.device:
-            self._model = self._model.to(self.device)
+            self._model = self._model.to(self.eigendevice)
 
             # distributed training wrapper
             if self.use_distributed:
@@ -402,6 +409,8 @@ class RunnerBase:
                             val_log.update({"best_epoch": best_epoch})
                             self.log_stats(val_log, split_name)
 
+                if self.config.run_cfg.get("save_after_epoch", True):
+                    self._save_checkpoint(cur_epoch, is_best=False)
             else:
                 # if no validation split is provided, we just save the checkpoint at the end of each epoch.
                 if not self.evaluate_only:
@@ -532,6 +541,43 @@ class RunnerBase:
                 else:
                     sampler = None
 
+                #Audio MR
+                #def custom_collate_fn(batch):
+                #    from collections import defaultdict
+                #    collated_batch = defaultdict(list)
+                #    for sample in batch:
+                #        for key, value in sample.items():
+                #            collated_batch[key].append(value)
+                #        return dict(collated_batch)
+                np_str_obj_array_pattern = re.compile(r"[SaUO]")
+
+                def default_collate(batch):
+                    r"""
+                    Custom collate function that handles the 'video' field.
+                    """
+                    elem = batch[0]
+                    elem_type = type(elem)
+                    if isinstance(elem, torch.Tensor):
+                        return torch.stack(batch, 0)
+                    elif isinstance(elem, float):
+                        return torch.tensor(batch, dtype=torch.float64)
+                    elif isinstance(elem, int):
+                        return torch.tensor(batch)
+                    elif isinstance(elem, str):
+                        return batch
+                    elif isinstance(elem, collections.abc.Mapping):
+
+                        return elem_type({key: default_collate([d[key] for d in batch]) for key in elem})
+                    elif isinstance(elem, tuple) and hasattr(elem, "_fields"):  # namedtuple
+                        return elem_type(*(default_collate(samples) for samples in zip(*batch)))
+                    elif isinstance(elem, collections.abc.Sequence):
+
+                        transposed = zip(*batch)
+                        return [default_collate(samples) for samples in transposed]
+                    else:
+                        return batch
+
+
                 loader = DataLoader(
                     dataset,
                     batch_size=bsz,
@@ -539,7 +585,7 @@ class RunnerBase:
                     pin_memory=True,
                     sampler=sampler,
                     shuffle=sampler is None and is_train,
-                    collate_fn=collate_fn,
+                    collate_fn= collate_fn, # default_collate, #custom_collate,
                     drop_last=True if is_train else False,
                 )
                 loader = PrefetchLoader(loader)
@@ -607,6 +653,7 @@ class RunnerBase:
 
         logging.info("Loading checkpoint from {}.".format(checkpoint_path))
         checkpoint = torch.load(checkpoint_path, map_location="cpu")
+        
         try:
             model.load_state_dict(checkpoint["model"])
         except RuntimeError as e:
@@ -634,7 +681,7 @@ class RunnerBase:
             raise RuntimeError("checkpoint url or path is invalid")
 
         state_dict = checkpoint["model"]
-        self.unwrap_dist_model(self.model).load_state_dict(state_dict)
+        self.unwrap_dist_model(self.model).load_state_dict(state_dict, strict=False)
 
         self.optimizer.load_state_dict(checkpoint["optimizer"])
         if self.scaler and "scaler" in checkpoint:

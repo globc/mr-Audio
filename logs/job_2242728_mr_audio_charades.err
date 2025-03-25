@@ -1,0 +1,132 @@
+WARNING:__main__:
+*****************************************
+Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+*****************************************
+/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/fairscale/experimental/nn/offload.py:19: FutureWarning: `torch.cuda.amp.custom_fwd(args...)` is deprecated. Please use `torch.amp.custom_fwd(args..., device_type='cuda')` instead.
+  return torch.cuda.amp.custom_fwd(orig_func)  # type: ignore
+/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/fairscale/experimental/nn/offload.py:19: FutureWarning: `torch.cuda.amp.custom_fwd(args...)` is deprecated. Please use `torch.amp.custom_fwd(args..., device_type='cuda')` instead.
+  return torch.cuda.amp.custom_fwd(orig_func)  # type: ignore
+/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/fairscale/experimental/nn/offload.py:30: FutureWarning: `torch.cuda.amp.custom_bwd(args...)` is deprecated. Please use `torch.amp.custom_bwd(args..., device_type='cuda')` instead.
+  return torch.cuda.amp.custom_bwd(orig_func)  # type: ignore
+/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/fairscale/experimental/nn/offload.py:30: FutureWarning: `torch.cuda.amp.custom_bwd(args...)` is deprecated. Please use `torch.amp.custom_bwd(args..., device_type='cuda')` instead.
+  return torch.cuda.amp.custom_bwd(orig_func)  # type: ignore
+/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/fairscale/experimental/nn/offload.py:19: FutureWarning: `torch.cuda.amp.custom_fwd(args...)` is deprecated. Please use `torch.amp.custom_fwd(args..., device_type='cuda')` instead.
+  return torch.cuda.amp.custom_fwd(orig_func)  # type: ignore
+/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/fairscale/experimental/nn/offload.py:30: FutureWarning: `torch.cuda.amp.custom_bwd(args...)` is deprecated. Please use `torch.amp.custom_bwd(args..., device_type='cuda')` instead.
+  return torch.cuda.amp.custom_bwd(orig_func)  # type: ignore
+/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/fairscale/experimental/nn/offload.py:19: FutureWarning: `torch.cuda.amp.custom_fwd(args...)` is deprecated. Please use `torch.amp.custom_fwd(args..., device_type='cuda')` instead.
+  return torch.cuda.amp.custom_fwd(orig_func)  # type: ignore
+/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/fairscale/experimental/nn/offload.py:30: FutureWarning: `torch.cuda.amp.custom_bwd(args...)` is deprecated. Please use `torch.amp.custom_bwd(args..., device_type='cuda')` instead.
+  return torch.cuda.amp.custom_bwd(orig_func)  # type: ignore
+Traceback (most recent call last):
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/urllib3/connection.py", line 199, in _new_conn
+    sock = connection.create_connection(
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/urllib3/util/connection.py", line 85, in create_connection
+    raise err
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/urllib3/util/connection.py", line 73, in create_connection
+    sock.connect(sa)
+socket.timeout: timed out
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/urllib3/connectionpool.py", line 789, in urlopen
+    response = self._make_request(
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/urllib3/connectionpool.py", line 490, in _make_request
+    raise new_e
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/urllib3/connectionpool.py", line 466, in _make_request
+    self._validate_conn(conn)
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/urllib3/connectionpool.py", line 1095, in _validate_conn
+    conn.connect()
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/urllib3/connection.py", line 693, in connect
+    self.sock = sock = self._new_conn()
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/urllib3/connection.py", line 208, in _new_conn
+    raise ConnectTimeoutError(
+urllib3.exceptions.ConnectTimeoutError: (<urllib3.connection.HTTPSConnection object at 0x14e8bcec77c0>, 'Connection to cdn-lfs.hf.co timed out. (connect timeout=10)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/requests/adapters.py", line 667, in send
+    resp = conn.urlopen(
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/urllib3/connectionpool.py", line 843, in urlopen
+    retries = retries.increment(
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/urllib3/util/retry.py", line 519, in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='cdn-lfs.hf.co', port=443): Max retries exceeded with url: /repos/16/41/16418edd56a7c42307a0f361531c01ee227a92a98628972bd433062c276dad7c/d60acb128cf7b7f2536e8f38a5b18a05535c9e14c7a355904270e15b0945ea86?response-content-disposition=inline%3B+filename*%3DUTF-8%27%27spiece.model%3B+filename%3D%22spiece.model%22%3B&Expires=1734525396&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTczNDUyNTM5Nn19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2RuLWxmcy5oZi5jby9yZXBvcy8xNi80MS8xNjQxOGVkZDU2YTdjNDIzMDdhMGYzNjE1MzFjMDFlZTIyN2E5MmE5ODYyODk3MmJkNDMzMDYyYzI3NmRhZDdjL2Q2MGFjYjEyOGNmN2I3ZjI1MzZlOGYzOGE1YjE4YTA1NTM1YzllMTRjN2EzNTU5MDQyNzBlMTViMDk0NWVhODY~cmVzcG9uc2UtY29udGVudC1kaXNwb3NpdGlvbj0qIn1dfQ__&Signature=t8gzGB7JZOx3vG-QwjJaC6v64V7WhAyXs5WuwfV2S26noGtmhOOH6p-TXVs7Aj-aIlTn6JHXMpiwxtWLrRkhCGPE4gcm90U~Tah7i2cvKW0NDPi3IYmWeVnZRkIHnqirTIBP6Qjj~Yt4fCbxVBO630BdCiQm7f76q4S4EK0lHo-nOGLo5S1wS6mmmx8HUmmrbn5CPD4ei75ZHQZMCSY6YG17MN2k5791Pi06nIzZTB-Mpz7Faaz6eLSrZqOd7B07AUc40Eu3Qxt2TMEArXKILGUYRjQlFO5-TIef2m5VC3rwBLm3zViiKTJKfZCKfEs12bBSEQ8Jt2uv82VqdqwSVA__&Key-Pair-Id=K3RPWS32NSSJCE (Caused by ConnectTimeoutError(<urllib3.connection.HTTPSConnection object at 0x14e8bcec77c0>, 'Connection to cdn-lfs.hf.co timed out. (connect timeout=10)'))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "train.py", line 19, in <module>
+    import lavis.tasks as tasks
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/__init__.py", line 16, in <module>
+    from lavis.models import *
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/models/__init__.py", line 52, in <module>
+    from lavis.models.blip2_mr_models.blip2_mr import BLIP2_MR
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/models/blip2_mr_models/blip2_mr.py", line 52, in <module>
+    class BLIP2_MR(Blip2Base):
+  File "/home/atuin/g102ea/g102ea22/mr-Audio/lavis/models/blip2_mr_models/blip2_mr.py", line 1040, in BLIP2_MR
+    tokenizer=T5TokenizerFast.from_pretrained("google/flan-t5-xl"),
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/transformers/tokenization_utils_base.py", line 2169, in from_pretrained
+    resolved_vocab_files[file_id] = cached_file(
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/transformers/utils/hub.py", line 403, in cached_file
+    resolved_file = hf_hub_download(
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/huggingface_hub/utils/_validators.py", line 114, in _inner_fn
+    return fn(*args, **kwargs)
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/huggingface_hub/file_download.py", line 862, in hf_hub_download
+    return _hf_hub_download_to_cache_dir(
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/huggingface_hub/file_download.py", line 1011, in _hf_hub_download_to_cache_dir
+    _download_to_tmp_and_move(
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/huggingface_hub/file_download.py", line 1545, in _download_to_tmp_and_move
+    http_get(
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/huggingface_hub/file_download.py", line 368, in http_get
+    r = _request_wrapper(
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/huggingface_hub/file_download.py", line 300, in _request_wrapper
+    response = get_session().request(method=method, url=url, **params)
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/requests/sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/requests/sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/huggingface_hub/utils/_http.py", line 93, in send
+    return super().send(request, *args, **kwargs)
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/requests/adapters.py", line 688, in send
+    raise ConnectTimeout(e, request=request)
+requests.exceptions.ConnectTimeout: (MaxRetryError("HTTPSConnectionPool(host='cdn-lfs.hf.co', port=443): Max retries exceeded with url: /repos/16/41/16418edd56a7c42307a0f361531c01ee227a92a98628972bd433062c276dad7c/d60acb128cf7b7f2536e8f38a5b18a05535c9e14c7a355904270e15b0945ea86?response-content-disposition=inline%3B+filename*%3DUTF-8%27%27spiece.model%3B+filename%3D%22spiece.model%22%3B&Expires=1734525396&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTczNDUyNTM5Nn19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2RuLWxmcy5oZi5jby9yZXBvcy8xNi80MS8xNjQxOGVkZDU2YTdjNDIzMDdhMGYzNjE1MzFjMDFlZTIyN2E5MmE5ODYyODk3MmJkNDMzMDYyYzI3NmRhZDdjL2Q2MGFjYjEyOGNmN2I3ZjI1MzZlOGYzOGE1YjE4YTA1NTM1YzllMTRjN2EzNTU5MDQyNzBlMTViMDk0NWVhODY~cmVzcG9uc2UtY29udGVudC1kaXNwb3NpdGlvbj0qIn1dfQ__&Signature=t8gzGB7JZOx3vG-QwjJaC6v64V7WhAyXs5WuwfV2S26noGtmhOOH6p-TXVs7Aj-aIlTn6JHXMpiwxtWLrRkhCGPE4gcm90U~Tah7i2cvKW0NDPi3IYmWeVnZRkIHnqirTIBP6Qjj~Yt4fCbxVBO630BdCiQm7f76q4S4EK0lHo-nOGLo5S1wS6mmmx8HUmmrbn5CPD4ei75ZHQZMCSY6YG17MN2k5791Pi06nIzZTB-Mpz7Faaz6eLSrZqOd7B07AUc40Eu3Qxt2TMEArXKILGUYRjQlFO5-TIef2m5VC3rwBLm3zViiKTJKfZCKfEs12bBSEQ8Jt2uv82VqdqwSVA__&Key-Pair-Id=K3RPWS32NSSJCE (Caused by ConnectTimeoutError(<urllib3.connection.HTTPSConnection object at 0x14e8bcec77c0>, 'Connection to cdn-lfs.hf.co timed out. (connect timeout=10)'))"), '(Request ID: 26e3c803-29d6-4992-811d-60400aca4003)')
+W1215 13:37:17.626206 22671531177472 torch/distributed/elastic/multiprocessing/api.py:858] Sending process 410150 closing signal SIGTERM
+W1215 13:37:17.626736 22671531177472 torch/distributed/elastic/multiprocessing/api.py:858] Sending process 410151 closing signal SIGTERM
+W1215 13:37:17.627473 22671531177472 torch/distributed/elastic/multiprocessing/api.py:858] Sending process 410152 closing signal SIGTERM
+E1215 13:37:17.942309 22671531177472 torch/distributed/elastic/multiprocessing/api.py:833] failed (exitcode: 1) local_rank: 0 (pid: 410149) of binary: /home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/bin/python
+Traceback (most recent call last):
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/runpy.py", line 194, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/runpy.py", line 87, in _run_code
+    exec(code, run_globals)
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/torch/distributed/run.py", line 905, in <module>
+    main()
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 348, in wrapper
+    return f(*args, **kwargs)
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/torch/distributed/run.py", line 901, in main
+    run(args)
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/torch/distributed/run.py", line 892, in run
+    elastic_launch(
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/torch/distributed/launcher/api.py", line 133, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+  File "/home/atuin/g102ea/g102ea22/software/private/conda/envs/mrAudio/lib/python3.8/site-packages/torch/distributed/launcher/api.py", line 264, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+train.py FAILED
+------------------------------------------------------------
+Failures:
+  <NO_OTHER_FAILURES>
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2024-12-15_13:37:17
+  host      : a0605.nhr.fau.de
+  rank      : 0 (local_rank: 0)
+  exitcode  : 1 (pid: 410149)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================

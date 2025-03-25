@@ -8,11 +8,16 @@ model:
   model_type: pretrain_flant5xl
   load_finetuned: False # True
   use_grad_checkpoint: False
+  vit_precision: fp16
   freeze_vit: True
   task: qformer_freeze_lora
   input_time_format: seconds_integers # [seconds_integers | seconds_floats | relative_integers | relative_floats | framenumbers]
   interleave_data: True
   frame_token_aggregation: False # [mean | False]
+  fusion_method: "gca" # [gca | bigca | avde | lcam]
+  use_rna_loss: False
+  log_feature_means: True
+  late_fusion: False
 
 datasets:
   qvh: # name of the dataset builder
@@ -21,10 +26,14 @@ datasets:
           name: "blip2_video_train"
           n_frms: 60
           image_size: 224
+          audio_clip_len: 2.5 # length of the extracted audio clips in seconds
+          target_sr: 48000 # target audio sampling rate
         eval:
           name: "blip_video_eval"
           n_frms: 60
           image_size: 224
+          audio_clip_len: 2.5 # length of the extracted audio clips in seconds
+          target_sr: 48000 # target audio sampling rate
     text_processor:
         train:
           name: "blip_question"
@@ -40,14 +49,15 @@ run:
   init_lr: 3e-4
   min_lr: 0
   warmup_lr: 1e-8
-  # warmup_steps: 4515 # 903 iters/ epoch * 50 epochs * 0.1 = 4515
-  warmup_steps: 2255 # 451 iters/ epoch * 50 epochs * 0.1 = 2255
+  warmup_steps: 4515 # 903 iters/ epoch * 50 epochs * 0.1 = 4515
+  #warmup_steps: 2255 # 451 iters/ epoch * 50 epochs * 0.1 = 2255
+  #warmup_steps: 1125 # 225 iters/ epoch * 50 epochs * 0.1 = 1125
   weight_decay: 0.05
   max_epoch: 50
-  batch_size_train: 2
-  batch_size_eval: 2
+  batch_size_train: 1
+  batch_size_eval: 1
   num_workers: 8
-  accum_grad_iters: 2
+  accum_grad_iters: 4
 
   max_len: 200
   min_len: 8
@@ -72,4 +82,4 @@ run:
 
   wandb: True
   wandb_project: "mr_BLIP"
-  wandb_name: "QVH_150"
+  wandb_name: "QVH_GCA_audio_2.5_60frms"

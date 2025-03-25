@@ -84,4 +84,8 @@ class MixedBuilder(MomentRetrievalBuilder):
     }
 
 
-# open-ended QA
+@registry.register_builder("unav100")
+class Unav100Builder(MomentRetrievalBuilder):
+    DATASET_CONFIG_DICT = {
+        "default": "configs/datasets/unav100/defaults.yaml",
+    }
