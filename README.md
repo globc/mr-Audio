@@ -7,11 +7,11 @@ We introduce SMS (Sight meets Sound), a multimodal, single-stage model that exte
 We achieve new state-of-the-art results on the challenging Charades-STA benchmark, and competitive results on QVHighlights.
 
 <p align="center">
-  <img src="assets/teaser.png" alt="teaser image" width="600"/>
+  <img src="assets/teaser_2.webp" alt="teaser image" width="600"/>
 </p>
 
 <p align="center">
-  <img src="assets/model.png" alt="architecture image" width="600"/>
+  <img src="assets/model_2.web" alt="architecture image" width="600"/>
 </p>
 
 # Code structure
