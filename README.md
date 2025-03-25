@@ -53,8 +53,8 @@ pip install -r requirements.txt
 ```
 
 ## Download Pretrained Models
-Checkpoints of MR. BLIP can be used for fine-tuning and training (use only Charades-STA and QVHighlights)
-Download the [checkpoints](https://drive.google.com/drive/folders/1AR-rdUillx0fy7KS4zbEuswFMl7qR9Gj?usp=sharing) and put them under /mr_BLIP_checkpoints.
+Checkpoints of SMS can be used for fine-tuning and training (use only Charades-STA and QVHighlights)
+Download the [checkpoints](https://drive.google.com/drive/folders/1a5EBsih0avDvm5nAKp_UwTMXnV5CMBOS?usp=sharing) and put them under /mr_BLIP_checkpoints.
 
 # Dataset Preparation
 
@@ -123,7 +123,7 @@ We also explore different model variations or setups in the following branches:
 
 # Acknowledgments
 
-We thank the developers of [LAVIS](https://github.com/salesforce/LAVIS) and [BLIP-2](https://github.com/salesforce/LAVIS/tree/main/projects/blip2) for their public code release.
+We thank the developers of [CHRONO](https://github.com/sudo-Boris/mr-Blip), [LAVIS](https://github.com/salesforce/LAVIS) and [BLIP-2](https://github.com/salesforce/LAVIS/tree/main/projects/blip2) for their public code release.
 
 
 
