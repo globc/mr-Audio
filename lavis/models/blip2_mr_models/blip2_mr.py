@@ -329,7 +329,7 @@ class BLIP2_MR(Blip2Base):
         if self.late_fusion:
             if self.fusion_method == "lcam":
                 frames_for_t5 = self.lcam_fusion(audio_for_t5, vision_for_t5)
-            if self.fusion_method == "interleave":
+            if self.fusion_method == "gca":
                 frames_for_t5 = self.gatedCrossAttention(vision_for_t5, audio_for_t5)
         else:
             if self.fusion_method == "lcam":
@@ -395,7 +395,7 @@ class BLIP2_MR(Blip2Base):
                 log["train/log_likelihood_loss"] = loss.item()
                 if self.log_feature_means:
                     log["train/normalized_mean_fused_norm"] = self.calculate_mean_feature_norm(frames_for_t5).item()
-                    log["train/vision_mean_feature_norm"] = torch.mean(torch.linalg.norm(vision_for_t5.mean(dim=1), dim=-1), dim=-1).item()
+                    log["train/vision_mean_feature_norm"] = torch.mean(torch.linalg.norm(frames_for_projection.mean(dim=1), dim=-1), dim=-1).item()
                     log["train/audio_mean_feature_norm"] = self.calculate_mean_feature_norm(audio_embeddings).item()
 
                     log["train/projectedfused_mean_fused_norm"] = torch.mean(torch.linalg.norm(frames_for_t5.mean(dim=1), dim=-1), dim=-1).item()
@@ -422,7 +422,7 @@ class BLIP2_MR(Blip2Base):
 
             return {"loss": loss}
 
-    #TODO: add audio embeddings here
+
     def prompt_concatenation(
         self,
         timestamps,
@@ -752,7 +752,7 @@ class BLIP2_MR(Blip2Base):
         if self.late_fusion:
             if self.fusion_method == "lcam":
                 frames_for_t5 = self.lcam_fusion(audio_for_t5, vision_for_t5)
-            if self.fusion_method == "interleave":
+            if self.fusion_method == "gca":
                 frames_for_t5 = self.gatedCrossAttention(vision_for_t5, audio_for_t5)
         else:
             if self.fusion_method == "lcam":
