@@ -114,7 +114,6 @@ sh run_scripts/mr_BLIP/eval/charades.sh
 
 We also explore different model variations or setups in the following branches:
 
-- [attention_fusion](https://github.com/globc/mr-Audio/tree/attention_fusion)
 - [clap_interleave](https://github.com/globc/mr-Audio/tree/clap_interleave)
 - [xinstructblip](https://github.com/globc/mr-Audio/tree/xinstructblip)
 - [MultiModalSequenceFusion](https://github.com/globc/mr-Audio/tree/MultiModalSequenceFusion)
