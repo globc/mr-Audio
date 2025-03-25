@@ -782,6 +782,8 @@ class Blip2VicunaXInstruct(Blip2Base):
             inp_list = [self.llm_model.get_input_embeddings()(self.tokenized_prefix.input_ids.to(self.device)).repeat(bs, 1, 1)] 
 
         prompt = samples["text_input"]
+
+        # Full interleaving strategy: [f1, a1, t1, f2, a2, t2, . . . , fn, an, tn, d, q, p]
         if self.joint_video_audio == "full":
             if "audio" in self.modalities:
                 assert len(embeds["audio"]) == len(embeds["video"])
@@ -814,7 +816,7 @@ class Blip2VicunaXInstruct(Blip2Base):
                 inp_list.extend([timestamp_inputs_llm[:, pos, :, :]])
                 att_list.extend([timestamp_atts_llm[:, pos, :]])
 
-        # equal to 'full' but order of loops reversed
+        # Semi interleaving strategy: [f1, t1, . . . , fn, tn, a1, t1, . . . , an, tn, d, q, p]
         elif self.joint_video_audio == "semi":
             for modality in self.modalities: # ["audio", "video"]
                 num = len(embeds[modality])
@@ -835,6 +837,7 @@ class Blip2VicunaXInstruct(Blip2Base):
                     inp_list.extend([timestamp_inputs_llm[:, pos, :, :]])
                     att_list.extend([timestamp_atts_llm[:, pos, :]])
 
+        # Non interleaving strategy: [f1, f2, . . . , fn, a1, a2, . . . an, t1, t2, . . . tn, d, q, p] 
         else:           
             for modality in curr_modalities:
                 if self.use_cues:

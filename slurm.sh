@@ -15,16 +15,19 @@ unset SLURM_EXPORT_ENV
 
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 export CUDA_NUM_DEVICES=$SLURM_GPUS_ON_NODE
+export http_proxy=http://proxy:80
+export https_proxy=http://proxy:80
+
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
 export HPC_SCRATCH=$WORK
 
-ml gcc/11 cuda/11.8
+ml gcc/11 cuda
 source ~/miniconda3/bin/activate
 conda activate mraudio
-# pip install git+https://github.com/salesforce/LAVIS --no-deps
-# pip install -r requirements_xinstructblip.txt
+pip install -r requirements.txt
 
-./run_scripts/mr_Audio/eval/X-InstructBLIP/qvh.sh
+./run_scripts/mr_Audio/train/X-InstructBLIP/charades_sta.sh
 conda deactivate
 
 
