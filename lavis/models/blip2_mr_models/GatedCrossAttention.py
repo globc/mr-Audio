@@ -1,5 +1,7 @@
 import torch
 import torch.nn as nn
+from sympy import false
+
 
 class GatedCrossAttention(nn.Module):
     def __init__(self, vision_dim=768, audio_dim=512, hidden_dim=768, num_heads=8):
@@ -16,12 +18,17 @@ class GatedCrossAttention(nn.Module):
 
     def forward(self, vision_emb, audio_emb):
         """
-        vision_emb: [batch_size, seq_len, vision_dim]
-        audio_emb:  [batch_size, seq_len, audio_dim]
+        Args:
+            vision_emb (torch.Tensor): A tensor of shape [batch_size, seq_len, vision_dim] representing vision embeddings.
+            audio_emb (torch.Tensor):  A tensor of shape [batch_size, seq_len, audio_dim] representing audio embeddings.
+        
+        Returns:
+            torch.Tensor: A tensor of shape [batch_size, seq_len, hidden_dim] representing the fused representation 
+                          of vision and audio embeddings.
         """
         # Project audio features to match vision feature size
-        # comment line out for fusion before projection
-        audio_emb = self.audio_proj(audio_emb)
+        if audio_emb.shape[-1] != vision_emb.shape[-1]:
+            audio_emb = self.audio_proj(audio_emb)
 
         # Compute cross-attention (audio attending to video)
         attended_audio, _ = self.cross_attn(audio_emb, vision_emb, vision_emb)
@@ -29,7 +36,6 @@ class GatedCrossAttention(nn.Module):
         # Compute gating scores (importance of each token)
         gate_values = torch.sigmoid(self.gate(audio_emb))
 
-        # Apply gating mechanism
-        fused_representation = gate_values * attended_audio + (1 - gate_values) * vision_emb  # Selectively fuse
+        fused_representation = gate_values * attended_audio + (1 - gate_values) * vision_emb
 
         return fused_representation

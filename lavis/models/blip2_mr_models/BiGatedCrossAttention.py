@@ -31,8 +31,13 @@ class BiGatedCrossAttention(nn.Module):
 
     def forward(self, vision_emb, audio_emb):
         """
-        vision_emb: [batch_size, seq_len, vision_dim]  -> (160, 32, 768)
-        audio_emb:  [batch_size, seq_len, audio_dim]   -> (160, 32, 512)
+        Args:
+            vision_emb (torch.Tensor): A tensor of shape [batch_size, seq_len, vision_dim] representing vision embeddings.
+            audio_emb (torch.Tensor):  A tensor of shape [batch_size, seq_len, audio_dim] representing audio embeddings.
+        
+        Returns:
+            torch.Tensor: A tensor of shape [batch_size, seq_len, hidden_dim] representing the fused representation 
+                          of vision and audio embeddings.
         """
         # Project audio features to match vision feature size
         audio_emb = self.audio_proj(audio_emb)  # Shape: (160, 32, 768)

@@ -23,14 +23,14 @@ class MultimodalTransformer(nn.Module):
         self.cross_attention = CrossAttentionBlock(hidden_dim, num_heads, dropout)
 
         # Fusion Layer
-        self.fusion_layer = TransformerEncoderBlock(hidden_dim, num_heads, dropout) # or MLP
+        self.fusion_layer = TransformerEncoderBlock(hidden_dim, num_heads, dropout) 
 
         # Output Layer
         self.output_layer = nn.Linear(hidden_dim, output_dim)
 
 
     def forward(self, audio_features, visual_features):
-        # 1. Input Embeddings
+        # Input Embeddings
         if audio_features.shape[-1] != self.hidden_dim:
             audio_embedded = self.audio_embedding(audio_features)
         else:
@@ -58,13 +58,16 @@ class MultimodalTransformer(nn.Module):
         return output
 
 
-class TransformerEncoderBlock(nn.Module):  # Standard Transformer Encoder Block
+class TransformerEncoderBlock(nn.Module):
+    """
+        Standard Transformer Encoder Block
+    """
     def __init__(self, hidden_dim, num_heads, dropout):
         super(TransformerEncoderBlock, self).__init__()
         self.attention = nn.MultiheadAttention(hidden_dim, num_heads, dropout=dropout, batch_first=True)
         self.norm1 = nn.LayerNorm(hidden_dim)
         self.ff = nn.Sequential(
-            nn.Linear(hidden_dim, hidden_dim * 4),  # Example Feed-Forward
+            nn.Linear(hidden_dim, hidden_dim * 4),
             nn.ReLU(),
             nn.Linear(hidden_dim * 4, hidden_dim)
         )
@@ -74,7 +77,7 @@ class TransformerEncoderBlock(nn.Module):  # Standard Transformer Encoder Block
 
     def forward(self, x):
         x = self.pe(x)
-        attn_output, _ = self.attention(x, x, x)  # Self-attention
+        attn_output, _ = self.attention(x, x, x)
         x = x + self.dropout(attn_output)
         x = self.norm1(x)
         ff_output = self.ff(x)
@@ -83,12 +86,12 @@ class TransformerEncoderBlock(nn.Module):  # Standard Transformer Encoder Block
         return x
 
 
-class CrossAttentionBlock(nn.Module): # Modified Transformer Block for Cross-Attention
+class CrossAttentionBlock(nn.Module):
     def __init__(self, hidden_dim, num_heads, dropout):
         super(CrossAttentionBlock, self).__init__()
         self.cross_attention = nn.MultiheadAttention(hidden_dim, num_heads, dropout=dropout, batch_first=True)
         self.norm1 = nn.LayerNorm(hidden_dim)
-        self.ff = nn.Sequential( # Same FF as before
+        self.ff = nn.Sequential(
             nn.Linear(hidden_dim, hidden_dim * 4),
             nn.ReLU(),
             nn.Linear(hidden_dim * 4, hidden_dim)
@@ -96,8 +99,8 @@ class CrossAttentionBlock(nn.Module): # Modified Transformer Block for Cross-Att
         self.norm2 = nn.LayerNorm(hidden_dim)
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, x, y):  # x and y are the two modalities
-        attn_output, _ = self.cross_attention(x, y, y)  # Query x, Key and Value y
+    def forward(self, x, y):
+        attn_output, _ = self.cross_attention(x, y, y)
         x = x + self.dropout(attn_output)
         x = self.norm1(x)
         ff_output = self.ff(x)
@@ -107,11 +110,12 @@ class CrossAttentionBlock(nn.Module): # Modified Transformer Block for Cross-Att
 
 
 class SinusoidalPositionalEncoding(nn.Module):
+    """
+        Standard Sinusoidal Positional Encoding for Transformers
+    """
     def __init__(self, dim, max_len=5000):
         super().__init__()
         self.dim = dim
-
-        # Compute sinusoidal encodings
         position = torch.arange(max_len).unsqueeze(1)
         div_term = torch.exp(torch.arange(0, dim, 2) * -(torch.log(torch.tensor(10000.0)) / dim))
         pe = torch.zeros(max_len, dim)
