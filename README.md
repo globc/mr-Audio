@@ -53,7 +53,7 @@ pip install -r requirements.txt
 ```
 
 ## Download Pretrained Models
-Checkpoints of MR. BLIP can be used for fine-tuning and training (use only CHarades-STA and QVHighlights)
+Checkpoints of MR. BLIP can be used for fine-tuning and training (use only Charades-STA and QVHighlights)
 Download the [checkpoints](https://drive.google.com/drive/folders/1AR-rdUillx0fy7KS4zbEuswFMl7qR9Gj?usp=sharing) and put them under /mr_BLIP_checkpoints.
 
 # Dataset Preparation
