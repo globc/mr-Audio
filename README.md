@@ -110,6 +110,17 @@ Should roughly return:
 sh run_scripts/mr_BLIP/eval/charades.sh
 ```
 
+# Additional Branches
+
+We also explore different model variations or setups in the following branches:
+
+- [attention_fusion](https://github.com/globc/mr-Audio/tree/attention_fusion)
+- [clap_interleave](https://github.com/globc/mr-Audio/tree/clap_interleave)
+- [xinstructblip](https://github.com/globc/mr-Audio/tree/xinstructblip)
+- [MultiModalSequenceFusion](https://github.com/globc/mr-Audio/tree/MultiModalSequenceFusion)
+- [AudioOnly](https://github.com/globc/mr-Audio/tree/AudioOnly)
+- [CLAP2](https://github.com/globc/mr-Audio/tree/CLAP2)
+
 
 # Acknowledgments
 
