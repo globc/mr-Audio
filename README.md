@@ -1,18 +1,17 @@
-# The Surprising Effectiveness of Multimodal Large Language Models for Video Moment Retrieval
+# Sight meets Sound: Leveraging Audio for Improved Video Moment Retrieval using Multimodal Large Language Models
 
-* Authors: [Boris Meinardus](https://sudo-boris.github.io/), [Anil Batra](https://anilbatra2185.github.io/), [Anna Rohrbach](https://anna-rohrbach.net/), [Marcus Rohrbach](https://rohrbach.vision/)
-* Paper: [arxiv](http://arxiv.org/abs/2406.18113)
+* Authors: Joël Tschesche, Habib Maraqten, Christian Bialas, Ahmed Fourati, Leon Wenderoth 
 
-We introduce Mr. BLIP (Mr. as in Moment Retrieval), a multimodal, single-stage model that requires no expensive video-language pretraining, no additional input signal (e.g., no transcript or audio) and has a simpler and more versatile design than prior state-of-the-art methods.
-We achieve a new state-of-the-art in moment retrieval on the widely used benchmarks Charades-STA, QVHighlights, and ActivityNet Captions.
-Notably, we attain over 9% (absolute) higher Recall (at 0.5 and 0.7 IoU) on the challenging long-video multi-moment QVHighlights benchmark.
+
+We introduce SMS (Sight meets Sound), a multimodal, single-stage model that extends Chrono ([arxiv](http://arxiv.org/abs/2406.18113)) by multimodal audio-vision reasoning capabilities for Video Moment Retrieval. 
+We achieve new state-of-the-art results on the challenging Charades-STA benchmark, and competitive results on QVHighlights.
 
 <p align="center">
-  <img src="./assets/teaser.png" alt="teaser image" width="600"/>
+  <img src="assets/teaser_2.webp" alt="teaser image" width="600"/>
 </p>
 
 <p align="center">
-  <img src="./assets/model.png" alt="architecture image" width="600"/>
+  <img src="assets/model_2.webp" alt="architecture image" width="600"/>
 </p>
 
 # Code structure
@@ -22,13 +21,13 @@ Notably, we attain over 9% (absolute) higher Recall (at 0.5 and 0.7 IoU) on the 
 # data & data preprocessing
 ./mr_BLIP_data
 
-# pretrained checkpoints
+# pretrained checkpoints from MR.BLIP
 ./mr_BLIP_checkpoints
 
-# mr_BLIP code
+# model code
 ./lavis/
 
-# running scripts for mr_BLIP training and inference
+# running scripts for training and inference
 ./run_scripts
 
 ```
@@ -37,23 +36,25 @@ Notably, we attain over 9% (absolute) higher Recall (at 0.5 and 0.7 IoU) on the 
 
 ## Install Dependencies
 
-1. (Optional) Creating conda environment
+1. (Optional) Creating conda environment from .yaml file
 
 ```bash
-conda create -n mrBlip python=3.8
-conda activate mrBlip
+cd mr-Audio/envs
+conda env create -f SMS.yaml
+conda activate sms-env
+
 ```
 
 2. build from source
 
 ```bash
+conda create -n SMS python=3.8
 pip install -r requirements.txt
 ```
 
 ## Download Pretrained Models
-
-We train Mr. BLIP on QVHighlights, Charades-STA, and ActivityNet Captions and provide the checkpoints.
-Download the [checkpoints](https://drive.google.com/drive/folders/1AR-rdUillx0fy7KS4zbEuswFMl7qR9Gj?usp=sharing) and put them under /mr_BLIP_checkpoints.
+Checkpoints of SMS can be used for fine-tuning and training (use only Charades-STA and QVHighlights)
+Download the [checkpoints](https://drive.google.com/drive/folders/1a5EBsih0avDvm5nAKp_UwTMXnV5CMBOS?usp=sharing) and put them under /mr_BLIP_checkpoints.
 
 # Dataset Preparation
 
@@ -64,17 +65,15 @@ We test our model on:
 
 * [QVHighlights](https://github.com/jayleicn/moment_detr)
 
-* [ActivityNet Captions](https://cs.stanford.edu/people/ranjaykrishna/densevid/)
-
 Please download original MR data and preprocess them via our [scripts](mr_BLIP_data/data_preprocess.ipynb).
 
 # Training and Inference
 
-We provide Mr. BLIP training and inference script examples as follows.
+We provide SMS training and inference script examples as follows.
 
 And please refer to [dataset page](lavis/configs/datasets/) to customize your data path.
 
-You might want to update the [config files](lavis/projects/mr_BLIP/train/) for the respective runs to fit on your machine. They are currently set to run on 8 A100-80GB GPUs. You can simply reduce the batch size, reduce the number of frames, or apply a frame level embeddings aggregation (32 frame tokens -> 1 token) to fit on a smaller GPU.
+You might want to update the [config files](lavis/projects/mr_BLIP/train/) for the respective runs to fit on your machine. They are currently set to run on 4 A100-80GB GPUs for Charades-STA and 8 A100-80GB GPUs for QVHighlights. You can simply reduce the batch size, reduce the number of frames, or apply a frame level embeddings aggregation (32 frame tokens -> 1 token) to fit on a smaller GPU.
 
 ## 1) QVH Finetuning
 
@@ -88,18 +87,13 @@ sh run_scripts/mr_BLIP/train/qvh.sh
 sh run_scripts/mr_BLIP/train/charades.sh
 ```
 
-## 3) ANet Captions Finetuning
-
-```bash
-sh run_scripts/mr_BLIP/train/anet.sh
-```
 
 ## 4) QVH Evaluation
 
 Should roughly return:
-|               | R1@0.5        | R1@0.7   | mIoU       | mAP@0.5  | mAP@0.75  |
-| ------------- |:-------------:| :-----:  | :--------: | :-----:  | --------: |
-| *Mr. BLIP*    | **76.16**     | **62.63**| **70.32**  | **68.50**| **55.06** |
+|               | R1@0.5        | R1@0.7    | mAP@0.5  | mAP@0.75  |
+| ------------- |:-------------:| :-----:   | :-----:  | --------: |
+| *SMS*    | **76.39**     | **61.35**| **69.09**| **54.07** |
 
 ```bash
 sh run_scripts/mr_BLIP/eval/qvh.sh
@@ -110,39 +104,27 @@ sh run_scripts/mr_BLIP/eval/qvh.sh
 Should roughly return:
 |               | R1@0.5        | R1@0.7   | mIoU      |
 | ------------- |:-------------:| :-----:  | --------: |
-| *Mr. BLIP*    | **69.31**     | **49.29**| **58.63** |
+| *SMS*         | **72.54**     | **51.0**| **60.90**  |
 
 ```bash
 sh run_scripts/mr_BLIP/eval/charades.sh
 ```
 
-## 6) ANet Captions Evaluation
+# Additional Branches
 
-Should roughly return:
-|               | R1@0.5        | R1@0.7   | mIoU      |
-| ------------- |:-------------:| :-----:  | --------: |
-| *Mr. BLIP*    | **53.79**     | **35.47**| **51.52** |
+We also explore different model variations or setups in the following branches:
 
-```bash
-sh run_scripts/mr_BLIP/eval/anet.sh
-```
+- [clap_interleave](https://github.com/globc/mr-Audio/tree/clap_interleave)
+- [xinstructblip](https://github.com/globc/mr-Audio/tree/xinstructblip)
+- [MultiModalSequenceFusion](https://github.com/globc/mr-Audio/tree/MultiModalSequenceFusion)
+- [AudioOnly](https://github.com/globc/mr-Audio/tree/AudioOnly)
+- [CLAP2](https://github.com/globc/mr-Audio/tree/CLAP2)
+
 
 # Acknowledgments
 
-We thank the developers of [LAVIS](https://github.com/salesforce/LAVIS) and [BLIP-2](https://github.com/salesforce/LAVIS/tree/main/projects/blip2) for their public code release.
+We thank the developers of [CHRONO](https://github.com/sudo-Boris/mr-Blip), [LAVIS](https://github.com/salesforce/LAVIS) and [BLIP-2](https://github.com/salesforce/LAVIS/tree/main/projects/blip2) for their public code release.
 
-# Reference
 
-Please cite our paper if you use our models in your works:
 
-```bibtex
-@article{boris2024surprisingeffectivenessmultimodallarge,
-      title={The Surprising Effectiveness of Multimodal Large Language Models for Video Moment Retrieval}, 
-      author={Meinardus Boris and Batra Anil and Rohrbach Anna and Rohrbach Marcus},
-      year={2024},
-      eprint={2406.18113},
-      archivePrefix={arXiv},
-      primaryClass={cs.CV},
-      url={https://arxiv.org/abs/2406.18113}, 
-}
-```
+
